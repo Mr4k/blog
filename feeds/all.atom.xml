@@ -1,0 +1,881 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>peterstefek.me</title><link href="/" rel="alternate"></link><link href="/feeds/all.atom.xml" rel="self"></link><id>/</id><updated>2019-10-18T00:00:00-07:00</updated><entry><title>A Note on Ray Marching with Heightfields</title><link href="/ray-marching-heightfields.html" rel="alternate"></link><published>2019-10-18T00:00:00-07:00</published><updated>2019-10-18T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2019-10-18:/ray-marching-heightfields.html</id><summary type="html">&lt;p&gt;Short stepping to avoid collisions&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;span class="math"&gt;\(\newcommand{\norm}[1]{\lvert \lvert #1 \rvert \rvert}\)&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;Ray marching is a technique for testing ray intersections with a scene.
+If you are new to ray marching, I highly recommend reading one of these &lt;a href="https://www.iquilezles.org/www/articles/raymarchingdf/raymarchingdf.htm"&gt;great&lt;/a&gt; &lt;a href="http://jamie-wong.com/2016/07/15/ray-marching-signed-distance-functions/"&gt;introductions&lt;/a&gt;
+to the technique.
+The central idea in raymarching is that the scene is represented by a distance field function &lt;span class="math"&gt;\(D(pos)\)&lt;/span&gt;
+which gives the distance to the closest surface at each point. This distance field function for a scene is usually built by combining the distance fields of many primitives such as spheres, cubes and planes. Usually the distance field of each primitive can be analytically defined. A simple example of one of these primitives is a sphere at the origin
+with radius r whose distance field function is defined as follows in glsl:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="nv"&gt;function&lt;/span&gt; &lt;span class="nv"&gt;distSphere&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;vec3&lt;/span&gt; &lt;span class="nv"&gt;pos&lt;/span&gt;, &lt;span class="nv"&gt;float&lt;/span&gt; &lt;span class="nv"&gt;r&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt; {
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nv"&gt;mag&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;pos&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="nv"&gt;r&lt;/span&gt;&lt;span class="c1"&gt;;&lt;/span&gt;
+}
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;On thing you might notice here is that if you are inside the sphere the distance field is negative. This is called a signed distance field. While we don't use the signed part in this article you can find more information about them &lt;a href="https://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm"&gt;here&lt;/a&gt;. &lt;br&gt;&lt;br&gt;
+People often tend to use heightfields as primitives in raymarching. A heightfield is
+a function &lt;code&gt;h(vec2 pos)&lt;/code&gt; that takes a 2d coordinate and returns the height
+at that point. They can be thought of as topographical maps. Heightfields are useful because they allow artists to easily define bumpy surfaces such as waves or terrain. 
+Common analytic heightfields include simplex noise, and sin / cosine waves.
+Typically people use a function like the one below for the heightfield's distance field function:  &lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="nv"&gt;function&lt;/span&gt; &lt;span class="nv"&gt;distHeightfield&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;vec3&lt;/span&gt; &lt;span class="nv"&gt;pos&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt; {
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nv"&gt;h&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;pos&lt;/span&gt;.&lt;span class="nv"&gt;xz&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="nv"&gt;pos&lt;/span&gt;.&lt;span class="nv"&gt;y&lt;/span&gt;&lt;span class="c1"&gt;;&lt;/span&gt;
+}
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;where &lt;code&gt;h(vec2 pos)&lt;/code&gt; is the heightfield function. However this function is really not a distance field. To see why we can look at the image below.&lt;br&gt;
+&lt;img alt="A ray can overshoot the closest surface when using heightfield distance" src="images/ray-marching-heightfields/heightfield-problem.png"&gt;&lt;br&gt;
+Let's say we are at point P and we shoot a ray to the right (represented by the red ray in the picture). If we use our &lt;code&gt;distHeightfield&lt;/code&gt; function we will think that the closest surface is &lt;span class="math"&gt;\(a\)&lt;/span&gt; away. However in the direction our red ray is going, the closest point is really &lt;span class="math"&gt;\(b\)&lt;/span&gt; away which is smaller than &lt;span class="math"&gt;\(a\)&lt;/span&gt;. So if we took a step of size &lt;span class="math"&gt;\(a\)&lt;/span&gt; along the red ray we would overshoot the heightfield. &lt;br/&gt;&lt;br/&gt;
+One way to solve this problem is to use a smaller step size. In fact it turns out we can just 
+down scale our step size by a constant multiple. So instead of taking a step of size &lt;code&gt;D(pos)&lt;/code&gt; as 
+usual we could take a step of size &lt;code&gt;D(pos)*shrinkFactor&lt;/code&gt;. One way to find the shrink factor is to just try plugging in small constants 
+until we get good results. In practice, there is absolutely nothing wrong with this approach. But if we want we can apply a more principled approach to finding a shrink factor.  &lt;br/&gt;&lt;br/&gt;
+&lt;strong&gt;Obtaining a shrink factor&lt;/strong&gt;:&lt;br&gt;
+Let's start by just trying to obtain a safe distance which gives us a lower bound on how far we can go in any direction without hitting anything. A really simple
+way to do that is by creating a surface that will always be between our point P and the heightfield and finding the closest distance to that surface.&lt;br&gt;
+A cone (more of a v shape in 2d) whose bottom starts on the heightfield directly under P is a good choice. Here is a picture:&lt;br&gt;
+&lt;img alt="A safety cone" src="images/ray-marching-heightfields/safety-cone.png"&gt;&lt;br&gt;
+Now we need is to chose a slope &lt;code&gt;c&lt;/code&gt; for the sides of the cone such that the it's edges will always lie between the heighfield and our point. If our heighfield function
+is continuous and its derivative is bounded everywhere it is defined then &lt;code&gt;c&lt;/code&gt; could be the lowest upper bound on the absolute value of the derivative.  &lt;br/&gt;&lt;br/&gt;
+Finally we have to find the closest distance from P to the edges of the cone. This distance will be our conservative bound.  &lt;br/&gt;&lt;br/&gt;
+Note while the math below is in 2d, the 3d case is basically identical:&lt;br&gt;
+&lt;img alt="A picture to set up our derivation" src="images/ray-marching-heightfields/derivation-diagram.png"&gt;&lt;br&gt;
+Let &lt;span class="math"&gt;\(O\)&lt;/span&gt; be the bottom of the cone and &lt;span class="math"&gt;\(N\)&lt;/span&gt; be the closest point on one of the edges of the cone to &lt;span class="math"&gt;\(P\)&lt;/span&gt;. For consistency we will choose the right edge although it doesn't matter.&lt;br&gt;
+First define &lt;span class="math"&gt;\(\hat{C}\)&lt;/span&gt; as the normalized vector pointing from &lt;span class="math"&gt;\(O\)&lt;/span&gt; along the right edge of the cone.&lt;br&gt;
+&lt;span class="math"&gt;\(\norm{\overrightarrow{ON}}\)&lt;/span&gt; is given by &lt;span class="math"&gt;\(\overrightarrow{OP}\cdot \hat{C}\)&lt;/span&gt;.&lt;br&gt;
+Given that &lt;span class="math"&gt;\(\overrightarrow{OP} = (0, h(P))\)&lt;/span&gt; we can say, &lt;span class="math"&gt;\(\norm{\overrightarrow{ON}} = \frac{h(P)c}{\sqrt{1+c^2}}\)&lt;/span&gt;.&lt;br&gt;
+Finally using the pythagorean theorem we can find &lt;span class="math"&gt;\(\norm{\overrightarrow{PN}} = \norm{\overrightarrow{OP} } - \norm{\overrightarrow{ON}}\)&lt;/span&gt; which is &lt;span class="math"&gt;\(\frac{1}{\sqrt{c^2+1}}h(p)\)&lt;/span&gt;. &lt;br&gt; &lt;span class="math"&gt;\(\norm{\overrightarrow{PN}}\)&lt;/span&gt; is our conservative lower bound. This also means we can use &lt;span class="math"&gt;\(\frac{1}{\sqrt{c^2+1}}\)&lt;/span&gt; as our shrink factor.&lt;/p&gt;
+&lt;script type="text/javascript"&gt;if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width &lt; 768) ? "left" : align;
+        indent = (screen.width &lt; 768) ? "0em" : indent;
+        linebreak = (screen.width &lt; 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/latest.js?config=TeX-AMS-MML_HTMLorMML';
+
+    var configscript = document.createElement('script');
+    configscript.type = 'text/x-mathjax-config';
+    configscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'none' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        availableFonts: ['STIX', 'TeX']," +
+        "        preferredFont: 'STIX'," +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+&lt;/script&gt;</content><category term="raymarching"></category><category term="graphics"></category></entry><entry><title>Optimal Stopping Policies</title><link href="/optimal-stopping.html" rel="alternate"></link><published>2018-10-06T00:00:00-07:00</published><updated>2019-10-15T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2018-10-06:/optimal-stopping.html</id><summary type="html">&lt;p&gt;Theoretical Recruiting&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;strong&gt;The Recruiter Problem&lt;/strong&gt;&lt;br&gt;
+Pretend for a minute that you are a recruiter who's looking for people to fill a position. Maybe you're reading this post because I have applied for a position at your company and you're vetting me. Anyways the point is I'm one candidate among many. Even if you interview me and like me how do you know there's not someone better out there to fill the position? &lt;br&gt;&lt;br&gt;
+More formally, you are going to interview &lt;span class="math"&gt;\(N\)&lt;/span&gt; candidates for a job. The order in which they come is random, with all orderings equally likely. After each interview with a candidate you will come up with a quality score (a real number between 0 and 1) for them and then you have to choose whether to hire them on the spot or reject them and hope a better fit comes along. Your goal is to hire the best of the best (the candidate who has the highest score among all N candidates) but you have no idea what the applicant pool looks like (no information about the distribution from which these candidates are drawn). What is the probability that you succeed in your task given that you use the optimal hiring strategy? &lt;br&gt;&lt;br&gt;
+This problem is know sometimes as the best choice problem or the secretary problem. We will call it the Recruiter Problem. It is a very famous and well studied problem because of its very surprising solution: &lt;br&gt;&lt;br&gt;
+&lt;div style="text-align:center;"&gt; &lt;span class="math"&gt;\(\lim_{N \to \infty}Pr(\mbox{best is selected out of N candidates}) \to \frac{1}{e}\)&lt;/span&gt; &lt;/div&gt;&lt;br&gt;
+This is a really cool result for several reasons. First of all it's not even clear that there should be any kind of one fits all strategy. Secondly, &lt;span class="math"&gt;\(\frac{1}{e} = 0.367879...\)&lt;/span&gt; which seems absurdly high. If have a million candidates, you have around a one third chance of choosing &lt;strong&gt;the&lt;/strong&gt; very best one. Here is a graph showing the probability of success using this strategy for different numbers of candidates,&lt;br&gt;
+&lt;p align="center"&gt;
+    &lt;img src="/images/optimal-stopping/cutoff.png" width="100%" &gt; 
+&lt;/p&gt;&lt;br&gt; The strategy is also fairly simple and seemingly bizarre.&lt;br&gt;&lt;br&gt;
+&lt;strong&gt;Strategy&lt;/strong&gt;&lt;br&gt; For every N there is an &lt;span class="math"&gt;\(r_N^*\)&lt;/span&gt; such that the following strategy is optimal. Reject the first &lt;span class="math"&gt;\(r_N^* - 1\)&lt;/span&gt; percent of the candidates then choose the next candidate who is better all of then them. &lt;br&gt;&lt;br&gt;
+This type of strategy is called a cutoff rule. The final surprising fact is that &lt;br&gt;
+&lt;div style="text-align:center;"&gt; &lt;/p&gt;
+&lt;div class="math"&gt;$$\lim_{N \to \infty} r_N^* \to \frac{1}{e}$$&lt;/div&gt;
+&lt;p&gt; &lt;/div&gt;
+This means that you see less than half of the many candidates while making your decision. &lt;br&gt;&lt;br&gt;
+&lt;strong&gt;Analysis&lt;/strong&gt;&lt;br&gt;
+Analyzing the cutoff rule approach to this problem is fairly straightforward. Consider the cutoff rule with a variable &lt;span class="math"&gt;\(r\)&lt;/span&gt; which defines the cutoff point. The probability of finding the max can be though as follows, &lt;br&gt;
+&lt;div style="text-align:center;"&gt; &lt;/p&gt;
+&lt;div class="math"&gt;$$P(\mbox{success}) = \sum_{i=1}^N P(\mbox{applicant i is selected} \cap \mbox{applicant i is the best})$$&lt;/div&gt;
+&lt;p&gt; &lt;/div&gt;
+&lt;div style="text-align:center;"&gt; &lt;/p&gt;
+&lt;div class="math"&gt;$$P(\mbox{success}) = \sum_{i=1}^N P(\mbox{applicant i is selected} \vert \mbox{applicant i is the best}) \times P(\mbox{applicant i is the best})$$&lt;/div&gt;
+&lt;p&gt; &lt;/div&gt;
+The probability of any applicant being the best if &lt;span class="math"&gt;\(\frac{1}{n}\)&lt;/span&gt; because our candidates are equally likely to appear in any order. So
+&lt;div style="text-align:center;"&gt; &lt;/p&gt;
+&lt;div class="math"&gt;$$P(\mbox{success}) = \sum_{i=1}^N(\mbox{applicant i is selected} \vert \mbox{applicant i is the best}) \times \frac{1}{n}$$&lt;/div&gt;
+&lt;p&gt; &lt;/div&gt; &lt;br&gt;
+The probability of success is clearly zero if when the best candidate is in the first r candidates since we reject them all. So we can simplify the above expression as follows: &lt;br&gt;
+&lt;div style="text-align:center;"&gt; &lt;/p&gt;
+&lt;div class="math"&gt;$$P(\mbox{success}) = \sum_{i=r}^N(\mbox{applicant i is selected} \vert \mbox{applicant i is the best}) \times \frac{1}{n}$$&lt;/div&gt;
+&lt;p&gt; &lt;/div&gt; &lt;br&gt;
+Finally we have one last key insight. We can observe that for &lt;span class="math"&gt;\(i \geq r\)&lt;/span&gt;, &lt;span class="math"&gt;\(P(\mbox{applicant i is selected} \vert \mbox{applicant i is the best})\)&lt;/span&gt; is the same as saying that the best of the first &lt;span class="math"&gt;\(i - 1\)&lt;/span&gt; candidates is in first r - 1 candidates. 
+&lt;div style="text-align:center;"&gt; &lt;/p&gt;
+&lt;div class="math"&gt;$$P(\mbox{success}) = \sum_{i=r}^N \frac{r-1}{i-1} \times \frac{1}{n} = \frac{r-1}{n}\sum_{i=r}^N \frac{1}{i-1}$$&lt;/div&gt;
+&lt;p&gt; &lt;/div&gt; &lt;br&gt;
+We can observe as &lt;span class="math"&gt;\(n \to \infty\)&lt;/span&gt; that our probability becomes:
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$P(x)=x\int_x^1 \frac{1}{t}dt$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt; &lt;br&gt;
+Maxmimizing this function in terms of x gives us &lt;span class="math"&gt;\(x^*=\frac{1}{e}\)&lt;/span&gt; and &lt;span class="math"&gt;\(P(x) = \frac{1}{e}\)&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;
+&lt;strong&gt;A Savvier Recruiter&lt;/strong&gt;&lt;br&gt;
+It turns out that in the case where we know nothing about the distribution, the cutoff rule is optimal. But what if we do know something? This time let's pretend we know our distribution is uniform on &lt;span class="math"&gt;\([0,1]\)&lt;/span&gt;. We will call this problem the Savvy Recruiter Problem. Now let's try to come up with an optimal strategy for the Savvy Recruiter Problem. After each interview we have to accept or reject the candidate we just interviewed (candidate i). To gain some insight we can take a look at the following statement, &lt;br&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$P(\mbox{best candidate was in past}) + P(\mbox{candidate i is best}) + P(\mbox{best candidate is in future}) = 1$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+Now we don't have control over the past but we do have the choice between hiring i and rejecting i. Therefore we choose the option which has the highest probability of giving us the best candidate. Let's make a few observations about these probabilities. &lt;br&gt;&lt;br&gt;
+If candidate i's score is less than any of the previous candidates we know that:
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$P(\mbox{candidate i is best}) = 0$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+In this case we would always choose to move on because no matter what our chance of finding the best candidate in the future is we know it is greater than 0. &lt;br&gt;&lt;br&gt;
+Now what if candidate i is better than all the other candidates we've seen so far? Off the bat we know that, &lt;br&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$P(\mbox{best candidate was in past}) = 0$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+This means that,
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$P(\mbox{candidate i is best}) + P(\mbox{best candidate is in future}) = 1$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$P(\mbox{best candidate is in future}) = 1 - P(\mbox{candidate i is best})$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;&lt;br&gt;
+Let &lt;span class="math"&gt;\(q_i\)&lt;/span&gt; denote candidate i's quality score. What we want now is the probability that we will not find a better candidate in our last &lt;span class="math"&gt;\(N-i\)&lt;/span&gt; interviews. Since our candidate scores are drawn from a uniform distribution on &lt;span class="math"&gt;\([0,1]\)&lt;/span&gt;,&lt;br&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$ P(\mbox{candidate j's score } \leq q_i) = q_i, \forall j $$&lt;/div&gt;
+&lt;p&gt; &lt;/div&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$ P(\mbox{last N-i candidates are all } \leq q_i) = \prod_{j = i+1}^{N}P(\mbox{candidate j's score } \leq q_i) = q_i^{N-i} $$&lt;/div&gt;
+&lt;p&gt; &lt;/div&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$ P(\mbox{best candidate in future}) = 1 - P(\mbox{last N-i candidates are all } \leq q_i) = 1 - q_i^{N-i} $$&lt;/div&gt;
+&lt;p&gt; &lt;/div&gt;
+So when is it optimal to choose to accept candidate i? It is when,
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$P(\mbox{candidate i is best}) \geq P(\mbox{best candidate is in future})$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+Equivalently this when,
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$P(\mbox{best candidate is in future}) \leq \frac{1}{2}$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$1 - q_i^{N-i} \leq \frac{1}{2}$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+Using this information we can solve for the threshold &lt;span class="math"&gt;\(q^*_i\)&lt;/span&gt; such that if &lt;span class="math"&gt;\(q_i \geq q^*_i\)&lt;/span&gt; our best option is to choose candidate i.
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$1 - {q^*_i}^{N-i} = \frac{1}{2}$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$${q^*_i}^{N-i} = \frac{1}{2}$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$q^*_i = \frac{1}{2}^\frac{1}{N-i}$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;So how much better is a savvy recruiter than a regular recruiter? Below is a graph comparing the probabilities that each type of recruiter will choose the best candidate. &lt;br&gt;
+&lt;p align="center"&gt;
+    &lt;img src="/images/optimal-stopping/cutoff-vs-knowing.png" width="100%"/&gt; 
+&lt;/p&gt;&lt;br/&gt;
+&lt;details&gt;
+    &lt;summary&gt;(details)&lt;/summary&gt;
+    The probability of success of the savvy recruiter strategy is a little more difficult to calculate then that of the basic recruiter strategy. However we will follow the same basic idea. First we break the probability into the sum of the probabilities of succeeding at each step (we can do this because the events are mutually exclusive),
+    &lt;div style="text-align:center;"&gt; &lt;/p&gt;
+&lt;div class="math"&gt;$$P(\mbox{success}) = \sum_{i=1}^N P(\mbox{we pick the max at step i})$$&lt;/div&gt;
+&lt;p&gt; &lt;/div&gt; 
+    However this is where it gets a little tricky. Remember that we pick a candidate if they are both larger than the threshold for that step &lt;span class="math"&gt;\(q_i\)&lt;/span&gt; and they are the max we have seen so far. Furthermore the sequence optimal thresholds &lt;span class="math"&gt;\((q_i)\)&lt;/span&gt; is decreasing. This means that there are situations where a candidate i can be larger than than the ith threshold &lt;span class="math"&gt;\(q_i\)&lt;/span&gt; but still be passed over because there was already a larger candidate that did not exceed a larger previous threshold. 
+    &lt;p align="center"&gt;
+        &lt;img src="/images/optimal-stopping/threshold-not-selected.png" width="40%" &gt; 
+    &lt;/p&gt;&lt;br&gt;
+    In the above image the current candidate (red) will not be selected even though it is larger than its threshold. To help us out with this problem we will define the true threshold &lt;span class="math"&gt;\(t_i\)&lt;/span&gt;. The true threshold &lt;span class="math"&gt;\(t_i\)&lt;/span&gt; is the max of the threshold &lt;span class="math"&gt;\(q_i\)&lt;/span&gt; and the last &lt;span class="math"&gt;\(i - 1\)&lt;/span&gt; candidate values. If the candidate at step &lt;span class="math"&gt;\(i\)&lt;/span&gt; is above the true threshold then they we be picked. So at step i we can condition on the true threshold.
+    &lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$P(\mbox{success at step i}) = P(\mbox{success at step i} | t_i = q_i)P(t_i=q_i) + P(\mbox{success at step i } | q_i &amp;lt; t_i \leq 1)P(q_i&amp;lt;t_i\leq 1)$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+    We can compute this larger term in two parts,
+    &lt;br&gt;&lt;b&gt;Unchanged Threshold&lt;/b&gt;
+    &lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$P(\mbox{success at step i} | t_i = q_i)P(t_i=q_i)$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+    We know that we are successful at step i if and only if candidate i is larger than &lt;span class="math"&gt;\(t_i\)&lt;/span&gt; (so we pick them) and candidate i is the max. We can write this as,
+    &lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$P(\mbox{success at step i | t_i = q_i}) = \int_{q_i}^1 F_{X+1}(x)...F_{X+n}(x)f_{X_i}(x)$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+    Because all the candidates are drawn i.i.d from a uniform distribution we can further simplify,
+    &lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$P(\mbox{success at step i | t_i = q_i}) = \int_{q_i}^1 x^{n-i}dx$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+    Next let's look at
+    &lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$P(t_i = q_i)$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+    We know this happens only when no previous candidate was larger than &lt;span class="math"&gt;\(q_i\)&lt;/span&gt; so we can express this as,
+    &lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$P(t_i = q_i) = q_i^{i-1}$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+    Combining these two terms we get
+    &lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$P(\mbox{success at step i} | t_i = q_i)P(t_i = q_i) = q_i^{i-1}\int_{q_i}^1 x^{n-i}dx$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+    &lt;b&gt;Modified Threshold&lt;/b&gt;
+    &lt;div&gt; &lt;/p&gt;
+&lt;div class="math"&gt;$$P(\mbox{success at step i } | q_i &amp;lt; t_i \leq 1)P(q_i&amp;lt;t_i\leq 1) $$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+    &lt;div&gt; &lt;/p&gt;
+&lt;div class="math"&gt;$$P(\mbox{success at step i } | q_i &amp;lt; t_i \leq 1)P(q_i&amp;lt;t_i\leq 1) = \sum_{k=1}^{i}P(\mbox{success at step i } | q_{k}\leq t_i \leq q_{k-1})P(q_{k}\leq t_i \leq q_{k-1}) $$&lt;/div&gt;
+&lt;p&gt;(where &lt;span class="math"&gt;\(q_0 := 1\)&lt;/span&gt; for notational convience)&lt;/div&gt;
+    &lt;div&gt; &lt;/p&gt;
+&lt;div class="math"&gt;$$P(\mbox{success at step i } | q_i &amp;lt; t_i \leq 1)P(q_i&amp;lt;t_i\leq 1) = \sum_{k=1}^{i}\int_{q_{k}}^{q_{k - 1}}P(\mbox{success at step i } |  q_{k}\leq t_i \leq q_{k-1})f_{t_i}(x)dx $$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+    &lt;div&gt; &lt;/p&gt;
+&lt;div class="math"&gt;$$P(\mbox{success at step i } | q_i &amp;lt; t_i \leq 1)P(q_i&amp;lt;t_i\leq 1) = \sum_{k=1}^{i}\int_{q_{k}}^{q_{k - 1}}P(\mbox{success at step i } |  q_{k}\leq t_i \leq q_{k-1})f_{t_i}(x)dx $$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+    Now after combinining both the unchanged and modified thresholds in a few more brutal algebrabic simplications we end up with the following:
+    &lt;/p&gt;
+&lt;div class="math"&gt;$$P(\mbox{success at step i}) = \bigg(\frac{1}{n-i+1}\bigg)\bigg[t_i^{i-1}-t_i^n+\sum_{j=1}^{i - 1}j \bigg(\frac{x^{i-1}}{i-1}-\frac{x^n}{n-1}\bigg)\bigg\rvert_{t_{j+1}}^{t_j}\bigg]$$&lt;/div&gt;
+&lt;div class="math"&gt;$$P(\mbox{success with n candidates}) = \sum_{i=1}^n\bigg(\frac{1}{n-i+1}\bigg)\bigg[t_i^{i-1}-t_i^n+\sum_{j=1}^{i - 1}j \bigg(\frac{x^{i-1}}{i-1}-\frac{x^n}{n-1}\bigg)\bigg\rvert_{t_{j+1}}^{t_j}\bigg]$$&lt;/div&gt;
+&lt;/details&gt;
+
+&lt;p&gt;So the savvy recruiter strategy is clearly better for a uniform distribution. This shouldn't be suprising because the savvy recruiter has more information than the basic recruiter. But just to be thorough we want to know if our results would be different if our underlying distribution was not uniform. It turns out it doesn't matter. We can actually transform any distribution into a uniform distribution by looking at percentiles then apply both strategies for a uniform to it. This works in our specific case because we care about finding the best candidate and the transformation into percentiles preserves the order of the candidate values. It's important to note that this type of transformation does not work if we care about maxmimizing other statistics such as expected value.  &lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;So clearly we have a much better chance of picking the max if we know the underlying distribution from which our candidates are drawn. However in most situations the true distribution isn't usually known (some people would even say that the idea of a single true distribution is ridiculous but we will not address that here for simplicities sake). But what if we could use the information we see during our interviews to appoximate the true distribution? Then we could use the savvy recruiter strategy with the our best guess of the true distribution. Seems kind of cool right? Let's look at an example. &lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p align="center"&gt;
+    &lt;img src="/images/optimal-stopping/apartments.jpg" width="100%" &gt; 
+&lt;/p&gt;
+
+&lt;p&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;Let's say that you have decided to get a house. However you live in a competitive market so housing tends to go fast. You need a house with in the next month so not a lot of new houses will come onto the market (let's say that you would be able to see a maximum of &lt;span class="math"&gt;\(n\)&lt;/span&gt; houses). Once you've seen a house, you basically have to decide whether or not to buy it on the spot. By the time you've seen another the first house will probably already be gone. You also want to find the best house for yourself. We will assume we can model the distribution of house qualities around the area with a gaussian distribution but you do not know its parameters (the mean or the variance). So how do you find the best house for yourself?
+&lt;br&gt;&lt;br&gt;
+As we view houses we attempt to learn the true underlying distribution of house qualities. The simplest way to do this is to use a technique called Maximum Likelihood Estimation. Maximum Likelihood Estimation operates on the assumption that each draw from the distribution is independent. It finds the parameters of a distribution (in our case the mean and the variance) which maximize the likelihood of seeing our observed data points. &lt;br&gt;&lt;br&gt;
+For a Gaussian distribution the likelihood function is given observed points &lt;span class="math"&gt;\(x_1,...x_n\)&lt;/span&gt; is defined as follows:&lt;br&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$ L(\mu, \sigma^2) = p(X_1=x_1,...X_n=x_n \vert \mu, \sigma^2) = p(X_1 = x_1 \vert \mu, \sigma^2)...p(X_n = x_n \vert \mu, \sigma^2) $$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+Notice that because each draw is independent the probability of seeing all of them is just the products of the probabilities of seeing each one individually! It turns out that the parameters (&lt;span class="math"&gt;\(\mu, \sigma^2\)&lt;/span&gt;) which maximize the likelihood of seeing n data points are given by, 
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$\mu =  \frac{1}{n}\sum_{i=1}^n x_i = \bar x  $$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$ \sigma^2 =  \frac{1}{n}\sum_{i=1}^n (x_i - \bar x)^2  $$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+&lt;details&gt;
+    &lt;summary&gt;(details)&lt;/summary&gt; Remember that we are looking for the parameters &lt;span class="math"&gt;\(\mu, \sigma^2\)&lt;/span&gt; which maximize our likelihood function. Now generally products are pretty gross to deal. One common trick when dealing with maximizing products is to maximize the sum of the logs instead. Because log is monotonically increasing function on its domain (and we know the maximum of likelihood function is greater than zero) finding the parameters which maximize the likelihood is equivalent to finding parameters which maximize the log likelihood. For a gaussian distribution our log likelihood function can be derived as follows: &lt;br&gt;
+    &lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$ L(\mu, \sigma^2) = p(X_1=x_1,...X_n=x_n \vert \mu, \sigma) = \prod_{i=1}^n \frac{1}{\sqrt{2\pi\sigma^2}}e^{-\frac{(x_i - \mu)^2}{2\sigma^2}} $$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+    The taking the log of both sides gives us the log likelihood: &lt;br&gt;
+    &lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$ \mbox{ln}(L(\mu, \sigma^2)) = \sum_{i=1}^n \mbox{ln}(\frac{1}{\sqrt{2\pi\sigma^2}}) - \frac{(x_i - \mu)^2}{2\sigma^2} $$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+    &lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$ \mbox{ln}(L(\mu, \sigma^2)) = n\mbox{ln}(\frac{1}{\sqrt{2\pi\sigma^2}}) - \sum_{i=1}^n \frac{(x_i - \mu)^2}{2\sigma^2} $$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+    &lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$ \mbox{ln}(L(\mu, \sigma^2)) = -\frac{n}{2}\mbox{ln}(\pi)-\frac{n}{2}\mbox{ln}(\sigma^2) - \sum_{i=1}^n \frac{(x_i - \mu)^2}{2\sigma^2} $$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+    Now we can take partial derivatives with respect to both &lt;span class="math"&gt;\(\mu\)&lt;/span&gt; and &lt;span class="math"&gt;\(\sigma^2\)&lt;/span&gt; (the mean and the variance). &lt;br&gt;
+    &lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$ \frac{\mbox{ln}(L(\mu, \sigma^2))}{\partial \mu} =  \sum_{i=1}^n \frac{x_i - \mu}{\sigma^2}  $$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+    &lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$ \frac{\mbox{ln}(L(\mu, \sigma^2))}{\partial \sigma^2} =  -\frac{n}{\sigma^2} + \sum_{i=1}^n \frac{(x_i - \mu)^2}{\sigma^4}  $$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+    Setting the partial derivatives to zero we get the following system of equations. &lt;br&gt;
+    &lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$ \sum_{i=1}^n \frac{x_i - \mu}{\sigma^2} = 0 $$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+    &lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$ -\frac{n}{\sigma^2} + \sum_{i=1}^n \frac{(x_i - \mu)^2}{\sigma^4} = 0 $$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+    From the first equation we obtain: &lt;br&gt;
+    &lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$ \mu =  \frac{1}{n}\sum_{i=1}^n x_i = \bar x  $$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+    Plugging that into the second equation we get: &lt;br&gt;
+    &lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$ \sigma^2 =  \frac{1}{n}\sum_{i=1}^n (x_i - \bar x)^2  $$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+&lt;/details&gt;&lt;/p&gt;
+&lt;p&gt;We can now use these MLE estimates to approach our stopping problem with the optimal strategy for a known distribution. For each candidate house i, we first come up with an estimate of our parameters using all of the houses we have seen so far. Then we use this estimated distribution to calculate the percentile of the candidate house. Finally we check to see if the current candidate is the max we have seen. If so the probability that our candidate house is the best is greater than &lt;span class="math"&gt;\(\frac{1}{2}\)&lt;/span&gt; we choose it (we can do this the same way as in the thresholding strategy for a known distribution). Here are several graphs demonstrating results of this approach:
+&lt;details style="display:inline;"&gt;
+    &lt;summary&gt;(details)&lt;/summary&gt;
+    We run simulations 10000 times (for each n) then average together to get the final probability of success for each n. Each time we run we pick our "true" parameters of underlying normal distribution from two different uniform random distributions. &lt;span class="math"&gt;\(\mu\)&lt;/span&gt; ~ &lt;span class="math"&gt;\(Unif(0, 1000)\)&lt;/span&gt;, &lt;span class="math"&gt;\(\sigma\)&lt;/span&gt; ~ &lt;span class="math"&gt;\(Unif(0, 15)\)&lt;/span&gt;. 
+&lt;/details&gt;&lt;/p&gt;
+&lt;p align="center"&gt;
+    &lt;img src="/images/optimal-stopping/learning-250.png" width="100%" &gt; 
+&lt;/p&gt;
+
+&lt;p&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;Zooming in we can see that the cutoff policy is on par with the learned policy until there are around 14 houses on the market.&lt;/p&gt;
+&lt;p align="center"&gt;
+    &lt;img src="/images/optimal-stopping/learning-35.png" width="100%" &gt; 
+&lt;/p&gt;
+
+&lt;p&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;Finally if we look at a much larger number of available houses we can see that the learning strategy gets much better over time.&lt;/p&gt;
+&lt;p align="center"&gt;
+    &lt;img src="/images/optimal-stopping/learning-2000.png" width="100%" &gt; 
+&lt;/p&gt;
+
+&lt;p&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Limitations&lt;/strong&gt;&lt;br&gt;
+So this is cool little fact but what kinds of problems can we apply it too besides that contrived housing example? Could we use it to made the best stock market trades or decide when to bid on ebay? Unfortunately the answer is no. One large underlying assumption in our model is that the candidate qualities are each drawn independently from an underlying distribution. Many types of time series like the stock market or the price of ebay bids are highly correlated. For example if one tech stock goes down its likely others will have gone down with it. Under these conditions our model would mostly likely work very poorly. &lt;br&gt; &lt;br&gt;
+&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;script type="text/javascript"&gt;if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width &lt; 768) ? "left" : align;
+        indent = (screen.width &lt; 768) ? "0em" : indent;
+        linebreak = (screen.width &lt; 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/latest.js?config=TeX-AMS-MML_HTMLorMML';
+
+    var configscript = document.createElement('script');
+    configscript.type = 'text/x-mathjax-config';
+    configscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'none' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        availableFonts: ['STIX', 'TeX']," +
+        "        preferredFont: 'STIX'," +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+&lt;/script&gt;</content><category term="probability"></category><category term="algorithms"></category></entry><entry><title>The PCP Theorem and the Hardness of Approximation</title><link href="/pcp-theorem.html" rel="alternate"></link><published>2018-04-29T02:50:00-07:00</published><updated>2019-08-14T09:30:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2018-04-29:/pcp-theorem.html</id><summary type="html">&lt;p&gt;An introduction to the applications of the PCP theorem&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;strong&gt;Preamble&lt;/strong&gt;&lt;br&gt;
+This post uses a lot of computational complexity terms and is fairly dense. I've included some defintions of frequently used terminology below. &lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;Complexity classes: A complexity class is a set of problems that can all be solved with an upper bounded constraint on a resource based on input size. In this article our constrained resource will usually be algorithmic runtime. &lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;P and NP: P is the complexity class made up of problems that can be solved in polynomial time by a deterministic Turing machine. NP is the class of problems that can be solved in polynomial time by a non-deterministic Turing machine. A major problem in computer science is proving whether or not P=NP. In this post most of the work will be built on the assumption that P &lt;span class="math"&gt;\(\neq\)&lt;/span&gt; NP. If this assumption is false many of our theorems will be irrelevant. &lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Reductions: A reduction is an algorithm which transforms one problem into another. In this post we will mostly focus on reductions that can be done in polynomial time. A problem is NP-hard if any problem in NP can be reduced to it in polynomial time. Showing that a problem is NP-hard by reducing another NP-hard (or NP Complete) problem to it is a common proof strategy. Notice that showing that a problem is NP-hard does not mean that it is in NP (it could be harder)&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;NP-Complete: An NP-Complete problem is an NP-hard problem that is also in NP. &lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Strings and Languages: We can also talk about complexity classes (such as P and NP) in terms of languages which accept certain strings. A language is a collection of strings. For example one language is the language of all strings which contain an odd number of 0s. A more complex example of a language is the set of all strings which represent bipartite graphs (the way we represent graphs as strings is not usually important). Determining whether or not a string is in a given language is now the problem we have to solve. For example we can say that a language &lt;span class="math"&gt;\(L\)&lt;/span&gt; is in P if and only if for any string &lt;span class="math"&gt;\(x\)&lt;/span&gt; we can determine if &lt;span class="math"&gt;\(x \in L\)&lt;/span&gt; in polynomial time. &lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Probabilistic Checkable Proofs&lt;/strong&gt; &lt;br&gt;&lt;/p&gt;
+&lt;p&gt;Probabilistic checkable proofs are a type of complexity class. The basic idea is this, consider a theorem and a lazy student. The lazy student has to decide whether or not the proof is true but does not want to read all of it. In fact the student only wants to read q bits of the proof before going back to sleep. The student also has r quarters (for laundry) next to them on their desk which they can flip (one time per coin) to help make random decisions. Given these r quarters and q bits the student must decide quickly whether or not the proof is true with a high probability. &lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p align="center"&gt;
+    &lt;img src="/images/pcp-theorem/pcp_verifier.png" width="80%" &gt; 
+&lt;/p&gt;
+
+&lt;p&gt;More formally we will first define a probabilistic polynomial time verifier for a language L as follows: &lt;br&gt;
+The verifier takes a string x and a proof (that x is in L) as input. The verifier gets to read &lt;span class="math"&gt;\(q\)&lt;/span&gt; bits of the proof and &lt;span class="math"&gt;\(r\)&lt;/span&gt; random bits (drawn from a uniform distribution). Using these two pieces of information the verifier must then decide in polynomial time whether or not x is in L. &lt;br&gt;&lt;br&gt;
+Define the complexity class PCP(r, q) as follows: &lt;br&gt;
+Let L be a language and v be a probabilistic polynomial time verifier which can read q bits of a proof and has access to string of r random bits drawn from a uniform distribution. Then language L is in &lt;span class="math"&gt;\(PCP(r,q)\)&lt;/span&gt; if and only if &lt;br&gt;
+Completeness: For every &lt;span class="math"&gt;\(x \in L\)&lt;/span&gt;, there exists a proof that &lt;span class="math"&gt;\(x \in L\)&lt;/span&gt; which v accepts with probability 1 &lt;br&gt;
+Soundness: For every &lt;span class="math"&gt;\(x \not\in L\)&lt;/span&gt;, v accepts all proofs that &lt;span class="math"&gt;\(x \in L\)&lt;/span&gt; with probability at most &lt;span class="math"&gt;\(\frac{1}{2}\)&lt;/span&gt; &lt;br&gt;&lt;br&gt;
+What does this mean? To gain a basic understanding lets look at some simple edge cases:&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;span class="math"&gt;\(PCP(0,0) = P\)&lt;/span&gt; (Claim 1)&lt;br&gt;&lt;br&gt;
+Notice &lt;span class="math"&gt;\(P \subseteq PCP(0,0)\)&lt;/span&gt; Let L be any language in P. Since our verifier has polynomial arbitrary steps of computation we can verify that any &lt;span class="math"&gt;\(x \in P\)&lt;/span&gt; with probability 1 without a proof or any randomness by replicating the polynomial time solver for L. Also notice &lt;span class="math"&gt;\(PCP(0,0) \subseteq P\)&lt;/span&gt; because there is no randomness or proof to use. If we could accept any language &lt;span class="math"&gt;\(L' \not\in P\)&lt;/span&gt; then we would have a deterministic polynomial time algorithm which told us if any &lt;span class="math"&gt;\(x\)&lt;/span&gt; was in &lt;span class="math"&gt;\(L'\)&lt;/span&gt;. This algorithm creates a contradiction because by definition of &lt;span class="math"&gt;\(L'\)&lt;/span&gt; there is no polynomial time algorithm to determine if any arbitrary string &lt;span class="math"&gt;\(x\)&lt;/span&gt; is in &lt;span class="math"&gt;\(L'\)&lt;/span&gt;. &lt;span class="math"&gt;\(\square\)&lt;/span&gt; &lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;span class="math"&gt;\(PCP(0, O(1)) = P\)&lt;/span&gt; (Claim 2)&lt;br&gt;&lt;br&gt;
+To show &lt;span class="math"&gt;\(P \subseteq PCP(0, O(1))\)&lt;/span&gt; we can use claim 1 and notice that &lt;span class="math"&gt;\(P \subseteq PCP(0, 0) \subseteq PCP(0, O(1))\)&lt;/span&gt;. Now all we have to show is that &lt;span class="math"&gt;\(PCP(0, O(1)) \subseteq P\)&lt;/span&gt;. We will use a similar strategy to last time but with a few tweaks. Let's pretend there is a language &lt;span class="math"&gt;\(L' \not\in P\)&lt;/span&gt; but &lt;span class="math"&gt;\(L' \in PCP(0,O(1))\)&lt;/span&gt;. In this case we know there is a way to check deterministically in polynomial time whether any &lt;span class="math"&gt;\(x \in L'\)&lt;/span&gt; by only reading a constant number of bits of the proof. Let's call this constant c. One important fact is that c is the same for every &lt;span class="math"&gt;\(x\)&lt;/span&gt;. Therefore we can run our polynomial time algorithm on each of the &lt;span class="math"&gt;\(2^c\)&lt;/span&gt; possible bits of the proof in polynomial time (with respect to the size of &lt;span class="math"&gt;\(x\)&lt;/span&gt;). If one of these combinations of bits gets accepted then we know &lt;span class="math"&gt;\(x \in L'\)&lt;/span&gt; (completeness) otherwise we know &lt;span class="math"&gt;\(x \not\in L'\)&lt;/span&gt; (soundness). Therefore we have just built a polynomial time algorithm to check if &lt;span class="math"&gt;\(x\)&lt;/span&gt; is in &lt;span class="math"&gt;\(L'\)&lt;/span&gt;. This algorithm creates a contradiction because by definition &lt;span class="math"&gt;\(L'\)&lt;/span&gt; there is no polynomial time algorithm to determine if any arbitrary string &lt;span class="math"&gt;\(x\)&lt;/span&gt; is in &lt;span class="math"&gt;\(L'\)&lt;/span&gt;. &lt;span class="math"&gt;\(\square\)&lt;/span&gt; &lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;span class="math"&gt;\(PCP(O(\mbox{log n}), 0) = P\)&lt;/span&gt; (Claim 3) &lt;br&gt;&lt;br&gt;
+As with the claim 2, we can show  &lt;span class="math"&gt;\(P \subseteq PCP(0, O(1)\)&lt;/span&gt; by observing that, &lt;span class="math"&gt;\(P \subseteq PCP(0,0) \subseteq PCP(O(\mbox{log n}), 0)\)&lt;/span&gt;. To show &lt;span class="math"&gt;\(PCP(O(\mbox{log n}),0) \subseteq P\)&lt;/span&gt; we will have to again tweak our strategy from before. As before consider an &lt;span class="math"&gt;\(L' \not\in P\)&lt;/span&gt; but &lt;span class="math"&gt;\(L' \in PCP(O(\mbox{log n},0)\)&lt;/span&gt;. Unlike last time our verifier's algorithm is not deterministic. However we can make it deterministic by running our verifier's algorithm on every possible random string of r bits. We know that r is &lt;span class="math"&gt;\(O(\mbox{log n})\)&lt;/span&gt; so there are &lt;span class="math"&gt;\(2^{r}\)&lt;/span&gt; combinations which is at most &lt;span class="math"&gt;\(2^{O(\mbox{log n})} = O(n)\)&lt;/span&gt;. So we just have to run our polynomial verifier algorithm on a linear number of different random bit strings which gives us a deterministic polynomial time algorithm to check if any &lt;span class="math"&gt;\(x \in L'\)&lt;/span&gt;. &lt;span class="math"&gt;\(\square\)&lt;/span&gt; &lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;So after looking at all of these cases, what do we think &lt;span class="math"&gt;\(PCP(O(log n), O(1))\)&lt;/span&gt; equals?&lt;/p&gt;
+&lt;p&gt;PCP Theorem: &lt;span class="math"&gt;\(PCP(O(log n), O(1)) = NP\)&lt;/span&gt; &lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;This means that for any decision problem in NP, we can construct a small probabilistic polynomial time verifier which can solve the decision problem up to soundness by at most looking at constant bits of an argument about what the answer is far faster than we could solve the problem deterministically.
+Seems surprising, right? We will not prove this theorem in this post but we will use it to show some results about how hard it is to approximate certain NP-Complete problems.&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;MAX-3SAT&lt;/strong&gt;&lt;br&gt;
+3SAT is a famous NP-Complete Problem. It goes like this: &lt;br/&gt;
+Take a set of m variables and n clauses. Each clause has exactly three literals (variables which may be negated) in it all of them are or'ed together. We then take the conjunction of all of the clauses together. This expression is said to be in 3 conjunctive normal form (3CNF). Here is an example of a 3CNF expression, &lt;br&gt;&lt;br&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$(x_1 \lor x_2 \lor x_3) \land (\bar x_4 \lor x_1 \lor x_3) \land (\bar x_3 \lor \bar x_2 \lor x_4)$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt; &lt;br&gt;
+ The classical 3SAT problem asks if all of the clauses can be simultaneously satisfied.  &lt;br/&gt;
+However sometimes we can't satisfy all of the clauses. MAX-3SAT an optimization problem in which we are given an 3CNF expression and we try to find the maximum number of clauses which can all be satisfied together. &lt;br/&gt;&lt;br/&gt;
+Since MAX-3SAT is NP-Complete we know that we cannot solve it exactly in polynomial time unless P=NP. But what if we could get close? &lt;br /&gt;&lt;br /&gt;
+We say that an problem has a polynomial time approximation scheme (PTAS) if for all &lt;span class="math"&gt;\(\epsilon &amp;gt; 0\)&lt;/span&gt; we can approximate the problem in polynomial time within a factor of &lt;span class="math"&gt;\(\epsilon\)&lt;/span&gt; of the optimal solution. It is important to note however that the runtime of a PTAS must only be polynomial in terms of n (the size of the input) and could be different for different epsilons. For example &lt;span class="math"&gt;\(O(n^\frac{1}{\epsilon})\)&lt;/span&gt; is still polynomial in terms of n. Polynomial time approximation schemes are the only way forward for some NP-Hard problems such as Knapsack and Load Balancing. Sadly, MAX-3SAT has no PTAS. &lt;br /&gt;&lt;br /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Theorem:&lt;/strong&gt; &lt;span class="math"&gt;\(NP \subseteq PCP(log(n), O(1))\)&lt;/span&gt; (PCP Theorem) implies that MAX-3SAT is inapproximable in polynomial time within some &lt;span class="math"&gt;\(\epsilon &amp;gt; 0\)&lt;/span&gt; unless P=NP. &lt;br /&gt;&lt;br /&gt;
+&lt;p&gt;Assume we have a polynomial time approximation scheme for MAX-3SAT. We will show that using this PTAS for MAX-3SAT and a fixed &lt;span class="math"&gt;\(\epsilon\)&lt;/span&gt; we can solve &lt;b&gt;any&lt;/b&gt; NP complete decision problem in polynomial time. Let &lt;span class="math"&gt;\(L\)&lt;/span&gt; be the language of strings which satisfy your favorite NP- Complete decision problem. Let &lt;span class="math"&gt;\(x\)&lt;/span&gt; be a string of any size n. We want to know if &lt;span class="math"&gt;\(x\)&lt;/span&gt; is in &lt;span class="math"&gt;\(L\)&lt;/span&gt;. Since &lt;span class="math"&gt;\(L \in PCP(log(n), O(1))\)&lt;/span&gt; there is an verifier which takes &lt;span class="math"&gt;\(x\)&lt;/span&gt;, log n bits of randomness and a proof that &lt;span class="math"&gt;\(x \in L\)&lt;/span&gt;. The verifier reads c (a constant) bits of the proof and then decides whether or not &lt;span class="math"&gt;\(x\)&lt;/span&gt; is in &lt;span class="math"&gt;\(L\)&lt;/span&gt;. The completeness property of the verifier says that if &lt;span class="math"&gt;\(x \in L\)&lt;/span&gt; then there is a proof that we can give the verifier so that it will always return true. The soundness property says that if &lt;span class="math"&gt;\(x \not \in L\)&lt;/span&gt; then for every proof the verifier will return true less than half of the time. &lt;br&gt; &lt;br&gt;
+ For any random string of &lt;span class="math"&gt;\(O(log(n))\)&lt;/span&gt; bits r we can figure out in polynomial time which bits of the proof our verifier will check. Let &lt;span class="math"&gt;\(Q_r\)&lt;/span&gt; be a set of variables corresponding to the locations of each bit our verifier will check. Also define a set of 3CNF clauses &lt;span class="math"&gt;\(C_r\)&lt;/span&gt; with &lt;span class="math"&gt;\(Q_r\)&lt;/span&gt; as its variables. Together the clauses &lt;span class="math"&gt;\(C_r\)&lt;/span&gt; will mimic the output of our verifier (with random string r) when it reads the bits represented by the variables in &lt;span class="math"&gt;\(Q_r\)&lt;/span&gt;. It's important that the number of clauses in any &lt;span class="math"&gt;\(C_r\)&lt;/span&gt; does not depend on the size of our input.
+&lt;details&gt;
+    &lt;summary&gt;(details)&lt;/summary&gt;
+    &lt;br&gt;PCP says our verifier only needs to read a c bits of the proof no matter what the size of the input is. In the worst case we could write a CNF formula that maps every possible configuration of the c bits to true or false. In this case we have &lt;span class="math"&gt;\(2^c\)&lt;/span&gt; clauses with c variables per clause. It turns out that we can also translate every CNF instance into a 3CNF instance in polynomial time which means that we may end up with more clauses, but the the number of clauses will still only depend on c not n the size of the input. Therefore this construction is constant in time and space with respect to n. 
+&lt;/details&gt;&lt;/p&gt; &lt;br&gt;
+Now define &lt;span class="math"&gt;\(Q\)&lt;/span&gt; to be the union of all sets &lt;span class="math"&gt;\(Q_r\)&lt;/span&gt; for every possible r and &lt;span class="math"&gt;\(C\)&lt;/span&gt; to be the union of &lt;span class="math"&gt;\(C_r\)&lt;/span&gt;. One important fact is that the size of &lt;span class="math"&gt;\(Q\)&lt;/span&gt; and &lt;span class="math"&gt;\(C\)&lt;/span&gt; is linear with respect to n. This is because the size of each &lt;span class="math"&gt;\(Q_r\)&lt;/span&gt; and &lt;span class="math"&gt;\(C_r\)&lt;/span&gt; is a constant and the total number of possible strings r = &lt;span class="math"&gt;\(2^{O(log(n))} = O(n)\)&lt;/span&gt;. So the size of &lt;span class="math"&gt;\(Q,C\)&lt;/span&gt; is at most &lt;span class="math"&gt;\(O(n)\)&lt;/span&gt;.&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;Finally create a 3CNF instance whose set of variables is &lt;span class="math"&gt;\(Q\)&lt;/span&gt;, and whose set of clauses is the conjunction of all the clauses in &lt;span class="math"&gt;\(C\)&lt;/span&gt;. Together all the variables in &lt;span class="math"&gt;\(Q\)&lt;/span&gt; represent a proof &lt;span class="math"&gt;\(\pi\)&lt;/span&gt; (or at least all the parts that our verifier could ever read) that &lt;span class="math"&gt;\(x \in L\)&lt;/span&gt;. Each set of clauses &lt;span class="math"&gt;\(C_r\)&lt;/span&gt; represents the output of the verifier with a certain random string r given access to our proof &lt;span class="math"&gt;\(\pi\)&lt;/span&gt;. Due to completeness, if &lt;span class="math"&gt;\(x\)&lt;/span&gt; is satisfiable then there is a proof &lt;span class="math"&gt;\(\pi\)&lt;/span&gt; such than all of the clauses will be satisfied. &lt;details&gt;
+    &lt;summary&gt;(details)&lt;/summary&gt;
+    &lt;br&gt;Now this is not technically true since we may have broken our larger clauses in small 3CNF clauses. So for example if we broke one clause with 11 terms into 4 different 3CNF clauses then only one of those would have to be satisfied. In cases like this we count all these clauses as one (if one is satisfied then we are happy).&lt;br&gt;&lt;br&gt;
+&lt;/details&gt; If the proof is incorrect then due to soundness, less than half of the clauses will be satisfied for every proof. If &lt;span class="math"&gt;\(\epsilon\)&lt;/span&gt; is small enough our PTAS have to satisfy more than half of the &lt;span class="math"&gt;\(C_r\)&lt;/span&gt;s if and only if our &lt;span class="math"&gt;\(x\)&lt;/span&gt; is in &lt;span class="math"&gt;\(L\)&lt;/span&gt;. Notice the same &lt;span class="math"&gt;\(\epsilon\)&lt;/span&gt; works no matter what &lt;span class="math"&gt;\(x\)&lt;/span&gt; is because the size of our construction did not depend on the n. Therefore, a PTAS for MAX-3SAT would give us a polynomial time algorithm to solve any NP Complete decision problem. &lt;span class="math"&gt;\(\square\)&lt;/span&gt;&lt;/p&gt; &lt;br&gt;&lt;/p&gt;
+&lt;p&gt;In short what we just did was assume that there was a PTAS for MAX-3SAT. Then we used this PTAS to construct a polynomial time deterministic solver for any NP-Complete decision problem. Because our PTAS takes polynomial time we know that its existence would prove P = NP which in our case is a contradiction (we assume P &lt;span class="math"&gt;\(\neq\)&lt;/span&gt; NP). Part of what makes this proof so cool is that the reduction doesn't change depending on what NP Complete decision problem we use. For maximum confusion I recommend using 3SAT. &lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;!--&lt;br /&gt;
+**MAXSNP and Immediate consequences of our theorem**
+One interesting and immediate consequence of our above theorem can be observed by looking at the class of problems MAXSNP. MAXSNP are NP-Hard optimization problems with the property that if there is an approximation for one of the problems, it can be used to approximate any of the other problems in the class. Many problems such as Independent Set and MAXCUT are in MAXSNP. Coincidently MAX-3SAT is also in MAXSNP. This is really interesting because from our above proof we have inadvertently just shown that everything else in MAXSNP has no PTAS.
+&lt;br&gt;&lt;br&gt;!--&gt;
+
+&lt;p&gt;&lt;strong&gt;The Hardness of Approximating Max Clique&lt;/strong&gt; &lt;br/&gt;
+A clique is a set of vertices in a graph which are all connected to each other. The size of a clique is the number of vertices it contains. Here's an example of a clique of size 4 &lt;br/&gt;
+&lt;p align="center"&gt;
+    &lt;img src="/images/pcp-theorem/clique_4.png" width="30%" &gt; 
+&lt;/p&gt;
+Given a graph G the Max Clique problem is to find the largest clique in G. Max Clique is NP-Complete, which means that it cannot be solved exactly in polynomial time unless P=NP. But can we get close to the optimal solution? In a surprising twist just like MAX-3SAT, Max Clique does not have a PTAS. &lt;br/&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Theorem:&lt;/strong&gt; Max Clique is inapproximable in polynomial time within some &lt;span class="math"&gt;\(\epsilon &amp;gt; 0\)&lt;/span&gt; unless P=NP. &lt;br&gt;&lt;br&gt;
+To prove this statement we will show that Max Clique on a certain graph corresponds to MAX-3SAT so closely that if we had a PTAS for Max Clique we would have a PTAS for MAX-3SAT. Heres how we construct this graph. Given a set of &lt;span class="math"&gt;\(m\)&lt;/span&gt; clauses in 3CNF form, we can construct a graph G as follows. For each clause &lt;span class="math"&gt;\(c_k\)&lt;/span&gt; add 3 vertices each one representing a literal in that clause. For every vertex v connect v to every other vertex which is not part of the same clause and that does not represent a negation of the literal v represents. Here is an example of this construction with two clauses, &lt;br&gt;
+&lt;p align="center"&gt;
+    &lt;img src="/images/pcp-theorem/sat-to-mclique.png" width="65%" &gt; 
+&lt;/p&gt;
+Let's say we find a clique of size k in this graph.  Consider what would happen if we set the variables corresponding to each vertex in our clique to true (or false if they are negations) and all the other variables to false (or true if they are negations). We can do this with no conflicts because by our construction no two vertices in the clique are negations of each other. Also by construction each vertex is in a different clause so at least k different clauses are satisfied. &lt;br&gt;
+Now consider &lt;span class="math"&gt;\(x\)&lt;/span&gt; an instance of MAX-3SAT. We know since MAX-3SAT has no PTAS &lt;span class="math"&gt;\(\exists \delta &amp;gt; 0\)&lt;/span&gt; such that we cannot approximate MAX-3SAT within &lt;span class="math"&gt;\(\delta\)&lt;/span&gt;. Now choose let our PTAS be an &lt;span class="math"&gt;\(1+\epsilon\)&lt;/span&gt; approximation where &lt;span class="math"&gt;\(\epsilon &amp;lt; \delta\)&lt;/span&gt;. We can turn our &lt;span class="math"&gt;\(x\)&lt;/span&gt; into a graph following our construction above. Notice that a &lt;span class="math"&gt;\(1 - \epsilon\)&lt;/span&gt; approximation of max clique gives us a &lt;span class="math"&gt;\(1 - \epsilon\)&lt;/span&gt; approximation for MAX-3SAT. This is a problem because we have just created a PTAS for MAX-3SAT.&lt;span class="math"&gt;\(\square\)&lt;/span&gt; &lt;br&gt; &lt;br&gt;&lt;/p&gt;
+&lt;p&gt;Okay, we can't do construct a PTAS, so we can't get as close as we want. What about approximating MAX Clique within some constant factor? Plenty of NP-Complete problems have a constant factor approximation including MAX-3SAT. As you may have guessed we won't be so lucky with Max Clique. &lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Theorem:&lt;/strong&gt; Max Clique has no constant factor approximation unless P = NP. &lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;Before we prove this theorem we have to build up some machinery on graphs. We will do this by defining the strong graph product. &lt;br&gt;&lt;br&gt;
+&lt;strong&gt;Definition&lt;/strong&gt; The (strong) graph product on graphs &lt;span class="math"&gt;\(G = G_1 \bigotimes G_2\)&lt;/span&gt; is defined as follows: &lt;br&gt;
+&lt;span class="math"&gt;\(V_G = V_{G_1} \times V_{G_2}\)&lt;/span&gt; (where &lt;span class="math"&gt;\(\times\)&lt;/span&gt; is the Cartesian product) &lt;br&gt;
+&lt;span class="math"&gt;\(E_G = \\{(u_1,v_1), (u_2,v_2)\\}\)&lt;/span&gt; such that &lt;span class="math"&gt;\((u_1, u_2) \in E_{G_1}\)&lt;/span&gt; or &lt;span class="math"&gt;\(u_1 = u_2, (v_1, v_2) \in E_{G_2}\)&lt;/span&gt; or &lt;span class="math"&gt;\(v_1 = v_2\)&lt;/span&gt; &lt;br&gt;
+Here's an example,
+&lt;p align="center"&gt;
+    &lt;img src="/images/pcp-theorem/strong-graph-product.png" width="80%" &gt; 
+&lt;/p&gt;&lt;br&gt;
+While this definition may seem daunting one can visualize it by imagining that we are putting a copy of &lt;span class="math"&gt;\(G_1\)&lt;/span&gt; at every vertex of &lt;span class="math"&gt;\(G_2\)&lt;/span&gt; then connecting the edges according to our edge rules. 
+Look at the max clique size &lt;span class="math"&gt;\(\omega(G)\)&lt;/span&gt; for each graph in the drawing above: &lt;/p&gt;
+&lt;div class="math"&gt;$$\omega(G_1) = 2, \omega(G_2) = 2, \omega(G_1 \bigotimes G_2) = 4$$&lt;/div&gt;
+&lt;p&gt; &lt;br&gt;&lt;br&gt;
+What can we make of this? It turns out that an important fact about graph products is,
+&lt;p style="display:inline;"&gt;
+    &lt;div style="text-align:center;"&gt;&lt;span class="math"&gt;\(\omega(G_1 \bigotimes G_2) = \omega(G_1)\omega(G_2)\)&lt;/span&gt;&lt;/div&gt;
+&lt;details style="display:inline;"&gt;
+    &lt;summary&gt;(details)&lt;/summary&gt;
+    &lt;br&gt;Take the two largest cliques &lt;span class="math"&gt;\(C_1 \in G_1, C_2 \in G_2\)&lt;/span&gt;. When we take the graph product &lt;span class="math"&gt;\(G'\)&lt;/span&gt; we place a copy of &lt;span class="math"&gt;\(G_1\)&lt;/span&gt; (including &lt;span class="math"&gt;\(C_1\)&lt;/span&gt;) at each vertex in &lt;span class="math"&gt;\(G_2\)&lt;/span&gt;. Now consider subgraph &lt;span class="math"&gt;\(G'\)&lt;/span&gt; made of the copies of &lt;span class="math"&gt;\(C_1\)&lt;/span&gt; placed at vertices that make up &lt;span class="math"&gt;\(C_2\)&lt;/span&gt;. Consider any edge in G' between two vertices &lt;span class="math"&gt;\(\\{(u_1,v_1), (u_2,v_2)\\}\)&lt;/span&gt;. Since &lt;span class="math"&gt;\(C_1\)&lt;/span&gt; and &lt;span class="math"&gt;\(C_2\)&lt;/span&gt; are cliques, &lt;span class="math"&gt;\((u_1, u_2) \in E_{G_1}\)&lt;/span&gt; or &lt;span class="math"&gt;\(u_1 = u_2\)&lt;/span&gt;. The same goes for &lt;span class="math"&gt;\(v_1\)&lt;/span&gt; and &lt;span class="math"&gt;\(v_2\)&lt;/span&gt;. So our subgraph is entirely connected. The size of this subgraph is &lt;span class="math"&gt;\(\lvert C_1 \rvert \lvert C_2 \rvert\)&lt;/span&gt;. Since this subgraph is a clique the max clique has size at least &lt;span class="math"&gt;\(\lvert C_1 \rvert \lvert C_2 \rvert = \omega(G_1)\omega(G_2)\)&lt;/span&gt;.&lt;br&gt;&lt;br&gt; Finally how do we know there is not a larger clique? Well let's reverse our logic. Suppose there is a clique &lt;span class="math"&gt;\(C' \in G'\)&lt;/span&gt; which is larger than &lt;span class="math"&gt;\(\omega(G_1)\omega(G_2)\)&lt;/span&gt;. Then we can decompose this clique into one clique in &lt;span class="math"&gt;\(G_1\)&lt;/span&gt; and one in &lt;span class="math"&gt;\(G_2\)&lt;/span&gt;. We must be able to do this decomposition because each of if one of the set of vertices that is part of this clique was not a clique itself then we would have a contradiction. 
+    &lt;br&gt;&lt;br&gt;
+&lt;/details&gt;.&lt;/p&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;Now we return to showing that Max Clique has no constant approximation. Assume we have an &lt;span class="math"&gt;\(\alpha\)&lt;/span&gt;-approximation for Max Clique. Now we know there &lt;span class="math"&gt;\(\exists \beta &amp;gt; 0\)&lt;/span&gt; such that Max Clique cannot be approximated within any factor larger than &lt;span class="math"&gt;\(\beta\)&lt;/span&gt; in polynomial time (Max Clique has not PTAS). Choose a &lt;span class="math"&gt;\(k\)&lt;/span&gt; such that &lt;span class="math"&gt;\(\beta^k &amp;lt; \alpha\)&lt;/span&gt;. Take in a graph G. Compute &lt;span class="math"&gt;\(G^k\)&lt;/span&gt; by taking the repeated graph product. Now use our alpha approximation algorithm on &lt;span class="math"&gt;\(G^k\)&lt;/span&gt;. Remember our fact from earlier, &lt;br&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$\omega(G^k) = \omega(G)^k$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+Let &lt;span class="math"&gt;\(C'\)&lt;/span&gt; denote the clique we found. Then we can say: &lt;br&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$ \lvert C' \rvert = \alpha \omega(G^k) $$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt; 
+This implies that there is a clique &lt;span class="math"&gt;\(C\)&lt;/span&gt; in our original graph such that:
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$ \lvert C \rvert = \sqrt[k]{(\lvert C' \rvert)} = \sqrt[k]{(\alpha w(G^k))} = \sqrt[k]{(\alpha)}w(G)$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+We know by our definition of k that:&lt;br&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$ \sqrt[k]{(\alpha)}w(G) &amp;gt; \beta w(G) $$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt; 
+Therefore we have just created a polynomial approximation for Max Clique within &lt;span class="math"&gt;\(\epsilon\)&lt;/span&gt;. Unless P=NP this is a contradiction. &lt;span class="math"&gt;\(\square\)&lt;/span&gt; &lt;br&gt;&lt;br&gt;
+So it turns out that Max Clique is really bad. In fact the best results on the hardness of Max Clique indicate the the only approximation one can make is a clique of size one (i.e choosing a single vertex). &lt;br&gt; &lt;br&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Getting better hardness guarantees&lt;/strong&gt; &lt;br&gt;
+So far, our results with the standard PCP Theorem have been quite cool. We have used a powerful tool to show that some NP-Complete Problems aren't just hard to solve exactly but are hard to approximate up to a certain point. One question is could we be more specific? It is simple to come up with a &lt;span class="math"&gt;\(\frac{7}{8}\)&lt;/span&gt;-approximation algorithm for MAX-3SAT but can we do better? After the PCP Theorem was introduced, researchers have become less interested in proving that there is no PTAS for certain problems and more interested in optimal inapproximability. &lt;br&gt;
+&lt;br&gt; &lt;strong&gt;Definition&lt;/strong&gt; An optimal inapproximability result for a problem says there is both an algorithm which is an &lt;span class="math"&gt;\(\alpha\)&lt;/span&gt; approximation that problem as well as a proof that the problem cannot be approximated within a factor of &lt;span class="math"&gt;\(\alpha + \epsilon\)&lt;/span&gt; for any &lt;span class="math"&gt;\(\epsilon &amp;gt; 0\)&lt;/span&gt;.&lt;br&gt;&lt;br&gt;
+While our classic PCP Theorem was enough to show many problems had no PTAS, it is not quite as simple to use for specific lower bounds. One way to get around this limitation is to define new versions of the PCP Theorem. One such theorem was posed by Johan Hastad: &lt;br&gt;&lt;br&gt;
+&lt;strong&gt;Theorem (Hastad's 3 Bit PCP):&lt;/strong&gt;
+For every &lt;span class="math"&gt;\(\delta &amp;gt; 0\)&lt;/span&gt; and &lt;span class="math"&gt;\(L \in NP\)&lt;/span&gt;, there exists a PCP verifier (with &lt;span class="math"&gt;\(\mbox{log n}\)&lt;/span&gt; bits of randomness) such that L can be verified in three queries with completeness &lt;span class="math"&gt;\((1 - \delta)\)&lt;/span&gt; and soundness at most &lt;span class="math"&gt;\(\frac{1}{2}+\delta\)&lt;/span&gt;. Furthermore the tests are of the following form. Our verifier chooses a parity bit &lt;span class="math"&gt;\(b \in \\{0,1\\}\)&lt;/span&gt; and then takes the three bits it queries &lt;span class="math"&gt;\(q_1,q_2,q_3\)&lt;/span&gt; and returns true if:
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$ q_1 + q_2 + q_3 = b \quad (\mbox{mod } 2)$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt; &lt;br&gt;
+A full proof of this theorem is beyond the scope of this post. However we will use this theorem to show optimal inapproxibility results for MAX-3SAT as well as a more specific approximation for Vertex Cover. &lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;MAX-3LIN&lt;/strong&gt;&lt;br&gt;
+The MAX-3LIN problem is defined as follows: &lt;br&gt;
+Given a system of integral linear equations (mod 2) with a most 3 variables what is the maximum number of them which can be satisfied simultaneously? It's immediately apparent that this problem is closely related to Hastad's variant of the PCP Theorem. &lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;We can consider Hastad's PCP equivalent to the statement:&lt;br&gt;
+&lt;p style="display:inline;"&gt;For any &lt;span class="math"&gt;\(\epsilon &amp;gt; 0\)&lt;/span&gt; determining between two instance of MAX-E3LIN, one where at least &lt;span class="math"&gt;\((1 - \epsilon)\)&lt;/span&gt; of the equations are satisfied and one where at most &lt;span class="math"&gt;\(\frac{1}{2}+\epsilon\)&lt;/span&gt; of the equations are satisfied is NP-Hard.&lt;details style="display:inline;"&gt;
+    &lt;summary&gt;(Details)&lt;/summary&gt;
+    If we had a polynomial time algorithm to tell the difference we use it to deterministically test if any string &lt;span class="math"&gt;\(x\)&lt;/span&gt; is in your favorite NP-Complete language L by building a system of equations (one for each possible random string) that mimic our Hastad PCPs output given that string. If we know we satisfied more than &lt;span class="math"&gt;\(\frac{1}{2}\)&lt;/span&gt; of the equations, by soundness we know &lt;span class="math"&gt;\(x\)&lt;/span&gt; must be in &lt;span class="math"&gt;\(L\)&lt;/span&gt;, if we don't we know &lt;span class="math"&gt;\(x\)&lt;/span&gt; is not in &lt;span class="math"&gt;\(L\)&lt;/span&gt; by completeness. This argument is very similar to our proof that MAX-3SAT has no PTAS. 
+&lt;/details&gt;&lt;br&gt;&lt;/p&gt;
+ Now we will use this formulation to prove better approximation bounds for MAX-3SAT and Vertex Cover. We will call this problem, GAP-3LIN. The GAP part comes from the fact that the domain of all possible numbers of mutually solvable equations has a gap in the middle. In the two proofs we will exploit this gap to give better lower bounds than we would be able to obtain with just vanilla PCP.&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Theorem:&lt;/strong&gt; MAX-3SAT cannot be approximated by a factor of &lt;span class="math"&gt;\(1 - (\frac{7}{8}+\epsilon)\)&lt;/span&gt; for any &lt;span class="math"&gt;\(\epsilon &amp;gt; 0\)&lt;/span&gt;. &lt;br&gt;
+To show this result we will reduce our gap GAP-E3LIN to MAX-3SAT. Given an equation:&lt;br&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$ a+b+c = 0 $$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+We create the following four clauses:&lt;br&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$ (\bar a\lor b \lor c) $$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$ (a\lor \bar b \lor c) $$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$ (a\lor b \lor \bar c) $$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$ (\bar a\lor \bar b \lor \bar c) $$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+These clauses are important because all four are only satisfied if and only if &lt;span class="math"&gt;\(a+b+c = 0\)&lt;/span&gt; (we can do the same thing if the equation should sum to 1). Otherwise at most &lt;span class="math"&gt;\(\frac{3}{4}\)&lt;/span&gt; of the clauses are satisfiable. From our previous result we know that it is NP-Hard to distinguish between an instance of MAX-E3LIN where &lt;span class="math"&gt;\(\frac{1}{2}+\delta\)&lt;/span&gt; the equations are satisfied versus one where &lt;span class="math"&gt;\(1-\delta\)&lt;/span&gt; of the equations are satisfied for any &lt;span class="math"&gt;\(\delta &amp;gt; 0\)&lt;/span&gt;. Consider a polynomial time algorithm Max-3SAT with an approximation ratio of &lt;span class="math"&gt;\(\alpha\)&lt;/span&gt;. Take an instance &lt;span class="math"&gt;\(x\)&lt;/span&gt; of MAX-E3LIN and creates a 3CNF expression from it by doing the following. For each equation in &lt;span class="math"&gt;\(x\)&lt;/span&gt; create four clauses following our above model and then combine all of them into one large 3CNF instance. If we could satisfy a fraction of more than &lt;span class="math"&gt;\(1 - (\frac{1}{2} - \delta)\frac{1}{4}\)&lt;/span&gt; of the clauses we could determine between the two different types of GAP-E3LIN instances. Since this is true for all &lt;span class="math"&gt;\(\delta &amp;gt; 0\)&lt;/span&gt;, we know that the largest valid value of &lt;span class="math"&gt;\(\delta\)&lt;/span&gt; is 0 (Unless P=NP). This gives us the following lower bound for MAX-3SAT: 
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$1 - \frac{1}{8} = \frac{7}{8}$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt; &lt;span class="math"&gt;\(\square\)&lt;/span&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;It turns out that the Hastad PCP Theorem is useful for more than just MAX-3SAT. Another problem which gives a specific constant bound with this theorem is vertex cover. &lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Vertex Cover&lt;/strong&gt;
+Given a graph G we say that a vertex cover of G is a set of the vertices such that every vertex in the graph is directly connected to one of these vertices via and edge, The vertex cover problem is to find a minimum such vertex cover on G. &lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Independent Set&lt;/strong&gt;
+It is useful to talk about independent set whenever we talk about vertex cover. Given a graph G, an Independent Set is a set of vertices which are not connected to each other. The Independent Set problem is to find the largest independent set in G. &lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Fact&lt;/strong&gt; One reason why these two problems are often presented together is because one is the complement of the other. That is to say let &lt;span class="math"&gt;\(I\)&lt;/span&gt; the maximum independent set in a graph and let &lt;span class="math"&gt;\(C\)&lt;/span&gt; the minimum vertex cover. &lt;span class="math"&gt;\(G - I = C\)&lt;/span&gt; (or the other way around). &lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Theorem:&lt;/strong&gt; Vertex Cover cannot be approximated within a factor of &lt;span class="math"&gt;\(\frac{7}{6} - \epsilon\)&lt;/span&gt; for any &lt;span class="math"&gt;\(\epsilon &amp;gt; 0\)&lt;/span&gt; unless P=NP. &lt;br&gt;&lt;br&gt;
+We again use the fact that GAP-3LIN is NP-Hard. Our goal is to use a &lt;span class="math"&gt;\(\frac{7}{6} - \epsilon\)&lt;/span&gt; approximation of Vertex Cover to solve GAP-3LIN. We just need a way to translate equations to graphs. We will do this using the following construction: &lt;br&gt;
+Look at an equation of the form &lt;br&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$x_1 + x_2 + x_3 = 0 \quad \mbox{mod } 2$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+The first thing we can notice about it is that it has eight possible choices of values. Notice that half of them will satisfy the equation and half of them will not. Therefore for any equation of this form there are 4 ways to satisfy it. &lt;br&gt;
+Now in our graph for each equation in our MAX-E3LIN instance we will create four different vertices, one for each of the valid solutions to the equation. We will connect all of them together as well as connecting them to each other vertex in the graph representing a logically incompatible solution to a different equation. When we are done there will be &lt;span class="math"&gt;\(4m\)&lt;/span&gt; vertices. Here's an example with two equations&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p align="center"&gt;
+    &lt;img src="/images/pcp-theorem/e3lin-to-vertex-cover.png" width="65%" &gt; 
+&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Observation 1&lt;/strong&gt; If at least &lt;span class="math"&gt;\((1-\epsilon)m\)&lt;/span&gt; of the equations of our GAP-E3LIN instance are satisfiable then our independent set is at least of size &lt;span class="math"&gt;\((1-\epsilon)m\)&lt;/span&gt;. This is because by construction of our graph, each satisfiable equation does not have an edge to any other mutually satisfiable equations because neither of them are different variable choices for the same equation and neither contradict each other. So since the maximum independent set is at least of size &lt;span class="math"&gt;\((1 - \epsilon)m\)&lt;/span&gt;, the minimum vertex cover will be at most of size &lt;span class="math"&gt;\((3 + \epsilon)m\)&lt;/span&gt;. &lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Observation 2&lt;/strong&gt; If at most &lt;span class="math"&gt;\((\frac{1}{2} + \epsilon)m\)&lt;/span&gt; equations are mutually satisfiable, then our maximal independent set will be of size at most &lt;span class="math"&gt;\((\frac{1}{2} + \epsilon)m\)&lt;/span&gt;. To show this is true consider we will pretend we could have a larger independent set. Take &lt;span class="math"&gt;\(v\)&lt;/span&gt; a vertex in this independent set which does not represent one our our satisfiable equations. By the rules of our construction &lt;span class="math"&gt;\(v\)&lt;/span&gt; would also not conflict with any of the &lt;span class="math"&gt;\((\frac{1}{2} + \epsilon)m\)&lt;/span&gt; mutually satisfiable equations of the other equations represented in the independent set. Therefore the existence of &lt;span class="math"&gt;\(v\)&lt;/span&gt; would imply there is another equation which could be mutually satisfied. This would contradict our assume that only &lt;span class="math"&gt;\((\frac{1}{2} + \epsilon)m\)&lt;/span&gt; are mutually satisfiable. So we know that the maximum independent set size is at most &lt;span class="math"&gt;\((\frac{1}{2} + \epsilon)m\)&lt;/span&gt;. This implies that the minimum vertex cover size will be at least &lt;span class="math"&gt;\((\frac{7}{2} - \epsilon)m\)&lt;/span&gt;. &lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;The two observations we have just made help define the gap between vertex cover instances associated with each of the two cases. This means that if we can approximate the upper bound of the smaller case within a factor that is tight enough so our approximation does not overlap with the lower bound of the larger case then we can distinguish between the two cases. To formalize this assume that we have an algorithm which can approximate vertex cover to a factor of &lt;span class="math"&gt;\(\alpha\)&lt;/span&gt;. For any &lt;span class="math"&gt;\(\epsilon &amp;gt; 0\)&lt;/span&gt; we know that unless we can solve GAP-3LIN in polynomial time: &lt;br&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$\alpha (3 + \epsilon) &amp;gt; \frac{7}{2} - \epsilon$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$\alpha &amp;gt; \frac{\frac{7}{2} - \epsilon}{(3 + \epsilon)}$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+This is to say that if &lt;span class="math"&gt;\(\alpha\)&lt;/span&gt; is too small than our smaller case and our larger case still be distinguished in our approximation. 
+Because this is true for all &lt;span class="math"&gt;\(\epsilon &amp;gt; 0\)&lt;/span&gt; we can take the limit as &lt;span class="math"&gt;\(\epsilon \to 0\)&lt;/span&gt; to find an &lt;span class="math"&gt;\(\alpha\)&lt;/span&gt; that works for all cases: &lt;br&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$\alpha = \frac{\frac{7}{2}}{3} = \frac{7}{6}$$&lt;/div&gt;
+&lt;p&gt; &lt;/div&gt; &lt;span class="math"&gt;\(\square\)&lt;/span&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Let's Play a Game&lt;/strong&gt; &lt;br&gt;
+Now we have seen some basic ideas such as gaps and simple graph operations as ways to prove hardness. One more common set of tools to show hardness of approximations is 2 Prover 1 Round Games. This last section aims to give some background on this problem. &lt;br&gt;&lt;br&gt;
+&lt;strong&gt;Definition:&lt;/strong&gt; A 2 Prover 1 Round Game is a game played by two provers (players) with the following parameters: &lt;br&gt;
+Two sets of questions: (one for each player) &lt;span class="math"&gt;\(X,Y\)&lt;/span&gt; &lt;br&gt;
+A probability distribution: &lt;span class="math"&gt;\(\lambda\)&lt;/span&gt; over &lt;span class="math"&gt;\(X \times Y\)&lt;/span&gt; &lt;br&gt;
+A set of answers: &lt;span class="math"&gt;\(A\)&lt;/span&gt; &lt;br&gt;
+A verifier (acceptance predicate): &lt;span class="math"&gt;\(V:X\times Y \times A \times A\)&lt;/span&gt; &lt;br&gt;
+A strategy for each player: &lt;span class="math"&gt;\(f_1:X \to A, f_2:Y \to A\)&lt;/span&gt; &lt;br&gt;&lt;br&gt;
+The rules of the game are as follows: &lt;br&gt;
+The verifier picks two questions &lt;span class="math"&gt;\((x, y) \in X \times Y\)&lt;/span&gt; from the distribution and asks x to player 1 and y to the player 2. &lt;br&gt;
+Each player thinks of an answer to their respective questions &lt;span class="math"&gt;\((a_1,a_2)\)&lt;/span&gt; by computing &lt;span class="math"&gt;\(a_1 = f_1(x), a_2 = f_2(y)\)&lt;/span&gt;. &lt;br&gt;
+The verifier takes both answers and the original questions &lt;span class="math"&gt;\(v(x,y,a_1,a_2)\)&lt;/span&gt; and returns either true or false. &lt;br&gt;&lt;br&gt;
+The goal of both players is to maximize &lt;span class="math"&gt;\(\omega(G)\)&lt;/span&gt; to be the optimal win probability for the game G. &lt;br&gt;&lt;br&gt;
+Also it is important that the two players cannot communicate during the game. &lt;br&gt;&lt;/p&gt;
+&lt;p&gt;You might be thinking, what kind of stupid game is this? Why don't computer scientists at least play something cool like fortnite?
+Well here's something kind of cool. We can formulate many problems as 2 Prover 1 Round Games. Let's give an example using good old 3SAT. &lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;Given a set of clauses &lt;span class="math"&gt;\(x\)&lt;/span&gt; in 3CNF form, consider the following 2P1R game: &lt;br&gt;
+Let &lt;span class="math"&gt;\(X\)&lt;/span&gt; be the set of all clauses in &lt;span class="math"&gt;\(x\)&lt;/span&gt;. &lt;br&gt;
+Let &lt;span class="math"&gt;\(Y\)&lt;/span&gt; be the set of all variables in &lt;span class="math"&gt;\(x\)&lt;/span&gt;. &lt;br&gt;
+Let &lt;span class="math"&gt;\(\lambda\)&lt;/span&gt; be such the variable we draw from &lt;span class="math"&gt;\(Y\)&lt;/span&gt; will be in the clause drawn from &lt;span class="math"&gt;\(X\)&lt;/span&gt; (it will be one of the three of them with uniform probability). &lt;br&gt;
+Our first prover will return an assignment &lt;span class="math"&gt;\(\alpha\)&lt;/span&gt; of variables satisfying the clause &lt;span class="math"&gt;\(c_j\)&lt;/span&gt; it was given. The second prover will return an assignment &lt;span class="math"&gt;\(\beta\)&lt;/span&gt; of &lt;span class="math"&gt;\(x_i\)&lt;/span&gt; the variable it was given. The verifier will return true if and only if &lt;span class="math"&gt;\(\beta\)&lt;/span&gt; matches the assignment given to the same variable in &lt;span class="math"&gt;\(\alpha\)&lt;/span&gt;. &lt;br&gt;&lt;br&gt; 
+Observation 1: If &lt;span class="math"&gt;\(x\)&lt;/span&gt; is fully satisfiable then both players just pick according to the satisfying assignment. In some cases there may be more than one satisfying assignment in which case both players can agree some sort of ordering scheme beforehand and pick the first one. &lt;br&gt;&lt;br&gt;
+Observation 2: If no satisfying assignment exists then every assignment fails to satisfy a certain factor of the clauses (let's call it &lt;span class="math"&gt;\(p\)&lt;/span&gt;). Then the probability of failure will be at least &lt;span class="math"&gt;\(\frac{p}{3}\)&lt;/span&gt;. &lt;br&gt;&lt;br&gt;
+Now there are several things that are interesting about this 2 prover round 1 game reduction. One is that we turned 3SAT which is a decision problem into a gap decision problem. The second thing which is related is that we can now start to talk about this game in terms of completeness and soundness. In a way this is starting to sound like the PCP Theorem. &lt;br&gt;&lt;br&gt;
+Another thing we could try is to play some kind of repeated game. One way we could do this is asking a series of questions, one after another. However it turns out to be more interesting to ask a bunch of questions at the same time (in parallel). We define a parallel n-repeated game &lt;span class="math"&gt;\(G^n\)&lt;/span&gt; for some 2P1R game G to be similar to G but each player reads a tuple of n questions and then outputs a tuple of n answers. The verifier accepts if and only if all the individual answers would be accepted by the verifier for G. So what can we say about these repeated games?&lt;br&gt;&lt;br&gt; 
+&lt;strong&gt;Theorem (Parallel Repetition Theorem):&lt;/strong&gt; For all games &lt;span class="math"&gt;\(G\)&lt;/span&gt; if &lt;span class="math"&gt;\(\omega(G) = 1 - \delta\)&lt;/span&gt; then, &lt;br&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$ \omega(G^n) \leq 2^{-\Omega(\delta^3 n)} $$&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;p&gt;While we will not go talk about this theorem much it is interesting because it can be used to decrease the size of gaps. In our 3-SAT game it is NP-Hard to distinguish between cases where we succeed with probability 1 and probability &lt;span class="math"&gt;\(1-\frac{p}{3}\)&lt;/span&gt;. But what if we could make our gap smaller? This could potentially make it easier to show different approximations are hard. &lt;br&gt;&lt;br&gt;&lt;br&gt; &lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Summary&lt;/strong&gt;&lt;br&gt;
+In this post I have summarized my findings after researching the a few basic concepts surrounding the PCP Theorem. Throughout this post there are a few big ideas. First we looked at the PCP Theorem itself and the ideas of completeness and soundness. We played with a few toy cases to get a feel for what the statement was saying. Next we used the PCP Theorem to shows MAX-3SAT had no PTAS. In this proof we turned our random PCP verifier in to a deterministic instance of MAX-3SAT. Then we showed that using MAX-3SAT we could search for a proof that our statement was correct or not. We then used graphs and the self improvement property of the graph product to prove that Max Clique had no constant approximation. After that we looked at Hastad's 3 bit PCP and used it to get a few more specific bounds on MAX-3SAT and Vertex Cover. The most important part of these proofs were the gap preserving reduction from our GAP-MAX-E3LIN decision problem. Finally we looked at a totally different way of viewing everything as a game. These general proof strategies give us some tools to tackle inapproximability arguments. &lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Exercises to the Reader&lt;/strong&gt; &lt;br&gt;&lt;br&gt; &lt;/p&gt;
+&lt;p&gt;1) Show &lt;span class="math"&gt;\(PCP(log(n), 1) = P\)&lt;/span&gt;
+&lt;details style="display:inline;"&gt;
+    &lt;summary&gt;Hint&lt;/summary&gt;
+    Think about our proof that MAX-3SAT has no PTAS.
+&lt;/details&gt;&lt;br&gt;&lt;/p&gt;&lt;/p&gt;
+&lt;details style="display:inline;"&gt;
+    &lt;summary&gt;Answer&lt;/summary&gt;
+    &lt;br&gt; As a proof of this consider our reduction in the proof for MAX-3SAT having no PTAS. We constructed a MAX-3SAT instance which checked if there was a (the bits of the proof were the variables) proof which could satisfy every one of the O(n) possible combinations of our O(log(n)) bits of randomness. The key was that we only had to have a constant number of variables because we only read a constant number of bits of the proof. Furthermore the size of our clauses was based on the number of bits we read. If we do this same construction here we will end up with an instance of MAX-1SAT which is solvable in polynomial time.
+    &lt;br&gt;&lt;br&gt;
+&lt;/details&gt;
+
+&lt;p&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;2) We talked about MAX-E3LIN but never proved any hardness results for it. Use Hastad's PCP Theorem prove the following: &lt;br&gt; 
+&lt;strong&gt;Theorem:&lt;/strong&gt; MAX-3LIN cannot be approximated by a factor of &lt;span class="math"&gt;\(\frac{1}{2}+\epsilon\)&lt;/span&gt; for any &lt;span class="math"&gt;\(\epsilon &amp;gt; 0\)&lt;/span&gt;. &lt;br&gt;
+&lt;details style="display:inline;"&gt;
+    &lt;summary&gt;Answer&lt;/summary&gt;
+    &lt;br&gt; Reduce the optimization version of MAX-E3LIN to the decision version using a gap preserving reduction.
+    &lt;br&gt;&lt;br&gt;
+&lt;/details&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;3) When the repeated version 2 Prover 1 Round Game was originally conceived it was conjectured that&lt;br&gt;
+&lt;div style="text-align:center;"&gt;&lt;/p&gt;
+&lt;div class="math"&gt;$$\omega(G^k) = \omega(G)^k$$&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
+Give a 2P1R Game which shows that this is false (i.e. &lt;span class="math"&gt;\(\omega(G^k) &amp;gt; \omega(G)^k\)&lt;/span&gt;)&lt;br&gt;
+&lt;details style="display:inline;"&gt;
+    &lt;summary&gt;Answer&lt;/summary&gt;
+    We define the Feige Game defined as follows:&lt;br&gt; Each player gets a bit as input. They must output a bit and a player. The players win if their bits are the same and that player did get that bit. Because they can't communicate &lt;span class="math"&gt;\(\omega(G) = \frac{1}{2}\)&lt;/span&gt;. The best strategy is to agree upon a player in advance. That player will pick themselves and their bit and the other player will guess their bit. However if the players play the two round version they can double down on their original bets which would mean &lt;span class="math"&gt;\(\omega(G^2) = \frac{1}{2}\)&lt;/span&gt; as well.
+    &lt;br&gt;&lt;br&gt;
+&lt;/details&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;
+Sources (and great references for learning more): &lt;br&gt;
+http://www.cs.jhu.edu/~scheideler/courses/600.471_S05/lecture_9.pdf&lt;br&gt;
+http://people.seas.harvard.edu/~madhusudan/courses/Spring2016/scribe/lect18.pdf&lt;br&gt;
+http://pages.cs.wisc.edu/~shuchi/courses/880-S07/scribe-notes/lecture29.pdf&lt;br&gt;
+http://www.cs.princeton.edu/~zdvir/apx11slides/guruswami-slides.pdf&lt;br&gt;
+https://cstheory.stackexchange.com/questions/18360/multi-prover-verifier-games-and-pcp-theorem&lt;br&gt;
+http://theory.cs.princeton.edu/complexity/ab_hastadchap.pdf
+&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;script type="text/javascript"&gt;if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width &lt; 768) ? "left" : align;
+        indent = (screen.width &lt; 768) ? "0em" : indent;
+        linebreak = (screen.width &lt; 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/latest.js?config=TeX-AMS-MML_HTMLorMML';
+
+    var configscript = document.createElement('script');
+    configscript.type = 'text/x-mathjax-config';
+    configscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'none' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        availableFonts: ['STIX', 'TeX']," +
+        "        preferredFont: 'STIX'," +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+&lt;/script&gt;</content><category term="algorithms"></category><category term="theory"></category></entry><entry><title>The Alias Method for Fast Weighted Random</title><link href="/alias-method.html" rel="alternate"></link><published>2017-06-25T00:00:00-07:00</published><updated>2019-10-15T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2017-06-25:/alias-method.html</id><summary type="html">&lt;p&gt;Constant time draws from a discrete distribution.&lt;/p&gt;</summary><content type="html">&lt;style&gt;
+thick.thicker {
+    font-weight: 900;
+}
+&lt;/style&gt;
+
+&lt;p&gt;&lt;strong&gt;&lt;text class = "thick"&gt;Lets say you have a bag with 2 orange marbles, 2 blue marbles and 2 green marbles&lt;/text&gt;.&lt;/strong&gt; You draw one marble out of the bag. The probability of drawing any color marble is 1/3. This is called a uniform discrete distribution. It's easy to draw from this distribution with a computer. Computers can generate uniform pseudo random numbers in constant time so all you would have to do is generate a number from 1 to 3 and map it to a color of marble depending on the result. This can be done in constant time for any arbitrary number of colors as long as there are the same number of each color of marble.&lt;br&gt;
+&lt;br&gt;
+&lt;strong&gt;But now let's try a slightly different problem.&lt;/strong&gt; Let's take a bag with 1 orange marble, 2 blue marbles and 4 green marbles. This distribution is a general discrete distribution. Clearly we can't tackle this exactly the same way as before. One simple adjustment we could make is to generate a random number between 1 and 7 and map it to 7 boxes. We could put a marble in each box and assign a orange marble to one box, blue marbles to two boxes and green marbles to four boxes. We then lookup the box which corresponds to the number we generate and check which kind of marble it has. This generates the correct distribution.&lt;br&gt;
+&lt;br&gt;
+&lt;strong&gt;Finally now let's look at a different general discrete distribution.&lt;/strong&gt; For example, the distribution of orange, blue and green marbles with weights: p(orange) = 251/1000, p(blue) = 479/1000 and p(green) = 270/1000. We cannot use the first technique because there is no easy way to simplify these numbers. The second technique would require us to create 1000 boxes, so it also seems pretty bad. The weakness of our second technique is that the setup time depends on the weights, so the messier the numbers are the longer (and more space) it takes. This is not ideal. &lt;br&gt;
+&lt;br&gt;
+&lt;strong&gt;Now we can talk about a simple algorithm which solves our problem.&lt;/strong&gt; The plan is to partition the interval [0,1] into n different parts based on the probabilities of each event. In our above example we could partition the interval into three sections with sizes orange = 0.251, blue = 0.479 and green = 0.27. Below is an O(n) algorithm to do this.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;random&lt;/span&gt;
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;weightedRandom&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;weights&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="sd"&gt;    Draw from a general discrete distribution.&lt;/span&gt;
+&lt;span class="sd"&gt;    :param weights: A dictionary of weights which sum to one.&lt;/span&gt;
+&lt;span class="sd"&gt;    :return: A random sample from it the distribution defined by the weights.&lt;/span&gt;
+&lt;span class="sd"&gt;    &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+
+    &lt;span class="c1"&gt;#generate a uniform random number from 0 - 1&lt;/span&gt;
+    &lt;span class="n"&gt;remainder&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;random&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;random&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; 
+
+    &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;weight&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;weights&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;iteritems&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+        &lt;span class="n"&gt;value&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;color&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;weight&lt;/span&gt;
+        &lt;span class="n"&gt;remainder&lt;/span&gt; &lt;span class="o"&gt;-=&lt;/span&gt; &lt;span class="n"&gt;value&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;remainder&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;color&lt;/span&gt;
+
+&lt;span class="n"&gt;weights&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="mf"&gt;3.0&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mf"&gt;6.0&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;orange&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mf"&gt;6.0&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;blue&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mf"&gt;2.0&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mf"&gt;6.0&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;green&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="n"&gt;counts&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;orange&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;blue&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;green&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="nb"&gt;xrange&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;600000&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;counts&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;weightedRandom&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;weights&lt;/span&gt;&lt;span class="p"&gt;)]&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+
+&lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;counts&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;br&gt;
+&lt;strong&gt;So can we do better?&lt;/strong&gt; The answer is sort of. It depends on what we want to do. It turns out if we want to sample from the same distribution multiple times, then we can. We will do just one preprocessing step (which will be the same time/space complexity for any set of n weights) and after that each sample will be O(1). So the more times we want to sample from the same distribution, the better the performance will be.&lt;br&gt;
+&lt;br&gt;
+&lt;strong&gt;How does this work?&lt;/strong&gt;
+I'm going to go over the preprocessing step in a later section but first I'm going to describe how we do the O(1) lookups. Consider a general discrete probability distribution with n weights. We are going to divide it up into n boxes such that each box will contain pieces of either one or two different different weights and the pieces of these weights will sum to 1/n. From our definition the sum of all the pieces of all the weights in the boxes is 1 (the size of the entire distribution).&lt;br&gt;
+&lt;br&gt;
+&lt;strong&gt;The description can be difficult.&lt;/strong&gt; I think a picture can really help. In this example we have three colored balls with weights p(blue) = 1/6, p(orange) = 3/6, p(green) = 2/6:
+&lt;p align="center"&gt;
+    &lt;img src="/images/alias-method/alias_diag.png" width="56%" &gt; 
+&lt;/p&gt;
+&lt;strong&gt;Once we have this partitioning, our algorithm is very simple:&lt;/strong&gt; &lt;br&gt;
+First we pick one of the 3 boxes. Then we choose a uniform random number between 0 and 1. We see which side of our chosen box it falls on and we return that color marble.&lt;br&gt;
+&lt;br&gt;
+&lt;strong&gt;Now we need to find these partitions.&lt;/strong&gt; First of you might be asking yourself, why can we always partition the distribution like this? To answer that we will first provide an algorithm to construct these partitions then prove it always works.&lt;br&gt;
+&lt;br&gt;
+&lt;strong&gt;The basic idea of this algorithm is about filling up these boxes.&lt;/strong&gt; First a quick observation. If we look at all the weights in a normalized (the sum of all the weights is one) probability distribution at least one of them must be less than or equal to 1/n where n is the total number of weights. Why is this important? This means that we can always fit one of these weights into a box of size 1/n possibly with some left over space.&lt;br&gt;
+&lt;br&gt;
+&lt;strong&gt;Our partitioning algorithm is as follows:&lt;/strong&gt;&lt;br&gt;
+1) Sort the weights from least to greatest.&lt;br&gt;
+2) Choose the smallest weight and put it into a box. Then if there is any space left over, fill in the extra room with some of the largest weight.&lt;br&gt;
+3) Repeat steps 1 and 2 until all of the boxes have been filled.&lt;br&gt;
+Here's a visualization of the algorithm:
+&lt;p align="center"&gt;
+    &lt;img src="images/alias-method/alias_anim.gif" width="56%" &gt; 
+&lt;/p&gt;
+&lt;strong&gt;Now why can we always do this?&lt;/strong&gt; Now that we have the algorithm we can use induction to give a formal proof. Our claim is a little more general than what we have been saying earlier but it will make the proof easier.&lt;br&gt;
+&lt;br&gt;
+&lt;strong&gt;Claim:&lt;/strong&gt; Given a set of n non-zero real numbers (called weights) we can partition them into n boxes of size s/n (where s is the sum of all n weights) such that each box only contains pieces of at most 2 weights using our algorithm.&lt;br&gt;
+&lt;br&gt;
+&lt;strong&gt;For the base case:&lt;/strong&gt; Clearly if we have just one weight we can just put it in a single box by itself.&lt;br&gt;
+&lt;br&gt;
+&lt;strong&gt;Now comes our inductive step:&lt;/strong&gt; Suppose that we know our claim is true for n - 1 weights. Now we must show it is true for n weights.&lt;br&gt;
+&lt;br&gt;
+&lt;strong&gt;Let's do the first step of our algorithm:&lt;/strong&gt; We put the smallest weight in a box of size s/n. We know that it must fit because if it did not our weights would sum to more than s. Now if there is any left over space we fill it with some of our largest weight (by similar logic to the previous sentence this is also always possible). Finally we are left with one filled box and n - 1 unfilled boxes. We know by the inductive hypothesis (our assumption) that we can split whatever is remaining into those n - 1 boxes. Therefore we are done.&lt;br&gt;
+&lt;br&gt;
+&lt;strong&gt;Now finally what is the running time of the preprocessing step?&lt;/strong&gt; First we need to sort all the weights which is O(nlog n). Now we need to do n steps where we get rid of the smallest weight and restart. However the key here is that only the largest weight needs to considered for sorting because its the only value let in the partition that is changed besides the one removed. We can do this in log n time with a binary search (because we have already sorted our weights). Therefore the rest of the algorithm is also O(n log n) so the whole algorithm is O(n log n).&lt;br&gt;
+&lt;br&gt;
+&lt;strong&gt;Here is an implementation of our algorithm:&lt;/strong&gt;&lt;br&gt;
+&lt;br&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;numpy&lt;/span&gt; &lt;span class="kn"&gt;as&lt;/span&gt; &lt;span class="nn"&gt;np&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;bintrees&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;AVLTree&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;random&lt;/span&gt;
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;partitionWeights&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;weights&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="sd"&gt;    The preprocessing step.&lt;/span&gt;
+&lt;span class="sd"&gt;    :param weights: A dictionary of weights which sum to one.&lt;/span&gt;
+&lt;span class="sd"&gt;    :return: A partition used to draw quickly from the distribution&lt;/span&gt;
+&lt;span class="sd"&gt;    &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+    &lt;span class="n"&gt;epsilon&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;0.00001&lt;/span&gt; &lt;span class="c1"&gt;# for floating point precision issues&lt;/span&gt;
+    &lt;span class="n"&gt;boxes&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[]&lt;/span&gt;
+    &lt;span class="n"&gt;numWeights&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;len&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;weights&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="c1"&gt;# We use a AVLTree to make our pull/push operations O(log n)&lt;/span&gt;
+    &lt;span class="n"&gt;tree&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;AVLTree&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;weights&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="nb"&gt;xrange&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;numWeights&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="n"&gt;smallestValue&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;smallestColor&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;tree&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pop_min&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="c1"&gt;# O(log n)&lt;/span&gt;
+        &lt;span class="n"&gt;overfill&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="n"&gt;numWeights&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;smallestValue&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;overfill&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;epsilon&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;largestValue&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;largestColor&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;tree&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pop_max&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="c1"&gt;# O(log n)&lt;/span&gt;
+            &lt;span class="n"&gt;largestValue&lt;/span&gt; &lt;span class="o"&gt;-=&lt;/span&gt; &lt;span class="n"&gt;overfill&lt;/span&gt;
+            &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;largestValue&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;epsilon&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="n"&gt;tree&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;insert&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;largestValue&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;largestColor&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;# O(log n)&lt;/span&gt;
+            &lt;span class="n"&gt;boxes&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;append&lt;/span&gt;&lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="n"&gt;smallestValue&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;smallestColor&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;largestColor&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+        &lt;span class="k"&gt;else&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;boxes&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;append&lt;/span&gt;&lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="n"&gt;smallestValue&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;smallestColor&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;none&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;boxes&lt;/span&gt;
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;drawFromPartition&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;partition&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="sd"&gt;    The draw step.&lt;/span&gt;
+&lt;span class="sd"&gt;    :param partition: partition A partition of a distribution into boxes.&lt;/span&gt;
+&lt;span class="sd"&gt;    :return: A sample from the distribution represented by the partition.&lt;/span&gt;
+&lt;span class="sd"&gt;    &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+    &lt;span class="n"&gt;numBoxes&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;len&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;partition&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;random&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;randint&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;numBoxes&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;value&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;color1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;color2&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;partition&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;random&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;random&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="n"&gt;numBoxes&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;=&lt;/span&gt; &lt;span class="n"&gt;value&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;color1&lt;/span&gt;
+    &lt;span class="k"&gt;else&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;color2&lt;/span&gt;
+
+&lt;span class="n"&gt;weights&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="mf"&gt;3.0&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mf"&gt;6.0&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;orange&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mf"&gt;6.0&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;blue&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mf"&gt;2.0&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mf"&gt;6.0&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;green&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="n"&gt;partition&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;partitionWeights&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;weights&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="n"&gt;counts&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;orange&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;blue&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;green&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="nb"&gt;xrange&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;600000&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;counts&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;drawFromPartition&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;partition&lt;/span&gt;&lt;span class="p"&gt;)]&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+
+&lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;counts&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;strong&gt;One final note on runtime.&lt;/strong&gt; If you run our example code you'll notice the "slow" function is almost twice as fast as the "fast" one. Have I been lying this whole time? No. This is because in our example we used a small number of weights. In a &lt;a href="https://gist.github.com/Mr4k/eabaca318499bd54e5e18431efbc6622"&gt;separate speed test&lt;/a&gt; I use 1000 weights and draw from the distributions 100000 times each. In this case the fast algorithm runs in 0.35 seconds on my computer while the slow algorithm takes about 15 seconds.&lt;/p&gt;</content><category term="probability"></category><category term="algorithms"></category></entry></feed>

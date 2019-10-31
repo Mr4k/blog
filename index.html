@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="utf-8" />
+        <title>peterstefek.me</title>
+        <link rel="stylesheet" href="/theme/css/main.css" />
+        <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="peterstefek.me Atom Feed" />
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="/">peterstefek.me </a></h1>
+                <nav><ul>
+                    <li><a href="/category/algorithms.html">algorithms</a></li>
+                    <li><a href="/category/graphics.html">graphics</a></li>
+                    <li><a href="/category/probability.html">probability</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+
+            <aside id="featured" class="body">
+                <article>
+                    <h1 class="entry-title"><a href="/ray-marching-heightfields.html">A Note on Ray Marching with Heightfields</a></h1>
+<footer class="post-info">
+        <abbr class="published" title="2019-10-18T00:00:00-07:00">
+                Published: Fri 18 October 2019
+        </abbr>
+		<br />
+        <abbr class="modified" title="2019-10-18T00:00:00-07:00">
+                Updated: Fri 18 October 2019
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="/author/peter-stefek.html">Peter Stefek</a>
+        </address>
+<p>In <a href="/category/graphics.html">graphics</a>.</p>
+<p>tags: <a href="/tag/raymarching.html">raymarching</a> <a href="/tag/graphics.html">graphics</a> </p>
+</footer><!-- /.post-info --><p><span class="math">\(\newcommand{\norm}[1]{\lvert \lvert #1 \rvert \rvert}\)</span></p>
+<p>Ray marching is a technique for testing ray intersections with a scene.
+If you are new to ray marching, I highly recommend reading one of these <a href="https://www.iquilezles.org/www/articles/raymarchingdf/raymarchingdf.htm">great</a> <a href="http://jamie-wong.com/2016/07/15/ray-marching-signed-distance-functions/">introductions</a>
+to the technique.
+The central idea in raymarching is that the scene is represented by a distance field function <span class="math">\(D(pos)\)</span>
+which gives the distance to the closest surface at each point. This distance field function for a scene is usually built by combining the distance fields of many primitives such as spheres, cubes and planes. Usually the distance field of each primitive can be analytically defined. A simple example of one of these primitives is a sphere at the origin
+with radius r whose distance field function is defined as follows in glsl:</p>
+<div class="highlight"><pre><span></span><span class="nv">function</span> <span class="nv">distSphere</span><span class="ss">(</span><span class="nv">vec3</span> <span class="nv">pos</span>, <span class="nv">float</span> <span class="nv">r</span><span class="ss">)</span> {
+    <span class="k">return</span> <span class="nv">mag</span><span class="ss">(</span><span class="nv">pos</span><span class="ss">)</span> <span class="o">-</span> <span class="nv">r</span><span class="c1">;</span>
+}
+</pre></div>
+
+
+<p>On thing you might notice here is that if you are inside the sphere the distance field is negative. This is called a signed distance field. While we don't use the signed part in this article you can find more information about them <a href="https://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm">here</a>. <br><br>
+People often tend to use heightfields as primitives in raymarching. A heightfield is
+a function <code>h(vec2 pos)</code> that takes a 2d coordinate and returns the height
+at that point. They can be thought of as topographical maps. Heightfields are useful because they allow artists to easily define bumpy surfaces such as waves or terrain. 
+Common analytic heightfields include simplex noise, and sin / cosine waves.
+Typically people use a function like the one below for the heightfield's distance field function:  </p>
+<div class="highlight"><pre><span></span><span class="nv">function</span> <span class="nv">distHeightfield</span><span class="ss">(</span><span class="nv">vec3</span> <span class="nv">pos</span><span class="ss">)</span> {
+    <span class="k">return</span> <span class="nv">h</span><span class="ss">(</span><span class="nv">pos</span>.<span class="nv">xz</span><span class="ss">)</span> <span class="o">+</span> <span class="nv">pos</span>.<span class="nv">y</span><span class="c1">;</span>
+}
+</pre></div>
+
+
+<p>where <code>h(vec2 pos)</code> is the heightfield function. However this function is really not a distance field. To see why we can look at the image below.<br>
+<img alt="A ray can overshoot the closest surface when using heightfield distance" src="images/ray-marching-heightfields/heightfield-problem.png"><br>
+Let's say we are at point P and we shoot a ray to the right (represented by the red ray in the picture). If we use our <code>distHeightfield</code> function we will think that the closest surface is <span class="math">\(a\)</span> away. However in the direction our red ray is going, the closest point is really <span class="math">\(b\)</span> away which is smaller than <span class="math">\(a\)</span>. So if we took a step of size <span class="math">\(a\)</span> along the red ray we would overshoot the heightfield. <br/><br/>
+One way to solve this problem is to use a smaller step size. In fact it turns out we can just 
+down scale our step size by a constant multiple. So instead of taking a step of size <code>D(pos)</code> as 
+usual we could take a step of size <code>D(pos)*shrinkFactor</code>. One way to find the shrink factor is to just try plugging in small constants 
+until we get good results. In practice, there is absolutely nothing wrong with this approach. But if we want we can apply a more principled approach to finding a shrink factor.  <br/><br/>
+<strong>Obtaining a shrink factor</strong>:<br>
+Let's start by just trying to obtain a safe distance which gives us a lower bound on how far we can go in any direction without hitting anything. A really simple
+way to do that is by creating a surface that will always be between our point P and the heightfield and finding the closest distance to that surface.<br>
+A cone (more of a v shape in 2d) whose bottom starts on the heightfield directly under P is a good choice. Here is a picture:<br>
+<img alt="A safety cone" src="images/ray-marching-heightfields/safety-cone.png"><br>
+Now we need is to chose a slope <code>c</code> for the sides of the cone such that the it's edges will always lie between the heighfield and our point. If our heighfield function
+is continuous and its derivative is bounded everywhere it is defined then <code>c</code> could be the lowest upper bound on the absolute value of the derivative.  <br/><br/>
+Finally we have to find the closest distance from P to the edges of the cone. This distance will be our conservative bound.  <br/><br/>
+Note while the math below is in 2d, the 3d case is basically identical:<br>
+<img alt="A picture to set up our derivation" src="images/ray-marching-heightfields/derivation-diagram.png"><br>
+Let <span class="math">\(O\)</span> be the bottom of the cone and <span class="math">\(N\)</span> be the closest point on one of the edges of the cone to <span class="math">\(P\)</span>. For consistency we will choose the right edge although it doesn't matter.<br>
+First define <span class="math">\(\hat{C}\)</span> as the normalized vector pointing from <span class="math">\(O\)</span> along the right edge of the cone.<br>
+<span class="math">\(\norm{\overrightarrow{ON}}\)</span> is given by <span class="math">\(\overrightarrow{OP}\cdot \hat{C}\)</span>.<br>
+Given that <span class="math">\(\overrightarrow{OP} = (0, h(P))\)</span> we can say, <span class="math">\(\norm{\overrightarrow{ON}} = \frac{h(P)c}{\sqrt{1+c^2}}\)</span>.<br>
+Finally using the pythagorean theorem we can find <span class="math">\(\norm{\overrightarrow{PN}} = \norm{\overrightarrow{OP} } - \norm{\overrightarrow{ON}}\)</span> which is <span class="math">\(\frac{1}{\sqrt{c^2+1}}h(p)\)</span>. <br> <span class="math">\(\norm{\overrightarrow{PN}}\)</span> is our conservative lower bound. This also means we can use <span class="math">\(\frac{1}{\sqrt{c^2+1}}\)</span> as our shrink factor.</p>
+<script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width < 768) ? "left" : align;
+        indent = (screen.width < 768) ? "0em" : indent;
+        linebreak = (screen.width < 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/latest.js?config=TeX-AMS-MML_HTMLorMML';
+
+    var configscript = document.createElement('script');
+    configscript.type = 'text/x-mathjax-config';
+    configscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'none' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        availableFonts: ['STIX', 'TeX']," +
+        "        preferredFont: 'STIX'," +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+</script>                </article>
+            </aside><!-- /#featured -->
+                <section id="content" class="body">
+                    <h1>Other articles</h1>
+                    <hr />
+                    <ol id="posts-list" class="hfeed">
+
+            <li><article class="hentry">
+                <header>
+                    <h1><a href="/optimal-stopping.html" rel="bookmark"
+                           title="Permalink to Optimal Stopping Policies">Optimal Stopping Policies</a></h1>
+                </header>
+
+                <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2018-10-06T00:00:00-07:00">
+                Published: Sat 06 October 2018
+        </abbr>
+		<br />
+        <abbr class="modified" title="2019-10-15T00:00:00-07:00">
+                Updated: Tue 15 October 2019
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="/author/peter-stefek.html">Peter Stefek</a>
+        </address>
+<p>In <a href="/category/probability.html">probability</a>.</p>
+<p>tags: <a href="/tag/probability.html">probability</a> <a href="/tag/algorithms.html">algorithms</a> </p>
+</footer><!-- /.post-info -->                <p>Theoretical Recruiting</p>
+                <a class="readmore" href="/optimal-stopping.html">read more</a>
+                </div><!-- /.entry-content -->
+            </article></li>
+
+            <li><article class="hentry">
+                <header>
+                    <h1><a href="/pcp-theorem.html" rel="bookmark"
+                           title="Permalink to The PCP Theorem and the Hardness of Approximation">The PCP Theorem and the Hardness of Approximation</a></h1>
+                </header>
+
+                <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2018-04-29T02:50:00-07:00">
+                Published: Sun 29 April 2018
+        </abbr>
+		<br />
+        <abbr class="modified" title="2019-08-14T09:30:00-07:00">
+                Updated: Wed 14 August 2019
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="/author/peter-stefek.html">Peter Stefek</a>
+        </address>
+<p>In <a href="/category/algorithms.html">algorithms</a>.</p>
+<p>tags: <a href="/tag/algorithms.html">algorithms</a> <a href="/tag/theory.html">theory</a> </p>
+</footer><!-- /.post-info -->                <p>An introduction to the applications of the PCP theorem</p>
+                <a class="readmore" href="/pcp-theorem.html">read more</a>
+                </div><!-- /.entry-content -->
+            </article></li>
+
+            <li><article class="hentry">
+                <header>
+                    <h1><a href="/alias-method.html" rel="bookmark"
+                           title="Permalink to The Alias Method for Fast Weighted Random">The Alias Method for Fast Weighted Random</a></h1>
+                </header>
+
+                <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2017-06-25T00:00:00-07:00">
+                Published: Sun 25 June 2017
+        </abbr>
+		<br />
+        <abbr class="modified" title="2019-10-15T00:00:00-07:00">
+                Updated: Tue 15 October 2019
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="/author/peter-stefek.html">Peter Stefek</a>
+        </address>
+<p>In <a href="/category/algorithms.html">algorithms</a>.</p>
+<p>tags: <a href="/tag/probability.html">probability</a> <a href="/tag/algorithms.html">algorithms</a> </p>
+</footer><!-- /.post-info -->                <p>Constant time draws from a discrete distribution.</p>
+                <a class="readmore" href="/alias-method.html">read more</a>
+                </div><!-- /.entry-content -->
+            </article></li>
+                </ol><!-- /#posts-list -->
+                </section><!-- /#content -->
+        <section id="extras" class="body">
+                <div class="blogroll">
+                        <h2>links</h2>
+                        <ul>
+                            <li><a href="http://getpelican.com/">Pelican</a></li>
+                            <li><a href="http://python.org/">Python.org</a></li>
+                            <li><a href="http://jinja.pocoo.org/">Jinja2</a></li>
+                            <li><a href="#">You can modify those links in your config file</a></li>
+                        </ul>
+                </div><!-- /.blogroll -->
+                <div class="social">
+                        <h2>social</h2>
+                        <ul>
+                            <li><a href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate">atom feed</a></li>
+
+                            <li><a href="#">You can add links in your config file</a></li>
+                            <li><a href="#">Another social link</a></li>
+                        </ul>
+                </div><!-- /.social -->
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a href="http://coding.smashingmagazine.com/2009/08/04/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>
