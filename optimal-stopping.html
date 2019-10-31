@@ -1,45 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-        <meta charset="utf-8" />
-        <title>Optimal Stopping Policies</title>
-        <link rel="stylesheet" href="/theme/css/main.css" />
-        <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="peterstefek.me Atom Feed" />
+    <title>Optimal Stopping Policies</title>
+    <link rel="stylesheet" type="text/css" href="/theme/css/main.css" />
 </head>
 
-<body id="index" class="home">
-        <header id="banner" class="body">
-                <h1><a href="/">peterstefek.me </a></h1>
-                <nav><ul>
-                    <li><a href="/category/algorithms.html">algorithms</a></li>
-                    <li><a href="/category/graphics.html">graphics</a></li>
-                    <li class="active"><a href="/category/probability.html">probability</a></li>
-                </ul></nav>
-        </header><!-- /#banner -->
-<section id="content" class="body">
-  <article>
-    <header>
-      <h1 class="entry-title">
-        <a href="/optimal-stopping.html" rel="bookmark"
-           title="Permalink to Optimal Stopping Policies">Optimal Stopping Policies</a></h1>
-    </header>
-
-    <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2018-10-06T00:00:00-07:00">
-                Published: Sat 06 October 2018
-        </abbr>
-		<br />
-        <abbr class="modified" title="2019-10-15T00:00:00-07:00">
-                Updated: Tue 15 October 2019
-        </abbr>
-
-        <address class="vcard author">
-                By                         <a class="url fn" href="/author/peter-stefek.html">Peter Stefek</a>
-        </address>
-<p>In <a href="/category/probability.html">probability</a>.</p>
-<p>tags: <a href="/tag/probability.html">probability</a> <a href="/tag/algorithms.html">algorithms</a> </p>
-</footer><!-- /.post-info -->      <p><strong>The Recruiter Problem</strong><br>
+<body>
+    <div class="container">
+<div class="row">
+ <div class="col-md-8">
+  <h1>Optimal Stopping Policies</h1>
+  <label>Posted on <strong>06 October 2018</strong></label>
+  <p><strong>The Recruiter Problem</strong><br>
 Pretend for a minute that you are a recruiter who's looking for people to fill a position. Maybe you're reading this post because I have applied for a position at your company and you're vetting me. Anyways the point is I'm one candidate among many. Even if you interview me and like me how do you know there's not someone better out there to fill the position? <br><br>
 More formally, you are going to interview <span class="math">\(N\)</span> candidates for a job. The order in which they come is random, with all orderings equally likely. After each interview with a candidate you will come up with a quality score (a real number between 0 and 1) for them and then you have to choose whether to hire them on the spot or reject them and hope a better fit comes along. Your goal is to hire the best of the best (the candidate who has the highest score among all N candidates) but you have no idea what the applicant pool looks like (no information about the distribution from which these candidates are drawn). What is the probability that you succeed in your task given that you use the optimal hiring strategy? <br><br>
 This problem is know sometimes as the best choice problem or the secretary problem. We will call it the Recruiter Problem. It is a very famous and well studied problem because of its very surprising solution: <br><br>
@@ -341,38 +314,12 @@ So this is cool little fact but what kinds of problems can we apply it too besid
     (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
 }
 </script>
-    </div><!-- /.entry-content -->
-
-  </article>
-</section>
-        <section id="extras" class="body">
-                <div class="blogroll">
-                        <h2>links</h2>
-                        <ul>
-                            <li><a href="http://getpelican.com/">Pelican</a></li>
-                            <li><a href="http://python.org/">Python.org</a></li>
-                            <li><a href="http://jinja.pocoo.org/">Jinja2</a></li>
-                            <li><a href="#">You can modify those links in your config file</a></li>
-                        </ul>
-                </div><!-- /.blogroll -->
-                <div class="social">
-                        <h2>social</h2>
-                        <ul>
-                            <li><a href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate">atom feed</a></li>
-
-                            <li><a href="#">You can add links in your config file</a></li>
-                            <li><a href="#">Another social link</a></li>
-                        </ul>
-                </div><!-- /.social -->
-        </section><!-- /#extras -->
-
-        <footer id="contentinfo" class="body">
-                <address id="about" class="vcard body">
-                Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
-                </address><!-- /#about -->
-
-                <p>The theme is by <a href="http://coding.smashingmagazine.com/2009/08/04/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
-        </footer><!-- /#contentinfo -->
-
+ </div>
+</div>
+<footer>
+    <a href="/">home</a>
+</footer>
+    </div>
 </body>
+
 </html>

@@ -1,45 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-        <meta charset="utf-8" />
-        <title>The Alias Method for Fast Weighted Random</title>
-        <link rel="stylesheet" href="/theme/css/main.css" />
-        <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="peterstefek.me Atom Feed" />
+    <title>The Alias Method for Fast Weighted Random</title>
+    <link rel="stylesheet" type="text/css" href="/theme/css/main.css" />
 </head>
 
-<body id="index" class="home">
-        <header id="banner" class="body">
-                <h1><a href="/">peterstefek.me </a></h1>
-                <nav><ul>
-                    <li class="active"><a href="/category/algorithms.html">algorithms</a></li>
-                    <li><a href="/category/graphics.html">graphics</a></li>
-                    <li><a href="/category/probability.html">probability</a></li>
-                </ul></nav>
-        </header><!-- /#banner -->
-<section id="content" class="body">
-  <article>
-    <header>
-      <h1 class="entry-title">
-        <a href="/alias-method.html" rel="bookmark"
-           title="Permalink to The Alias Method for Fast Weighted Random">The Alias Method for Fast Weighted Random</a></h1>
-    </header>
-
-    <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2017-06-25T00:00:00-07:00">
-                Published: Sun 25 June 2017
-        </abbr>
-		<br />
-        <abbr class="modified" title="2019-10-15T00:00:00-07:00">
-                Updated: Tue 15 October 2019
-        </abbr>
-
-        <address class="vcard author">
-                By                         <a class="url fn" href="/author/peter-stefek.html">Peter Stefek</a>
-        </address>
-<p>In <a href="/category/algorithms.html">algorithms</a>.</p>
-<p>tags: <a href="/tag/probability.html">probability</a> <a href="/tag/algorithms.html">algorithms</a> </p>
-</footer><!-- /.post-info -->      <style>
+<body>
+    <div class="container">
+<div class="row">
+ <div class="col-md-8">
+  <h1>The Alias Method for Fast Weighted Random</h1>
+  <label>Posted on <strong>25 June 2017</strong></label>
+  <style>
 thick.thicker {
     font-weight: 900;
 }
@@ -174,38 +147,12 @@ Here's a visualization of the algorithm:
 
 
 <p><strong>One final note on runtime.</strong> If you run our example code you'll notice the "slow" function is almost twice as fast as the "fast" one. Have I been lying this whole time? No. This is because in our example we used a small number of weights. In a <a href="https://gist.github.com/Mr4k/eabaca318499bd54e5e18431efbc6622">separate speed test</a> I use 1000 weights and draw from the distributions 100000 times each. In this case the fast algorithm runs in 0.35 seconds on my computer while the slow algorithm takes about 15 seconds.</p>
-    </div><!-- /.entry-content -->
-
-  </article>
-</section>
-        <section id="extras" class="body">
-                <div class="blogroll">
-                        <h2>links</h2>
-                        <ul>
-                            <li><a href="http://getpelican.com/">Pelican</a></li>
-                            <li><a href="http://python.org/">Python.org</a></li>
-                            <li><a href="http://jinja.pocoo.org/">Jinja2</a></li>
-                            <li><a href="#">You can modify those links in your config file</a></li>
-                        </ul>
-                </div><!-- /.blogroll -->
-                <div class="social">
-                        <h2>social</h2>
-                        <ul>
-                            <li><a href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate">atom feed</a></li>
-
-                            <li><a href="#">You can add links in your config file</a></li>
-                            <li><a href="#">Another social link</a></li>
-                        </ul>
-                </div><!-- /.social -->
-        </section><!-- /#extras -->
-
-        <footer id="contentinfo" class="body">
-                <address id="about" class="vcard body">
-                Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
-                </address><!-- /#about -->
-
-                <p>The theme is by <a href="http://coding.smashingmagazine.com/2009/08/04/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
-        </footer><!-- /#contentinfo -->
-
+ </div>
+</div>
+<footer>
+    <a href="/">home</a>
+</footer>
+    </div>
 </body>
+
 </html>
