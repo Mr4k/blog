@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}{{ article.title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+ <div class="col-md-8">
+  <h1>{{ article.title }}</h1>
+  <label>Posted on <strong>{{ article.date|strftime('%d %B %Y') }}</strong></label>
+  {{ article.content }}
+ </div>
+</div>
+<footer>
+    <a href="/{{ SITEURL }}">home</a>
+</footer>
+{% endblock %}
