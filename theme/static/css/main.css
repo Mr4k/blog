@@ -1,8 +1,75 @@
+/*
+* Webfonts served by typotheque.com
+*
+* To make the font files as small as possible,
+* most glyphs and OpenType features were removed.
+* To edit the fonts, add more language support,
+* log it to your Typotheque account:
+* http://www.typotheque.com/my_account/webfonts
+*
+* The Typotheque Font Software is protected under domestic
+* and international trademark and copyright law.
+* Modifying, reverse engineering or otherwise copying
+* of Typotheque Font Software is illegal.
+* http://www.typotheque.com/licensing/
+*
+* (c) 2018, Typotheque
+* Generated: 2018-01-21 22:24:45
+*/
+
+@font-face {
+	font-family: "Neutral 2";
+	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001251-35d9c274f6e1e4b02a13a899dab6df7f.eot");
+	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001251-35d9c274f6e1e4b02a13a899dab6df7f.eot?#iefix") format("embedded-opentype"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001251-35d9c274f6e1e4b02a13a899dab6df7f.woff2") format("woff2"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001251-35d9c274f6e1e4b02a13a899dab6df7f.woff") format("woff"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001251-35d9c274f6e1e4b02a13a899dab6df7f.svg#typotheque_webfonts_service") format("svg");
+	font-style: normal;
+	font-weight: 400;
+}
+@font-face {
+	font-family: "Neutral Regular 2";
+	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001251-35d9c274f6e1e4b02a13a899dab6df7f.eot");
+	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001251-35d9c274f6e1e4b02a13a899dab6df7f.eot?#iefix") format("embedded-opentype"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001251-35d9c274f6e1e4b02a13a899dab6df7f.woff2") format("woff2"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001251-35d9c274f6e1e4b02a13a899dab6df7f.woff") format("woff"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001251-35d9c274f6e1e4b02a13a899dab6df7f.svg#typotheque_webfonts_service") format("svg");
+}
+@font-face {
+	font-family: "Neutral 2";
+	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001252-c69c1edf5a5f9b3ddc6494869d377455.eot");
+	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001252-c69c1edf5a5f9b3ddc6494869d377455.eot?#iefix") format("embedded-opentype"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001252-c69c1edf5a5f9b3ddc6494869d377455.woff2") format("woff2"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001252-c69c1edf5a5f9b3ddc6494869d377455.woff") format("woff"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001252-c69c1edf5a5f9b3ddc6494869d377455.svg#typotheque_webfonts_service") format("svg");
+	font-style: italic;
+	font-weight: 400;
+}
+@font-face {
+	font-family: "Neutral Regular Italic 2";
+	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001252-c69c1edf5a5f9b3ddc6494869d377455.eot");
+	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001252-c69c1edf5a5f9b3ddc6494869d377455.eot?#iefix") format("embedded-opentype"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001252-c69c1edf5a5f9b3ddc6494869d377455.woff2") format("woff2"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001252-c69c1edf5a5f9b3ddc6494869d377455.woff") format("woff"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001252-c69c1edf5a5f9b3ddc6494869d377455.svg#typotheque_webfonts_service") format("svg");
+}
+@font-face {
+	font-family: "Neutral 2";
+	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001253-bcea74faba2fa3c3cdeb277afbbfb844.eot");
+	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001253-bcea74faba2fa3c3cdeb277afbbfb844.eot?#iefix") format("embedded-opentype"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001253-bcea74faba2fa3c3cdeb277afbbfb844.woff2") format("woff2"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001253-bcea74faba2fa3c3cdeb277afbbfb844.woff") format("woff"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001253-bcea74faba2fa3c3cdeb277afbbfb844.svg#typotheque_webfonts_service") format("svg");
+	font-style: normal;
+	font-weight: 700;
+}
+@font-face {
+	font-family: "Neutral Medium 2";
+	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001253-bcea74faba2fa3c3cdeb277afbbfb844.eot");
+	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001253-bcea74faba2fa3c3cdeb277afbbfb844.eot?#iefix") format("embedded-opentype"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001253-bcea74faba2fa3c3cdeb277afbbfb844.woff2") format("woff2"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001253-bcea74faba2fa3c3cdeb277afbbfb844.woff") format("woff"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001253-bcea74faba2fa3c3cdeb277afbbfb844.svg#typotheque_webfonts_service") format("svg");
+}
+@font-face {
+	font-family: "Neutral 2";
+	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001254-0fda9ee2882f56a104d7cf32d3f6061c.eot");
+	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001254-0fda9ee2882f56a104d7cf32d3f6061c.eot?#iefix") format("embedded-opentype"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001254-0fda9ee2882f56a104d7cf32d3f6061c.woff2") format("woff2"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001254-0fda9ee2882f56a104d7cf32d3f6061c.woff") format("woff"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001254-0fda9ee2882f56a104d7cf32d3f6061c.svg#typotheque_webfonts_service") format("svg");
+	font-style: italic;
+	font-weight: 700;
+}
+@font-face {
+	font-family: "Neutral Medium Italic 2";
+	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001254-0fda9ee2882f56a104d7cf32d3f6061c.eot");
+	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001254-0fda9ee2882f56a104d7cf32d3f6061c.eot?#iefix") format("embedded-opentype"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001254-0fda9ee2882f56a104d7cf32d3f6061c.woff2") format("woff2"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001254-0fda9ee2882f56a104d7cf32d3f6061c.woff") format("woff"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001254-0fda9ee2882f56a104d7cf32d3f6061c.svg#typotheque_webfonts_service") format("svg");
+}
+
 body {
-    font-family: "Avant Garde", serif;
-    font-size: 130%;
-    line-height: 135%;
-    background-color: white;
+    font-family: "Neutral 2";
+    background-color: #FEFEFE;
+    line-height: 150%;
     color: #111;
     width: 85%;
     min-width: 400px;
@@ -16,9 +83,12 @@ body {
 }
 
 img{
-    width:100%;
-    max-width:600px;
-    max-height: 400px;
-    width: auto;
-    height: auto;
+    max-width:100%;
+    max-height: 100%;
+}
+
+@media (max-width: 1000px) {
+    img{
+        width: 100%;
+    }
 }
