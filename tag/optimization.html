@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
         <meta charset="utf-8" />
-        <title>Optimizing an Open Source Texture Synthesis Tool</title>
+        <title>peterstefek.me - optimization</title>
         <link rel="stylesheet" href="/theme/css/main.css" />
 </head>
 
@@ -10,20 +10,15 @@
         <header id="banner" class="body">
                 <h1><a href="/">peterstefek.me </a></h1>
                 <nav><ul>
-                    <li class="active"><a href="/category/algorithms.html">algorithms</a></li>
+                    <li><a href="/category/algorithms.html">algorithms</a></li>
                     <li><a href="/category/graphics.html">graphics</a></li>
                     <li><a href="/category/probability.html">probability</a></li>
                 </ul></nav>
         </header><!-- /#banner -->
-<section id="content" class="body">
-  <article>
-    <header>
-      <h1 class="entry-title">
-        <a href="/texture-optimization.html" rel="bookmark"
-           title="Permalink to Optimizing an Open Source Texture Synthesis Tool">Optimizing an Open Source Texture Synthesis Tool</a></h1>
-    </header>
 
-    <div class="entry-content">
+            <aside id="featured" class="body">
+                <article>
+                    <h1 class="entry-title"><a href="/texture-optimization.html">Optimizing an Open Source Texture Synthesis Tool</a></h1>
 <footer class="post-info">
         <abbr class="published" title="2020-07-26T00:00:00-07:00">
                 Published: Sun 26 July 2020
@@ -38,7 +33,7 @@
         </address>
 <p>In <a href="/category/algorithms.html">algorithms</a>.</p>
 <p>tags: <a href="/tag/probability.html">probability</a> <a href="/tag/algorithms.html">algorithms</a> <a href="/tag/image-processing.html">image processing</a> <a href="/tag/optimization.html">optimization</a> </p>
-</footer><!-- /.post-info -->      <p><strong>Background</strong><br>
+</footer><!-- /.post-info --><p><strong>Background</strong><br>
 Near the end of 2019 I stumbled across this <a href="https://www.youtube.com/watch?v=fMbK7PYQux4&amp;t=6m57s">talk</a> by <a href="https://www.anastasiaopara.com/">Anastasia Opara</a>. In the talk she presents a novel algorithm for example based texture synthesis. The goal of example based texture synthesis is to take one or more example textures and synthesize a new visually similar output texture.    </p>
 <p>Here's an example from the project README:
   <p align="center">
@@ -100,11 +95,8 @@ Now it was time to optimize. The first thing I did was to run the program on a f
 Overall I was pretty excited by how this project turned out. However I think it's worth noting that there are often some tradeoffs which are made during optimizations. A common one that I saw in this project was trading speed for flexibility. Austin Jones, a previous contributor, had also made some significant speedups. <a href="https://github.com/EmbarkStudios/texture-synthesis/pull/14">One of them</a> was to replace some function evaluations with a lookup table. This resulted in a large speed up but it came at the cost of limiting the range of input values to 8 bits per pixel because larger ranges of numbers would cause the size of the lookup table to explode. My tree grid optimization was somewhat similar in the fact the structure was two dimensional. Although I think it could be extended to three dimensions, it would have to change at least a little if Embark wanted the library to generate voxel models or something. So the lesson here is to wait until your functionality is set in stone before you try to heavily optimize it.<br>
 <strong>Footnotes</strong><br>
 Disclaimer: While I made many claims above optimization and profiling I am no expert so feel free and always looking to learn more so if you thinking something is incorrect feel free to get in touch!<br>
-Also a big thanks to the people at <a href="https://www.embark-studios.com/">Embark Studios</a> who were nice enough to take the time to review my code / ideas!</p>
-    </div><!-- /.entry-content -->
-
-  </article>
-</section>
+Also a big thanks to the people at <a href="https://www.embark-studios.com/">Embark Studios</a> who were nice enough to take the time to review my code / ideas!</p>                </article>
+            </aside><!-- /#featured -->
         <section id="extras" class="body">
                 <div class="blogroll">
                         <h2>links</h2>
