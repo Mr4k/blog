@@ -2,13 +2,13 @@ Title: Optimizing an Open Source Texture Synthesis Tool
 Date: 2020-07-26
 Modified: 2020-07-26
 Category: algorithms
-Tags: probability, algorithms, image processing
+Tags: probability, algorithms, image processing, optimization
 Slug: texture-optimization
 Authors: Peter Stefek
 Summary: Adventures in learning to profile and optimize.
 
 **Background**  
-Near the end of 2019 I stumbled across this [talk](https://www.youtube.com/watch?v=fMbK7PYQux4&t=6m57s) by Anastasia Opara. In the talk she presents a novel algorithm for example based texture synthesis. The goal of example based texture synthesis is to take one or more example textures and synthesize a new visually similar output texture.    
+Near the end of 2019 I stumbled across this [talk](https://www.youtube.com/watch?v=fMbK7PYQux4&t=6m57s) by [Anastasia Opara](https://www.anastasiaopara.com/). In the talk she presents a novel algorithm for example based texture synthesis. The goal of example based texture synthesis is to take one or more example textures and synthesize a new visually similar output texture.    
 
 Here's an example from the project README:
   <p align="center">
@@ -30,6 +30,8 @@ Then repeat the following procedure until the output image is filled: <br><br>
 3. Come up with a list of the most promising neighborhoods in the example image(s)  
 4. Compare the most promising candidate neighborhoods in the example image(s) to the neighborhood around the center pixel and pick the most similar one.  
 5. Fill the center pixel in the output image with the color of the center pixel in the best matching neighborhood.  
+
+One last important detail is that the algorithm works on filling multiple empty pixels in parallel to take full advantage of multi core cpus.  
 
 **Missteps and Micro optimizations**  
 Now it was time to optimize. The first thing I did was to run the program on a few sample inputs with the xcode instruments profiler (partly because I had never used it). I used a cool [library](https://www.reddit.com/r/rust/comments/b20eca/introducing_cargoinstruments_zerohassle_profiling/) which makes it easier to use instruments with rust . Using instruments I was able to see how much each instruction contributed to the overall runtime of the program.  
@@ -89,8 +91,10 @@ What I realized is that after a few pixels had been filled in the chance that on
 Another important note here is that you'll notice the improved version does not scale linearly either. In an ideal world maybe it would but there are several complicating factors that are at play here. First of all the program has some initialization costs as well as having to synthesize a few pixels in series. Both of these steps cannot be parallelized. Secondly contention is complicated and can crop up in many places. I did eliminate a large source of contention but optimization can be tricky and I'm sure I didn't fix everything.
 
 **Tricks and Trade Offs**  
-Overall I was pretty excited by how this project turned out. However I think it's worth noting that there are often some tradeoffs which are made during optimizations. A common one that I saw in this project was trading speed for flexibility. Austin Jones, a previous contributor, had also made some significant speedups. [One of them](https://github.com/EmbarkStudios/texture-synthesis/pull/14) was to replace some function evaluations with a lookup table. This resulted in a large speed up but it came at the cost of limiting the range of input values to 8 bits per pixel because larger ranges of numbers would cause the size of the lookup table to explode. My tree grid optimization was somewhat similar in the fact the structure was two dimensional. Although I think it could be extended to three dimensions, it would have to change at least a little if Embark wanted the library to generate voxel models or something. So the lesson here is to wait until your functionality is set in stone before you try to heavily optimize it.
-
+Overall I was pretty excited by how this project turned out. However I think it's worth noting that there are often some tradeoffs which are made during optimizations. A common one that I saw in this project was trading speed for flexibility. Austin Jones, a previous contributor, had also made some significant speedups. [One of them](https://github.com/EmbarkStudios/texture-synthesis/pull/14) was to replace some function evaluations with a lookup table. This resulted in a large speed up but it came at the cost of limiting the range of input values to 8 bits per pixel because larger ranges of numbers would cause the size of the lookup table to explode. My tree grid optimization was somewhat similar in the fact the structure was two dimensional. Although I think it could be extended to three dimensions, it would have to change at least a little if Embark wanted the library to generate voxel models or something. So the lesson here is to wait until your functionality is set in stone before you try to heavily optimize it.  
+**Footnotes**  
+Disclaimer: While I made many claims above optimization and profiling I am no expert so feel free and always looking to learn more so if you thinking something is incorrect feel free to get in touch!  
+Also a big thanks to the people at [Embark Studios](https://www.embark-studios.com/) who were nice enough to take the time to review my code / ideas!
 
 
 
