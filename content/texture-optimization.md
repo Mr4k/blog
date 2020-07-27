@@ -1,4 +1,4 @@
-Title: Optimizing an Open Source Texture Synthesis Tool
+Title: Optimizing an Open Source Texture Synthesis Library
 Date: 2020-07-26
 Modified: 2020-07-26
 Category: algorithms
@@ -8,7 +8,7 @@ Authors: Peter Stefek
 Summary: Adventures in learning to profile and optimize.
 
 **Background**  
-Near the end of 2019 I stumbled across this [talk](https://www.youtube.com/watch?v=fMbK7PYQux4&t=6m57s) by [Anastasia Opara](https://www.anastasiaopara.com/). In the talk she presents a novel algorithm for example based texture synthesis. The goal of example based texture synthesis is to take one or more example textures and synthesize a new visually similar output texture.    
+Near the end of 2019 I stumbled across this [talk](https://www.youtube.com/watch?v=fMbK7PYQux4&t=6m57s) by procedural generation researcher [Anastasia Opara](https://www.anastasiaopara.com/). In the talk she presents a novel algorithm for example based texture synthesis. The goal of example based texture synthesis is to take one or more example textures and synthesize a new visually similar output texture.    
 
 Here's an example from the project README:
   <p align="center">
@@ -34,7 +34,7 @@ Then repeat the following procedure until the output image is filled: <br><br>
 One last important detail is that the algorithm works on filling multiple empty pixels in parallel to take full advantage of multi core cpus.  
 
 **Missteps and Micro optimizations**  
-Now it was time to optimize. The first thing I did was to run the program on a few sample inputs with the xcode instruments profiler (partly because it was new to me). I found a cool [library](https://www.reddit.com/r/rust/comments/b20eca/introducing_cargoinstruments_zerohassle_profiling/) which made it easier to use instruments with rust. Using instruments I was able to see how much each instruction contributed to the overall runtime of the program.  
+Now it was time to optimize. The first thing I did was to run the program on a few sample inputs with the xcode instruments profiler (partly because it was new to me). I even found a cool [library](https://www.reddit.com/r/rust/comments/b20eca/introducing_cargoinstruments_zerohassle_profiling/) which made it easier to use instruments with rust. Using instruments I was able to see how much each instruction contributed to the overall runtime of the program.  
 
 Being able to see time per instruction was perfect for me because I was looking for micro optimizations. I'm using the term micro optimization here to mean a very small change which has a relatively large impact compared to its size. Even though they are not always a good idea, micro optimizations seemed like the best place to start because they would be less of an investment on my end. I also didn't know if the project maintainers would be excited about large code changes.  
 
