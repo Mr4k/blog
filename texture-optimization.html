@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <title>Optimizing an Open Source Texture Synthesis Tool</title>
+    <title>Optimizing an Open Source Texture Synthesis Library</title>
     <link rel="stylesheet" type="text/css" href="/theme/css/main.css" />
 </head>
 
@@ -10,10 +10,10 @@
     <div class="container">
 <div class="row">
  <div class="col-md-8">
-  <h1>Optimizing an Open Source Texture Synthesis Tool</h1>
+  <h1>Optimizing an Open Source Texture Synthesis Library</h1>
   <label>Posted on <strong>26 July 2020</strong></label>
   <p><strong>Background</strong><br>
-Near the end of 2019 I stumbled across this <a href="https://www.youtube.com/watch?v=fMbK7PYQux4&amp;t=6m57s">talk</a> by <a href="https://www.anastasiaopara.com/">Anastasia Opara</a>. In the talk she presents a novel algorithm for example based texture synthesis. The goal of example based texture synthesis is to take one or more example textures and synthesize a new visually similar output texture.    </p>
+Near the end of 2019 I stumbled across this <a href="https://www.youtube.com/watch?v=fMbK7PYQux4&amp;t=6m57s">talk</a> by procedural generation researcher <a href="https://www.anastasiaopara.com/">Anastasia Opara</a>. In the talk she presents a novel algorithm for example based texture synthesis. The goal of example based texture synthesis is to take one or more example textures and synthesize a new visually similar output texture.    </p>
 <p>Here's an example from the project README:
   <p align="center">
     <img src="/images/texture-optimization/readme-example.jpeg" width="70%" > 
@@ -34,7 +34,7 @@ Then repeat the following procedure until the output image is filled: <br><br>
 5. Fill the center pixel in the output image with the color of the center pixel in the best matching neighborhood.  </p>
 <p>One last important detail is that the algorithm works on filling multiple empty pixels in parallel to take full advantage of multi core cpus.  </p>
 <p><strong>Missteps and Micro optimizations</strong><br>
-Now it was time to optimize. The first thing I did was to run the program on a few sample inputs with the xcode instruments profiler (partly because it was new to me). I found a cool <a href="https://www.reddit.com/r/rust/comments/b20eca/introducing_cargoinstruments_zerohassle_profiling/">library</a> which made it easier to use instruments with rust. Using instruments I was able to see how much each instruction contributed to the overall runtime of the program.  </p>
+Now it was time to optimize. The first thing I did was to run the program on a few sample inputs with the xcode instruments profiler (partly because it was new to me). I even found a cool <a href="https://www.reddit.com/r/rust/comments/b20eca/introducing_cargoinstruments_zerohassle_profiling/">library</a> which made it easier to use instruments with rust. Using instruments I was able to see how much each instruction contributed to the overall runtime of the program.  </p>
 <p>Being able to see time per instruction was perfect for me because I was looking for micro optimizations. I'm using the term micro optimization here to mean a very small change which has a relatively large impact compared to its size. Even though they are not always a good idea, micro optimizations seemed like the best place to start because they would be less of an investment on my end. I also didn't know if the project maintainers would be excited about large code changes.  </p>
 <p>Looking at the profiler output I was drawn to this line which looked like an unnecessary array resize operation nested within our once per pixel loop.  </p>
 <p align="center">
