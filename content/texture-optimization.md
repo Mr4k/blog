@@ -34,7 +34,7 @@ Then repeat the following procedure until the output image is filled: <br><br>
 One last important detail is that the algorithm works on filling multiple empty pixels in parallel to take full advantage of multi core cpus.  
 
 **Missteps and Micro optimizations**  
-Now it was time to optimize. The first thing I did was to run the program on a few sample inputs with the xcode instruments profiler (partly because I had never used it). I used a cool [library](https://www.reddit.com/r/rust/comments/b20eca/introducing_cargoinstruments_zerohassle_profiling/) which makes it easier to use instruments with rust . Using instruments I was able to see how much each instruction contributed to the overall runtime of the program.  
+Now it was time to optimize. The first thing I did was to run the program on a few sample inputs with the xcode instruments profiler (partly because it was new to me). I found a cool [library](https://www.reddit.com/r/rust/comments/b20eca/introducing_cargoinstruments_zerohassle_profiling/) which made it easier to use instruments with rust. Using instruments I was able to see how much each instruction contributed to the overall runtime of the program.  
 
 Being able to see time per instruction was perfect for me because I was looking for micro optimizations. I'm using the term micro optimization here to mean a very small change which has a relatively large impact compared to its size. Even though they are not always a good idea, micro optimizations seemed like the best place to start because they would be less of an investment on my end. I also didn't know if the project maintainers would be excited about large code changes.  
 
@@ -88,13 +88,13 @@ What I realized is that after a few pixels had been filled in the chance that on
 	<img src="/images/texture-optimization/after-graph.png" width="50%" > 
 </p>
 
-Another important note here is that you'll notice the improved version does not scale linearly either. In an ideal world maybe it would but there are several complicating factors that are at play here. First of all the program has some initialization costs as well as having to synthesize a few pixels in series. Both of these steps cannot be parallelized. Secondly contention is complicated and can crop up in many places. I did eliminate a large source of contention but optimization can be tricky and I'm sure I didn't fix everything.
+An important note here is that the improved version does not scale linearly either. In an ideal world maybe it would but there are several complicating factors that are at play here. First of all the program has some initialization costs as well as having to synthesize the first few pixels in series. Both of these steps cannot be parallelized. Secondly contention is complicated and can crop up in many places. I believe I did eliminate a large source of contention but I'm sure there is more that could be done. Finally this algorithm is not [embarrassingly parallel](https://en.wikipedia.org/wiki/Embarrassingly_parallel) and will ultimately have to have some amount of informtion shared between threads.
 
 **Tricks and Trade Offs**  
 Overall I was pretty excited by how this project turned out. However I think it's worth noting that there are often some tradeoffs which are made during optimizations. A common one that I saw in this project was trading speed for flexibility. Austin Jones, a previous contributor, had also made some significant speedups. [One of them](https://github.com/EmbarkStudios/texture-synthesis/pull/14) was to replace some function evaluations with a lookup table. This resulted in a large speed up but it came at the cost of limiting the range of input values to 8 bits per pixel because larger ranges of numbers would cause the size of the lookup table to explode. My tree grid optimization was somewhat similar in the fact the structure was two dimensional. Although I think it could be extended to three dimensions, it would have to change at least a little if Embark wanted the library to generate voxel models or something. So the lesson here is to wait until your functionality is set in stone before you try to heavily optimize it.  <br><br>
-**Footnotes**  
+**Acknowledgements**  
 While I said many things above about optimization and profiling I am no expert and always looking to learn more so if you think something is incorrect or have any suggestions feel free to get in touch!  
-Also a big thanks to the people at [Embark Studios](https://www.embark-studios.com/) who were nice enough to take the time to review my code / ideas!
+Also a big thanks to the people at [Embark Studios](https://www.embark-studios.com/) who were nice enough to take the time to review my code / ideas!  
 
 
 
