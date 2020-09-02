@@ -5,7 +5,7 @@ Category: algorithms
 Tags: probability, algorithms, image processing, optimization
 Slug: texture-optimization
 Authors: Peter Stefek
-Summary: Adventures in learning to profile and optimize.
+Summary: Adventures in learning to profile.
 
 **Background**  
 Near the end of 2019 I stumbled across this [talk](https://www.youtube.com/watch?v=fMbK7PYQux4&t=6m57s) by procedural generation researcher [Anastasia Opara](https://www.anastasiaopara.com/). In the talk she presents a novel algorithm for example based texture synthesis. The goal of example based texture synthesis is to take one or more example textures and synthesize a new visually similar output texture.    
