@@ -253,4 +253,4 @@ What if we used different shapes? What if we let the algorithm choose the shape?
 What if we did it in 3d?  
   
 Have questions / comments / corrections?  
-Get in touch: pstefek2@gmail.com
+Get in touch: <a href="mailto:pstefek.dev@gmail.com">pstefek.dev@gmail.com</a>
