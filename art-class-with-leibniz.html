@@ -19,8 +19,8 @@
     <img class='artpic' src="/images/art-class/mona-progress.gif" width="20%" > 
 </p>
 
-<p>Recently I decided to try out Jax, Google's new library for differentiable programming. Essentially Jax allows you to take arbitrary derivatives of python. It claims to be simpler and more flexible than competing frameworks such as pytorch or tensorflow. It uses a fancy just in time compiler and auto parallelization to make your code faster. Since the easiest way for me to learn is by working, I thought about problems I could tackle with Jax.  </p>
-<p>Inspired by impressionist painting I decided to try to answer the question, "how well can I represent an image with a fixed number of circles?" To give a more exact definition suppose we have n colored circles each having 7 parameters: x position, y position, radius, red, green, blue and alpha (transparency). Each circle also has a (non adjustable) depth which is used to determine which circle occludes another should they overlap. Here's a picture of 100 of these circles whose parameters have been randomly initialized rendered against a black background.<br>
+<p>Recently I decided to try out Jax, Google's new library for differentiable programming. Essentially Jax allows you to take arbitrary derivatives of python functions. It claims to be simpler and more flexible than competing frameworks such as pytorch or tensorflow. As a bonus, it uses a fancy just in time compiler and auto parallelization to make your code faster. Since the easiest way for me to learn is by working, I thought about problems I could tackle with Jax.  </p>
+<p>Inspired by impressionist painting I decided to try to answer the question, "how well can I represent an image with a fixed number of circles?" To give a more exact definition suppose we have n colored circles each having 7 parameters: x position, y position, radius, red, green, blue and alpha (transparency). Each circle also has a (non adjustable) depth which is used to determine if one circle occludes another should they overlap. Here's a picture of 100 of these circles whose parameters have been randomly initialized rendered against a black background.<br>
 <p align="center">
     <img class='artpic' src="/images/art-class/random-init-mattjj.png" width="25%" > 
 </p>   </p>
@@ -58,13 +58,13 @@ I'm not claiming this is the most efficient form of the code but it was now fast
 <p align="center">
     <img class='artpic' src="/images/art-class/init-mattjj-attempt.png" width="40%" > 
 </p>  </p>
-<p>Mattjj approximated with 1000 circles (loss ~4800). I'd recommend stepping back, squinting or viewing these images from an angle to really appreciate some of the blending tricks that are going on.  </p>
+<p>Mattjj approximated with 1000 circles. I'd recommend stepping back, squinting or viewing these images from an angle to really appreciate some of the blending tricks that are going on.  </p>
 <p>Looking at the image, 1000 circles seemed like a few too many so I decided to try to push the technique by seeing what it could do with 100 circles.  </p>
 <p><strong>Math the Sharp Bits</strong><br>
 Before I started trying to generate images with fewer than 1000 circles I needed to fix the last few problems with the code that I had been putting off.  </p>
 <p>First of all, the circles were not moving or changing their size. Even though I was taking the gradient with respect to those parameters as well as the color and alpha values, the gradient of the loss function with respect to position and radius was always zero.  </p>
-<p>Technically you've already seen the source of this error in my description of the rendering algorithm. However it would have been very hard to catch this error because it was less of a code problem and more of a basic calculus dilemma. The simple way we render circles with a hard cutoff at the edge is not fully differentiable with respect to the position or size.   </p>
-<p>To see why, let's look at a circle's influence on three different pixel positions. For a pixel outside of the circle's radius, the derivative is zero because the circle has no effect on it's color. For a pixel on the inside the circle's effect on the color of the pixel is constant with respect to its size and position so the derivative is still zero. For a pixel at the edge of the circle the derivative is actually undefined. This is a classic example of a <a href="https://en.wikipedia.org/wiki/Heaviside_step_function">heaviside step function</a>. A picture of a radial cross section of the circle's influence on the pixels around below shows the discontinuity. 
+<p>Technically you've already seen the source of this error in my description of the rendering algorithm. However it would have been very hard to catch because it was less of a code problem and more of a basic calculus dilemma. The simple way we render circles with a hard cutoff at the edge is not fully differentiable with respect to the position or size.   </p>
+<p>To see why, let's look at a circle's influence on three different pixel positions. For a pixel outside of the circle's radius, the derivative is zero because the circle has no effect on it's color. For a pixel on the inside, the circle's effect on the color of the pixel is constant with respect to its size and position so the derivative is still zero. For a pixel at the edge of the circle, the derivative is actually undefined. This is a classic example of a <a href="https://en.wikipedia.org/wiki/Heaviside_step_function">heaviside step function</a>. A picture of a radial cross section of the circle's influence on the pixels around it below shows the discontinuity (R is the edge of the circle). 
 <p align="center">
     <img src="/images/art-class/heaviside.png" width="40%" > 
 </p>  </p>
@@ -73,13 +73,13 @@ Before I started trying to generate images with fewer than 1000 circles I needed
     <img src="/images/art-class/sigmoid.png" width="40%" > 
 </p>
 
-<p>For our purposes it's easiest to take the approximation path and make our circle's influence fall off with a differentiable function like <a href="https://en.wikipedia.org/wiki/Sigmoid_function">sigmoid</a> (pictured above) instead of the hard step function. The side effect of this is that our circles get a little blurrier. We also have to introduce a new "softness" parameter that defines how fast our sigmoid function falls off. A small investigation of the effects of this parameter is discussed later.  </p>
+<p>For our purposes it's easiest to take the approximation path and make our circle's influence fall off with a differentiable function like <a href="https://en.wikipedia.org/wiki/Sigmoid_function">sigmoid</a> (pictured above) instead of the hard step function. The side effect of this is that our circles get a little blurrier. We also have to introduce a new "softness" parameter that defines how fast our sigmoid function falls off. </p>
 <p>So for our purposes we can just replace hard conditional in the line:
 <script src="https://gist.github.com/Mr4k/cab2968aea526b7d33eaa6fbe13b84dc.js"></script>
 with:
 <script src="https://gist.github.com/Mr4k/fe4156ddf6a36a0604dbd43473be2edd.js"></script></p>
 <p>Now our renderer is fully differentiable with respect to all the circle parameters.  </p>
-<p>The last little loose end we have is that currently the red, green, blue and alpha parameters are technically unbounded as well. When you have a sigmoid shaped hammer everything looks like a differentiable nail so I decided to just wrap these parameters in a sigmoid, for example a would become sigmoid(a), which would bound their outputs to [0, 1].  </p>
+<p>The last little loose end we have is that currently the red, green, blue and alpha parameters are technically unbounded as well. That is to say there's nothing stopping the optimizer from setting them outside of [0, 1]. When you have a sigmoid shaped hammer everything looks like a differentiable nail so I decided to just wrap these parameters in a sigmoid, for example alpha would become sigmoid(alpha), which would bound their outputs to [0, 1].  </p>
 <p>Now I was able to render my first 100 circle image. The gif below shows the optimization process. Notice how all of the circle parameters are being adjusted.
 <p align="center">
     <img class='artpic' src="/images/art-class/mattjj-first-100.gif" width="25%" > 
@@ -88,7 +88,7 @@ with:
 One final optimization I implemented was minibatching (also known as stochastic gradient descent). For our purposes mini batching means only rendering and comparing a random fixed size subset of the pixel at each gradient descent step. I was able to achieve quality results using about 10% of the total samples from before (which greatly sped up the program).</p>
 <p><strong>Results</strong><br>
 Here are some results generated by this process. All of them can be found in the attached <a href="https://gist.github.com/Mr4k/2155d55e379f00235086de7d3c45402b">colab notebook</a> where you can see the code and the hyperparameters used to generate them. All final images are rendered with softness = 10.  </p>
-<p>Also note although that we are not optimizing over human perception loss, merely approximating it with the sum of square differences which is not perfect by any means. It seems to me that squinting or viewing the image from other angles makes some of the images (especially the 100 circle ones) look dramatically better. My guess is that this is because our brain stops focusing on the circles allowing us to see the bigger picture. Of course I'm know nothing about the human visual system so take that with a huge grain of salt.</p>
+<p>Also note that we are not optimizing over human perception loss, merely approximating it with the sum of square differences which is not perfect by any means. It seems to me that squinting or viewing the image from other angles makes some of the images (especially the 100 circle ones) look dramatically better. My guess is that this is because our brain stops focusing on the circles allowing us to see the bigger picture. Of course I know nothing about the human visual system so take that with a huge grain of salt.</p>
 <p><strong>Mattjj</strong></p>
 <p align="center">
     <p align="center">Mattjj 100 Circles</p>
