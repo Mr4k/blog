@@ -5,7 +5,7 @@ Category: algorithms, jax, gradient descent
 Tags: algorithms, jax, gradient descent
 Slug: art-class-with-leibniz
 Authors: Peter Stefek
-Summary: Differentiable doodling
+Summary: Doodling with derivatives
 
 <p align="center">
 	<img class='artpic' src="/images/art-class/mona-progress.gif" width="20%" > 
