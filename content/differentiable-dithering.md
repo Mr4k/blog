@@ -24,7 +24,7 @@ The image above has 16 colors and the one below only has 8.
 </p>   
 The problem of color palette reduction has been studied extensively and the typical approach works roughly as follows:  
   
-1. Build a reduced color palette of size N by dividing the color space up into N distinct regions where each region is represented by one color. This is usually accomplished by one of serveral [popular approaches](https://en.wikipedia.org/wiki/Color_quantization).  
+1. Build a reduced color palette of size N by dividing the color space up into N distinct regions where each region is represented by one color. This is usually accomplished by one of several [popular approaches](https://en.wikipedia.org/wiki/Color_quantization).  
   
 2. [Dither](https://en.wikipedia.org/wiki/Dither) the image. The process of dithering eliminates color banding and creates the illusion of more colors through a stippling like effect. If you are not familar with dithering we will explore it in more detail later. Given a fixed color palette there are specialized algorithms for dithering such as [Floyd Stienberg](https://research.cs.wisc.edu/graphics/Courses/559-s2004/docs/floyd-steinberg.pdf).  
   
@@ -113,4 +113,6 @@ As far as I know dithering and palette selection aren't really part of state of 
 A pipedream would be an entirely differentiable image compression pipeline where all the steps can be fine tuned together to optimize a particular image with respect to any differentiable loss function.
 
 Have questions / comments / corrections?  
-Get in touch: <a href="mailto:pstefek.dev@gmail.com">pstefek.dev@gmail.com</a>
+Get in touch: <a href="mailto:pstefek.dev@gmail.com">pstefek.dev@gmail.com</a>   
+   
+Discussion on [Hacker News](https://news.ycombinator.com/item?id=24477913).

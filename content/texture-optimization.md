@@ -94,12 +94,7 @@ An important note here is that the improved version does not scale linearly eith
 Overall I was pretty excited by how this project turned out. However I think it's worth noting that there are often some tradeoffs which are made during optimizations. A common one that I saw in this project was trading speed for flexibility. Austin Jones, a previous contributor, had also made some significant speedups. [One of them](https://github.com/EmbarkStudios/texture-synthesis/pull/14) was to replace some function evaluations with a lookup table. This resulted in a large speed up but it came at the cost of limiting the range of input values to 8 bits per pixel because larger ranges of numbers would cause the size of the lookup table to explode. My tree grid optimization was somewhat similar in the fact the structure was two dimensional. Although I think it could be extended to three dimensions, it would have to change at least a little if Embark wanted the library to generate voxel models or something. So the lesson here is to wait until your functionality is set in stone before you try to heavily optimize it.  <br><br>
 **Acknowledgements**  
 While I said many things above about optimization and profiling I am no expert and always looking to learn more so if you think something is incorrect or have any suggestions feel free to get in touch!  
-Also a big thanks to the people at [Embark Studios](https://www.embark-studios.com/) who were nice enough to take the time to review my code / ideas!  
-
-
-
-
-
-
-
-
+Also a big thanks to the people at [Embark Studios](https://www.embark-studios.com/) who were nice enough to take the time to review my code / ideas!    
+  
+Have questions / comments / corrections?  
+Get in touch: <a href="mailto:pstefek.dev@gmail.com">pstefek.dev@gmail.com</a>   
