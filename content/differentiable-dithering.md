@@ -10,7 +10,7 @@ Summary: Coloring with calculus
 Colab source code can be found [here](https://gist.github.com/Mr4k/1f1b7ecaf30de073a50cbedd0da4dc82).
 
 **Problem**  
-Let's say we want to reduce the number of colors in an image. For example consider the image of fruit below:
+Let's say we want to reduce the number of colors in an image. For example consider the picture of fruit below:
 <p align="center">
 	<img src="/images/differentiable-dithering/fruit.jpg" width="50%" > 
 </p>   
@@ -30,9 +30,9 @@ The problem of color palette reduction has been studied extensively and the typi
   
 Instead of the usual approach, we are going to solve both of these problems at the same time using gradient descent.  
   
-First of all let's define a palette of N colors. For this article the colors will be 3 component vectors in rgb space. A quick warning to graphics nerds, for portability and simplicity we do not take [gamma correction](http://xahlee.info/img/what_is_gamma_correction.html) into account.
+First of all let's define a palette of N colors. For this article the colors will be 3 component vectors in rgb space. A quick warning to graphics nerds, for portability and simplicity we do not take [gamma correction](http://xahlee.info/img/what_is_gamma_correction.html) into account. Our palette can be thought of as a Nx3 matrix where the rows represent colors in the palette and the columns represent the r,g,b weights of each of those colors. This entries of this matrix are variables in our optimization problem.
   
-Now how do we assign a discrete set of colors to pixels in a differentiable way? I decided to do this using probability distributions. Each pixel is represented by a vector containing the probabilities of each palette color being chosen for that pixel. When actually generating an image we just sample each pixel's color from it's distribution.  
+Now how do we assign our palette colors to pixels in a differentiable way? I decided to do this using probability distributions. Each pixel is represented by a vector containing the probabilities of each palette color being chosen for that pixel. When actually generating an image we just sample each pixel's color from it's distribution.  
   
 The above formulation is pretty general. Importantly both the colors in the palette and the mapping of image pixels to palette colors are variables which we can optimize over simultaneously. Now all we need to do is attach any one of a number of loss functions.   
   
@@ -52,7 +52,7 @@ By the above reasoning we want to make sure that the dithered pixel assignment (
 
 You might be asking, why not take the expected value of the whole squared error? This would look like:
   
-$loss(output, target) = E[\sum_{i\in pixels}(target_i$ $-$ $output_i)^2]$    
+$loss(output, target) = E[\sum_{i\in pixels}(target_i$ $-$ $output_i)^2]$ (equation 2)   
   
 This actually does not work. To see why, let's look at the same setup as above and consider the expectation of an individual pixel (for math sticklers we can do this because expectation is linear). The loss function for a pixel denoted by the random variable $X$ that always chooses black is: 
    
@@ -91,15 +91,20 @@ To give an extreme example, consider an image with three colors red, blue and pu
   
 2. Each red pixel is red, each blue pixel is blue, each purple pixel has a $\frac{1}{2}$ chance of being red and a $\frac{1}{2}$ chance of being blue. Notice here we only use two out of three possible colors and the final image is clearly lower quality.   
     
-To control for this weakness, I added an additional term to the loss function which penalizes the sum of the pixel variances. Right now I just hand tune the coefficient of the variance penalty. A good rule of thumb seems to be larger palettes should weigh variance more heavily. Applying this penalty (variance coefficient = 0.25) gives us the 16 color image from the top of this post:
+To control for this weakness, I added an additional term to the loss function which penalizes the sum of the pixel variances with a coeffcient given below by $c$. The new loss function looks like this:  
+  
+$loss(output, target)=\sum_{i\in pixels}(target_i$ $-$ $E[output_i])^2 + cVar(output_i)$ (equation 3) 
+  
+Right now I just hand tune the coefficient of the variance penalty. A good rule of thumb seems to be larger palettes should weigh variance more heavily. Applying this penalty (variance coefficient = 0.25) gives us the 16 color image from the top of this post:
 <p align="center">
 	<img src="/images/differentiable-dithering/fruit-16-final.png" width="50%" > 
 </p>   
 
-The tradeoff is that too little variance removes noise which, due to the absence of dithering, makes the final image appear to contain fewer colors and also creates [banding effects](https://en.wikipedia.org/wiki/Colour_banding). The image below has 16 colors and variance coefficient = 1.0. It demonstrates both of these problems:  
+The tradeoff is that too little variance removes too much noise which, due to the absence of dithering, makes the final image appear to contain fewer colors and also creates [banding effects](https://en.wikipedia.org/wiki/Colour_banding). The image below has 16 colors and variance coefficient = 1.0. It demonstrates both of these problems:  
 <p align="center">
 	<img src="/images/differentiable-dithering/fruit-16-saturated.png" width="50%" > 
 </p>   
+In fact when the variance coefficent = 1.0, a little algebra shows equation 3 is equal to our rejected equation 2.
 
 Note there are many valid choices of loss function here and I'm not claiming mine is perfect at all. For example [this article](https://blog.demofox.org/2017/12/23/c-differentiable-programming-searching-for-an-optimal-dither-pattern/) on creating optimal dither patterns blurs both images and takes the difference between those. We could try to use this idea or search for something else to replace our simple squared error. It would also be interesting to try to use a real image quality metric like [SSIM](https://www.cns.nyu.edu/~lcv/ssim/) to measure image quality instead of using variance as a proxy.   
   
