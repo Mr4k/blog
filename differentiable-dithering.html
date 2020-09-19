@@ -17,7 +17,7 @@
   <label>Posted on <strong>09 September 2020</strong></label>
   <p>Colab source code can be found <a href="https://gist.github.com/Mr4k/1f1b7ecaf30de073a50cbedd0da4dc82">here</a>.</p>
 <p><strong>Problem</strong><br>
-Let's say we want to reduce the number of colors in an image. For example consider the image of fruit below:
+Let's say we want to reduce the number of colors in an image. For example consider the picture of fruit below:
 <p align="center">
     <img src="/images/differentiable-dithering/fruit.jpg" width="50%" > 
 </p> <br>
@@ -39,8 +39,8 @@ The problem of color palette reduction has been studied extensively and the typi
 </li>
 </ol>
 <p>Instead of the usual approach, we are going to solve both of these problems at the same time using gradient descent.  </p>
-<p>First of all let's define a palette of N colors. For this article the colors will be 3 component vectors in rgb space. A quick warning to graphics nerds, for portability and simplicity we do not take <a href="http://xahlee.info/img/what_is_gamma_correction.html">gamma correction</a> into account.</p>
-<p>Now how do we assign a discrete set of colors to pixels in a differentiable way? I decided to do this using probability distributions. Each pixel is represented by a vector containing the probabilities of each palette color being chosen for that pixel. When actually generating an image we just sample each pixel's color from it's distribution.  </p>
+<p>First of all let's define a palette of N colors. For this article the colors will be 3 component vectors in rgb space. A quick warning to graphics nerds, for portability and simplicity we do not take <a href="http://xahlee.info/img/what_is_gamma_correction.html">gamma correction</a> into account. Our palette can be thought of as a Nx3 matrix where the rows represent colors in the palette and the columns represent the r,g,b weights of each of those colors. This entries of this matrix are variables in our optimization problem.</p>
+<p>Now how do we assign our palette colors to pixels in a differentiable way? I decided to do this using probability distributions. Each pixel is represented by a vector containing the probabilities of each palette color being chosen for that pixel. When actually generating an image we just sample each pixel's color from it's distribution.  </p>
 <p>The above formulation is pretty general. Importantly both the colors in the palette and the mapping of image pixels to palette colors are variables which we can optimize over simultaneously. Now all we need to do is attach any one of a number of loss functions.   </p>
 <p>The loss function I chose to use at first was just the squared difference between the original image and the expected value of the output image:  </p>
 <p><span class="math">\(loss(output, target)=\sum_{i\in pixels}(target_i\)</span> <span class="math">\(-\)</span> <span class="math">\(E[output_i])^2\)</span> (equation 1)  </p>
@@ -52,7 +52,7 @@ The problem of color palette reduction has been studied extensively and the typi
 <p>For example let's pretend our palette has only two colors, black and white. Also suppose our target image is a 50% gray square. Consider the following three possible representations of the image. One is an all black image, one is all white and the third has 50% black and 50% white pixels randomly distributed across the image. If we look from far away the third image will look better. This is because the black and white pixels will blur together and appear gray. This effect is called dithering.   </p>
 <p>By the above reasoning we want to make sure that the dithered pixel assignment (each pixel has a 50% chance of being black or white) should appear more desirable than the other two candidates to our loss function. Taking the squared error between the target image and the expected color of each pixel does exactly this.   </p>
 <p>You might be asking, why not take the expected value of the whole squared error? This would look like:</p>
-<p><span class="math">\(loss(output, target) = E[\sum_{i\in pixels}(target_i\)</span> <span class="math">\(-\)</span> <span class="math">\(output_i)^2]\)</span>    </p>
+<p><span class="math">\(loss(output, target) = E[\sum_{i\in pixels}(target_i\)</span> <span class="math">\(-\)</span> <span class="math">\(output_i)^2]\)</span> (equation 2)   </p>
 <p>This actually does not work. To see why, let's look at the same setup as above and consider the expectation of an individual pixel (for math sticklers we can do this because expectation is linear). The loss function for a pixel denoted by the random variable <span class="math">\(X\)</span> that always chooses black is: </p>
 <p><span class="math">\(E[(0.5 - X)^2] = (0.5 - 0)^2 = 0.25\)</span>   </p>
 <p>And the loss function for a pixel denoted by the random <span class="math">\(X\)</span> which is 50% black and 50% white is:</p>
@@ -85,14 +85,17 @@ The above image highlights one weakness of our current loss function. It's very 
 <p>Each red pixel is red, each blue pixel is blue, each purple pixel has a <span class="math">\(\frac{1}{2}\)</span> chance of being red and a <span class="math">\(\frac{1}{2}\)</span> chance of being blue. Notice here we only use two out of three possible colors and the final image is clearly lower quality.   </p>
 </li>
 </ol>
-<p>To control for this weakness, I added an additional term to the loss function which penalizes the sum of the pixel variances. Right now I just hand tune the coefficient of the variance penalty. A good rule of thumb seems to be larger palettes should weigh variance more heavily. Applying this penalty (variance coefficient = 0.25) gives us the 16 color image from the top of this post:
+<p>To control for this weakness, I added an additional term to the loss function which penalizes the sum of the pixel variances with a coeffcient given below by <span class="math">\(c\)</span>. The new loss function looks like this:  </p>
+<p><span class="math">\(loss(output, target)=\sum_{i\in pixels}(target_i\)</span> <span class="math">\(-\)</span> <span class="math">\(E[output_i])^2 + cVar(output_i)\)</span> (equation 3) </p>
+<p>Right now I just hand tune the coefficient of the variance penalty. A good rule of thumb seems to be larger palettes should weigh variance more heavily. Applying this penalty (variance coefficient = 0.25) gives us the 16 color image from the top of this post:
 <p align="center">
     <img src="/images/differentiable-dithering/fruit-16-final.png" width="50%" > 
 </p>   </p>
-<p>The tradeoff is that too little variance removes noise which, due to the absence of dithering, makes the final image appear to contain fewer colors and also creates <a href="https://en.wikipedia.org/wiki/Colour_banding">banding effects</a>. The image below has 16 colors and variance coefficient = 1.0. It demonstrates both of these problems:<br>
+<p>The tradeoff is that too little variance removes too much noise which, due to the absence of dithering, makes the final image appear to contain fewer colors and also creates <a href="https://en.wikipedia.org/wiki/Colour_banding">banding effects</a>. The image below has 16 colors and variance coefficient = 1.0. It demonstrates both of these problems:<br>
 <p align="center">
     <img src="/images/differentiable-dithering/fruit-16-saturated.png" width="50%" > 
-</p>   </p>
+</p> <br>
+In fact when the variance coefficent = 1.0, a little algebra shows equation 3 is equal to our rejected equation 2.</p>
 <p>Note there are many valid choices of loss function here and I'm not claiming mine is perfect at all. For example <a href="https://blog.demofox.org/2017/12/23/c-differentiable-programming-searching-for-an-optimal-dither-pattern/">this article</a> on creating optimal dither patterns blurs both images and takes the difference between those. We could try to use this idea or search for something else to replace our simple squared error. It would also be interesting to try to use a real image quality metric like <a href="https://www.cns.nyu.edu/~lcv/ssim/">SSIM</a> to measure image quality instead of using variance as a proxy.   </p>
 <p>Another place for improvement is that our approach is sloooow (up to several minutes). It also does not scale well memory wise to large palettes (when I try using more than 200 colors for the 900x450 pixel fruit image my colab notebook runs out of ram). This is because in that case there are more than 200x950x450 variables to optimize over. We could potentially tackle these problems in two ways. To address speed we could try to break the image up into mini batches. To address memory usage we could try to use a neural network to output probabilities at each pixel location instead of storing them all explicitly.   </p>
 <p><strong>Why do I think this approach is interesting?</strong><br>
