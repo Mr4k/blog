@@ -74,7 +74,7 @@ In my previous post, the random variables I was dealing with were categorical. A
 <p><span class="math">\(argmax_{i \in \{1,..,n\}}\)</span>  <span class="math">\(x_i + log(p_i)\)</span>    </p>
 <p>where the <span class="math">\(x_i\)</span>'s are drawn from a standard Gumbel Distribution. I'm not going to post the derivation of this trick but a walk through can be found <a href="https://lips.cs.princeton.edu/the-gumbel-max-trick-for-discrete-distributions/">here</a>.    </p>
 <p>The problem with this trick of course is that it's still not differentiable. However we can use a common deep learning trick and replace the discontinuous max with the approximate but continuous softmax function.  </p>
-<p><span class="math">\(softmax([(x_0 + log(p_0))/t, ..., (x_n + log(p_n))/t])\)</span>  </p>
+<p><span class="math">\(softmax([(x_0 + log(p_0))/t, ...\)</span><span class="math">\(, (x_n + log(p_n))/t])\)</span>  </p>
 <p><span class="math">\(t\)</span> is an tempreture parameter, which controls how smooth the softmax is. I coded up a <a href="https://gist.github.com/Mr4k/fbb096baf20354b3fdcbd082a00e20d6">quick example of this trick</a> in Jax here if you want to see it in action. </p>
 <p>This post is a high level overview but if you're curious, here is some <a href="http://gregorygundersen.com/blog/2018/04/29/reparameterization/">good</a> <a href="https://timvieira.github.io/blog/post/2019/04/20/the-likelihood-ratio-gradient/">further</a> <a href="https://casmls.github.io/general/2017/02/01/GumbelSoftmax.html">reading</a>. </p>
 <p>Have questions / comments / corrections?<br>
