@@ -55,12 +55,12 @@ The little trick here is to format the gradient as a second Monte Carlo problem 
 - You need to be able to represent the derivative of <span class="math">\(p(\overline{\mathbf{x}}_i; \theta)\)</span> analytically (which rules out categorical variables for example).
 From what I've seen this approach does not easily fit into an auto differentiation framework  </p>
 <p><strong>The Reparameterization Trick</strong><br>
-As far as I can tell, the reparameterization trick was established by Kingma et al in their paper about Variational AutoEncoders.  </p>
+As far as I can tell, the reparameterization trick was established by Kingma et al in their paper about Variational Auto Encoders.  </p>
 <p>The insight here is that some families of distributions can be defined in terms of a differentiable transformation applied to constant underlying distribution. What does that mean?<br>
 <p align="center">
     <img src="/images/differentiable-monte-carlo/reparam-vae.png" width="65%" > 
 </p>  </p>
-<p>Let's consider the family of normal distributions parameterized by mean <span class="math">\(\mu\)</span> and variance <span class="math">\(\sigma\)</span>. If we tried to differentiate through the samples drawn from the normal distribution parameterized by <span class="math">\(\mu\)</span> and <span class="math">\(\sigma\)</span> directly we'd have to resort to something like the likelihood trick.  </p>
+<p>Let's consider the family of normal distributions parameterized by mean <span class="math">\(\mu\)</span> and variance <span class="math">\(\sigma\)</span>. Let's say we wanted to differentiate through a function which includes samples drawn from the normal distribution parameterized by the variables <span class="math">\(\mu\)</span> and <span class="math">\(\sigma\)</span>. If we approached this directly, we'd have to resort to something like the likelihood trick.  </p>
 <p>Alternatively, if we draw samples from <span class="math">\(Normal(0,1)\)</span> then multiply the result by <span class="math">\(\sigma\)</span> and add <span class="math">\(\mu\)</span>, we can differentiate with respect to <span class="math">\(\sigma\)</span> and <span class="math">\(\mu\)</span> directly through auto differentiation without having to deal with any randomness. This trick works because the normal distribution parameterized by <span class="math">\(\mu\)</span> and <span class="math">\(\sigma\)</span> is equal to the scaled / translated unit normal distribution. Not all distributions have nice properties like this, but for the ones that do reparametrization tricks can be quite nice. </p>
 <p><em>Pros</em><br>
 - Easy to use with existing autodiff frameworks<br>
