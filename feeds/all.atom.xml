@@ -1,5 +1,130 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>peterstefek.me</title><link href="/" rel="alternate"></link><link href="/feeds/all.atom.xml" rel="self"></link><id>/</id><updated>2020-09-09T00:00:00-07:00</updated><entry><title>Differentiable Dithering</title><link href="/differentiable-dithering.html" rel="alternate"></link><published>2020-09-09T00:00:00-07:00</published><updated>2020-09-09T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-09-09:/differentiable-dithering.html</id><summary type="html">&lt;p&gt;Coloring with calculus&lt;/p&gt;</summary><content type="html">&lt;p&gt;Colab source code can be found &lt;a href="https://gist.github.com/Mr4k/1f1b7ecaf30de073a50cbedd0da4dc82"&gt;here&lt;/a&gt;.&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>peterstefek.me</title><link href="/" rel="alternate"></link><link href="/feeds/all.atom.xml" rel="self"></link><id>/</id><updated>2020-09-23T00:00:00-07:00</updated><entry><title>Quick Notes on Differentiable Monte Carlo Simulations</title><link href="/differentiable-monte-carlo.html" rel="alternate"></link><published>2020-09-23T00:00:00-07:00</published><updated>2020-09-23T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-09-23:/differentiable-monte-carlo.html</id><summary type="html">&lt;p&gt;Reversing Expectations&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;strong&gt;Background&lt;/strong&gt;&lt;br&gt;
+If you haven't read my &lt;a href="https://www.peterstefek.me/differentiable-dithering.html"&gt;last post&lt;/a&gt; and the next paragraph sounds like gibberish, don't worry! None of it is required.  &lt;/p&gt;
+&lt;p&gt;In my &lt;a href="https://www.peterstefek.me/differentiable-dithering.html"&gt;last post&lt;/a&gt;, I used variance as a proxy for image quality in the loss function. The nice thing about using variance, is that the sum of independent pixel variances is simple to compute (it's just the sum of the individual variances). However, I mentioned one could try using the expected value of a real image quality metric like &lt;a href="https://en.wikipedia.org/wiki/Structural_similarity"&gt;SSIM&lt;/a&gt; instead. Unfortunately computing the expectation of a function like SSIM (or something crazier like &lt;a href="https://ai.googleblog.com/2017/12/introducing-nima-neural-image-assessment.html"&gt;NIMA&lt;/a&gt;) is not so trivial. One way to compute the expectation of these crazier metrics, would be to use a Monte Carlo techinque. But it was not obvious to me how to get useful gradients out of that procedure.  &lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Problem&lt;/strong&gt;&lt;br&gt;
+Suppose we want to compute a complex expectation. This problem pops in up machine learning in a few places (some ELBO losses for example). Often these problems can be solve using Monte Carlo Sampling.  &lt;/p&gt;
+&lt;p&gt;The basic idea behind using Monte Carlo Sampling to compute expectations is to take:  &lt;/p&gt;
+&lt;p&gt;&lt;span class="math"&gt;\(E_{\Omega}[f(x)]\)&lt;/span&gt;  &lt;/p&gt;
+&lt;p&gt;and approximate it as follows:  &lt;/p&gt;
+&lt;p&gt;&lt;span class="math"&gt;\(E_{\Omega}[f(x)]\)&lt;/span&gt; &lt;span class="math"&gt;\(\approx\)&lt;/span&gt; &lt;span class="math"&gt;\(\frac{1}{N} \sum_{i=1}^N p_{\Omega}(\overline{\mathbf{x}}_i)f(\overline{\mathbf{x}}_i)\)&lt;/span&gt;  &lt;/p&gt;
+&lt;p&gt;where the &lt;span class="math"&gt;\(x_i\)&lt;/span&gt;'s are drawn from a random distribution (uniform in the simplest case).
+There are many fancier extensions which improve on the basic formulation by doing things such as converging faster.  &lt;/p&gt;
+&lt;p&gt;If we want to including Monte Carlo estimations inside a differentiable system (such as a neural network) we need a way to differentiate through the simulation. &lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Easy Mode&lt;/strong&gt;&lt;br&gt;
+&lt;p align="center"&gt;
+    &lt;img src="/images/differentiable-monte-carlo/angel-dice.png" width="30%" &gt; 
+&lt;/p&gt;&lt;br&gt;
+Let's start with something simple. If the shape of the probability distribution we are taking the monte carlo estimate over is not a parameter, then differentiating through a Monte Carlo simulation is simple. No adjustments at all have to be made. Mathematically this looks like the following:  &lt;/p&gt;
+&lt;p&gt;&lt;span class="math"&gt;\(\frac{d}{d\theta}E[f(x, \theta)]\)&lt;/span&gt; &lt;span class="math"&gt;\(\approx\)&lt;/span&gt; &lt;span class="math"&gt;\(\frac{d}{d\theta} \frac{1}{N} \sum_{i=1}^N p(\overline{\mathbf{x}}_i)f(\overline{\mathbf{x}}_i, \theta)\)&lt;/span&gt;  &lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Hard Mode&lt;/strong&gt; 
+&lt;p align="center"&gt;
+    &lt;img src="/images/differentiable-monte-carlo/demon-dice.png" width="30%" &gt; 
+&lt;/p&gt; &lt;br&gt;
+However often some parameters will affect the shape of the sampling distribution. For example, in my previous post the probabilities of each palette color being chosen per pixel are variables.&lt;br&gt;
+Mathemtically this looks like:  &lt;/p&gt;
+&lt;p&gt;&lt;span class="math"&gt;\(\frac{d}{d\theta}E[f(x, \theta)]\)&lt;/span&gt; &lt;span class="math"&gt;\(\approx\)&lt;/span&gt; &lt;span class="math"&gt;\(\frac{d}{d\theta} \frac{1}{N} \sum_{i=1}^N p(\overline{\mathbf{x}}_i; \theta)f(\overline{\mathbf{x}}_i, \theta)\)&lt;/span&gt;  &lt;/p&gt;
+&lt;p&gt;This is where things get a little trickier. I generally found two common ways of approaching this problem.  &lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The Score Function Gradient Estimator (aka REINFORCE)&lt;/strong&gt;&lt;br&gt;
+The little trick here is to format the gradient as a second Monte Carlo problem (assuming &lt;a href="https://en.wikipedia.org/wiki/Leibniz_integral_rule"&gt;certain conditions&lt;/a&gt; are met). We also make use of the log derivative trick.   &lt;/p&gt;
+&lt;p&gt;&lt;span class="math"&gt;\(\frac{d}{d\theta}E[f(x, \theta)]=\frac{d}{d\theta} \int_{\Omega} p(\overline{\mathbf{x}}_i; \theta)f(\overline{\mathbf{x}}_i, \theta)\)&lt;/span&gt;  &lt;/p&gt;
+&lt;p&gt;&lt;span class="math"&gt;\(\frac{d}{d\theta}E[f(x, \theta)]= \int_{\Omega} \frac{d}{d\theta}p(\overline{\mathbf{x}}_i; \theta)f(\overline{\mathbf{x}}_i, \theta)\)&lt;/span&gt; + &lt;span class="math"&gt;\(\int_{\Omega} p(\overline{\mathbf{x}}_i; \theta)\frac{d}{d\theta}f(\overline{\mathbf{x}}_i, \theta)\)&lt;/span&gt; &lt;/p&gt;
+&lt;p&gt;&lt;span class="math"&gt;\(\frac{d}{d\theta}E[f(x, \theta)]= \int_{\Omega} \frac{\frac{d}{d\theta}p(\overline{\mathbf{x}}_i; \theta)}{p(\overline{\mathbf{x}}_i; \theta)}f(\overline{\mathbf{x}}_i, \theta)p(\overline{\mathbf{x}}_i; \theta)\)&lt;/span&gt; + &lt;span class="math"&gt;\(\int_{\Omega} p(\overline{\mathbf{x}}_i; \theta)\frac{d}{d\theta}f(\overline{\mathbf{x}}_i, \theta)\)&lt;/span&gt;  &lt;/p&gt;
+&lt;p&gt;&lt;span class="math"&gt;\(\frac{d}{d\theta}E[f(x, \theta)]= \int_{\Omega} \frac{d}{d\theta}\log(p(\overline{\mathbf{x}}_i; \theta))\)&lt;/span&gt;&lt;span class="math"&gt;\(f(\overline{\mathbf{x}}_i, \theta)p(\overline{\mathbf{x}}_i; \theta)\)&lt;/span&gt; + &lt;span class="math"&gt;\(\int_{\Omega} p(\overline{\mathbf{x}}_i; \theta)\frac{d}{d\theta}f(\overline{\mathbf{x}}_i, \theta)\)&lt;/span&gt;  &lt;/p&gt;
+&lt;p&gt;&lt;span class="math"&gt;\(\frac{d}{d\theta}E[f(x, \theta)]= E[\frac{d}{d\theta}\log(p(\overline{\mathbf{x}}_i; \theta))\)&lt;/span&gt;&lt;span class="math"&gt;\(f(\overline{\mathbf{x}}_i, \theta)]\)&lt;/span&gt; + &lt;span class="math"&gt;\(E[\frac{d}{d\theta}f(\overline{\mathbf{x}}_i, \theta)]\)&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Pros&lt;/em&gt;&lt;br&gt;
+- Incredibly simple. Fairly general.&lt;br&gt;
+&lt;em&gt;Cons&lt;/em&gt;&lt;br&gt;
+- Several people seem to agree that high variance is a problem with this method. &lt;a href="https://timvieira.github.io/blog/post/2019/04/20/the-likelihood-ratio-gradient/"&gt;Tim Vieria&lt;/a&gt; call the basic method "useless on top of noisy". It seems like controlling the variance is an active area of research.&lt;br&gt;
+- You need to be able to represent the derivative of &lt;span class="math"&gt;\(p(\overline{\mathbf{x}}_i; \theta)\)&lt;/span&gt; analytically (which rules out categorical variables for example).
+From what I've seen this approach does not easily fit into an auto differentiation framework  &lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The Reparameterization Trick&lt;/strong&gt;&lt;br&gt;
+As far as I can tell, the reparameterization trick was established by Kingma et al in their paper about Variational AutoEncoders.  &lt;/p&gt;
+&lt;p&gt;The insight here is that some families of distributions can be defined in terms of a differentiable transformation applied to constant underlying distribution. What does that mean?&lt;br&gt;
+&lt;p align="center"&gt;
+    &lt;img src="/images/differentiable-monte-carlo/reparam-vae.png" width="65%" &gt; 
+&lt;/p&gt;  &lt;/p&gt;
+&lt;p&gt;Let's consider the family of normal distributions parameterized by mean &lt;span class="math"&gt;\(\mu\)&lt;/span&gt; and variance &lt;span class="math"&gt;\(\sigma\)&lt;/span&gt;. If we tried to differentiate through the samples drawn from the normal distribution parameterized by &lt;span class="math"&gt;\(\mu\)&lt;/span&gt; and &lt;span class="math"&gt;\(\sigma\)&lt;/span&gt; directly we'd have to resort to something like the likelihood trick.  &lt;/p&gt;
+&lt;p&gt;Alternatively, if we draw samples from &lt;span class="math"&gt;\(Normal(0,1)\)&lt;/span&gt; then multiply the result by &lt;span class="math"&gt;\(\sigma\)&lt;/span&gt; and add &lt;span class="math"&gt;\(\mu\)&lt;/span&gt;, we can differentiate with respect to &lt;span class="math"&gt;\(\sigma\)&lt;/span&gt; and &lt;span class="math"&gt;\(\mu\)&lt;/span&gt; directly through auto differentiation without having to deal with any randomness. This trick works because the normal distribution parameterized by &lt;span class="math"&gt;\(\mu\)&lt;/span&gt; and &lt;span class="math"&gt;\(\sigma\)&lt;/span&gt; is equal to the scaled / translated unit normal distribution. Not all distributions have nice properties like this, but for the ones that do reparametrization tricks can be quite nice. &lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Pros&lt;/em&gt;&lt;br&gt;
+- Easy to use with existing autodiff frameworks&lt;br&gt;
+- At least empirically less variance&lt;br&gt;
+&lt;em&gt;Cons&lt;/em&gt;&lt;br&gt;
+- Not generalizable because you need a specific "trick" per distribution. Not many distributions have one.  &lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The Gumbel Softmax Trick&lt;/strong&gt;&lt;br&gt;
+In my previous post, the random variables I was dealing with were categorical. After learning about the reparameterization trick for normal distributions, I was immediately curious if there was a trick for categorical variables. It turns out there is an approximate one called the &lt;a href="https://arxiv.org/pdf/1611.01144.pdf%20http://arxiv.org/abs/1611.01144.pdf"&gt;Gumbel Softmax Trick&lt;/a&gt;.  &lt;/p&gt;
+&lt;p&gt;To understand the Gumbel Softmax Trick we will first talk about the non-differentiable version called the Gumbel Max Trick.  &lt;/p&gt;
+&lt;p&gt;The Gumbel Max trick says that sampling from a categorical distribution with n classes (with probabilities &lt;span class="math"&gt;\(p_{1}, ..., p_{n}\)&lt;/span&gt;) is equivalent to:  &lt;/p&gt;
+&lt;p&gt;&lt;span class="math"&gt;\(argmax_{i \in \{1,..,n\}}\)&lt;/span&gt;  &lt;span class="math"&gt;\(x_i + log(p_i)\)&lt;/span&gt;    &lt;/p&gt;
+&lt;p&gt;where the &lt;span class="math"&gt;\(x_i\)&lt;/span&gt;'s are drawn from a standard Gumbel Distribution. I'm not going to post the derivation of this trick but a walk through can be found &lt;a href="https://lips.cs.princeton.edu/the-gumbel-max-trick-for-discrete-distributions/"&gt;here&lt;/a&gt;.    &lt;/p&gt;
+&lt;p&gt;The problem with this trick of course is that it's still not differentiable. However we can use a common deep learning trick and replace the discontinuous max with the approximate but continuous softmax function.  &lt;/p&gt;
+&lt;p&gt;&lt;span class="math"&gt;\(softmax([(x_0 + log(p_0))/t, ..., (x_n + log(p_n))/t])\)&lt;/span&gt;  &lt;/p&gt;
+&lt;p&gt;&lt;span class="math"&gt;\(t\)&lt;/span&gt; is an tempreture parameter, which controls how smooth the softmax is. I coded up a &lt;a href="https://gist.github.com/Mr4k/fbb096baf20354b3fdcbd082a00e20d6"&gt;quick example of this trick&lt;/a&gt; in Jax here if you want to see it in action. &lt;/p&gt;
+&lt;p&gt;This post is a high level overview but if you're curious, here is some &lt;a href="http://gregorygundersen.com/blog/2018/04/29/reparameterization/"&gt;good&lt;/a&gt; &lt;a href="https://timvieira.github.io/blog/post/2019/04/20/the-likelihood-ratio-gradient/"&gt;further&lt;/a&gt; &lt;a href="https://casmls.github.io/general/2017/02/01/GumbelSoftmax.html"&gt;reading&lt;/a&gt;. &lt;/p&gt;
+&lt;p&gt;Have questions / comments / corrections?&lt;br&gt;
+Get in touch: &lt;a href="mailto:pstefek.dev@gmail.com"&gt;pstefek.dev@gmail.com&lt;/a&gt;   &lt;/p&gt;
+&lt;script type="text/javascript"&gt;if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width &lt; 768) ? "left" : align;
+        indent = (screen.width &lt; 768) ? "0em" : indent;
+        linebreak = (screen.width &lt; 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/latest.js?config=TeX-AMS-MML_HTMLorMML';
+
+    var configscript = document.createElement('script');
+    configscript.type = 'text/x-mathjax-config';
+    configscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'none' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        availableFonts: ['STIX', 'TeX']," +
+        "        preferredFont: 'STIX'," +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+&lt;/script&gt;</content><category term="jax"></category><category term="gradient descent"></category><category term="statistics"></category></entry><entry><title>Differentiable Dithering</title><link href="/differentiable-dithering.html" rel="alternate"></link><published>2020-09-09T00:00:00-07:00</published><updated>2020-09-09T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-09-09:/differentiable-dithering.html</id><summary type="html">&lt;p&gt;Coloring with calculus&lt;/p&gt;</summary><content type="html">&lt;p&gt;Colab source code can be found &lt;a href="https://gist.github.com/Mr4k/1f1b7ecaf30de073a50cbedd0da4dc82"&gt;here&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Problem&lt;/strong&gt;&lt;br&gt;
 Let's say we want to reduce the number of colors in an image. For example consider the picture of fruit below:
 &lt;p align="center"&gt;

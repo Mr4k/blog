@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Quick Notes on Differentiable Monte Carlo Simulations</title>
+    <link rel="stylesheet" type="text/css" href="/theme/css/main.css" />
+</head>
+
+<body>
+    <div class="container">
+<header>
+    <a href="/">home</a>
+</header>
+<div class="row">
+ <div class="col-md-8">
+  <h1>Quick Notes on Differentiable Monte Carlo Simulations</h1>
+  <label>Posted on <strong>23 September 2020</strong></label>
+  <p><strong>Background</strong><br>
+If you haven't read my <a href="https://www.peterstefek.me/differentiable-dithering.html">last post</a> and the next paragraph sounds like gibberish, don't worry! None of it is required.  </p>
+<p>In my <a href="https://www.peterstefek.me/differentiable-dithering.html">last post</a>, I used variance as a proxy for image quality in the loss function. The nice thing about using variance, is that the sum of independent pixel variances is simple to compute (it's just the sum of the individual variances). However, I mentioned one could try using the expected value of a real image quality metric like <a href="https://en.wikipedia.org/wiki/Structural_similarity">SSIM</a> instead. Unfortunately computing the expectation of a function like SSIM (or something crazier like <a href="https://ai.googleblog.com/2017/12/introducing-nima-neural-image-assessment.html">NIMA</a>) is not so trivial. One way to compute the expectation of these crazier metrics, would be to use a Monte Carlo techinque. But it was not obvious to me how to get useful gradients out of that procedure.  </p>
+<p><strong>Problem</strong><br>
+Suppose we want to compute a complex expectation. This problem pops in up machine learning in a few places (some ELBO losses for example). Often these problems can be solve using Monte Carlo Sampling.  </p>
+<p>The basic idea behind using Monte Carlo Sampling to compute expectations is to take:  </p>
+<p><span class="math">\(E_{\Omega}[f(x)]\)</span>  </p>
+<p>and approximate it as follows:  </p>
+<p><span class="math">\(E_{\Omega}[f(x)]\)</span> <span class="math">\(\approx\)</span> <span class="math">\(\frac{1}{N} \sum_{i=1}^N p_{\Omega}(\overline{\mathbf{x}}_i)f(\overline{\mathbf{x}}_i)\)</span>  </p>
+<p>where the <span class="math">\(x_i\)</span>'s are drawn from a random distribution (uniform in the simplest case).
+There are many fancier extensions which improve on the basic formulation by doing things such as converging faster.  </p>
+<p>If we want to including Monte Carlo estimations inside a differentiable system (such as a neural network) we need a way to differentiate through the simulation. </p>
+<p><strong>Easy Mode</strong><br>
+<p align="center">
+    <img src="/images/differentiable-monte-carlo/angel-dice.png" width="30%" > 
+</p><br>
+Let's start with something simple. If the shape of the probability distribution we are taking the monte carlo estimate over is not a parameter, then differentiating through a Monte Carlo simulation is simple. No adjustments at all have to be made. Mathematically this looks like the following:  </p>
+<p><span class="math">\(\frac{d}{d\theta}E[f(x, \theta)]\)</span> <span class="math">\(\approx\)</span> <span class="math">\(\frac{d}{d\theta} \frac{1}{N} \sum_{i=1}^N p(\overline{\mathbf{x}}_i)f(\overline{\mathbf{x}}_i, \theta)\)</span>  </p>
+<p><strong>Hard Mode</strong> 
+<p align="center">
+    <img src="/images/differentiable-monte-carlo/demon-dice.png" width="30%" > 
+</p> <br>
+However often some parameters will affect the shape of the sampling distribution. For example, in my previous post the probabilities of each palette color being chosen per pixel are variables.<br>
+Mathemtically this looks like:  </p>
+<p><span class="math">\(\frac{d}{d\theta}E[f(x, \theta)]\)</span> <span class="math">\(\approx\)</span> <span class="math">\(\frac{d}{d\theta} \frac{1}{N} \sum_{i=1}^N p(\overline{\mathbf{x}}_i; \theta)f(\overline{\mathbf{x}}_i, \theta)\)</span>  </p>
+<p>This is where things get a little trickier. I generally found two common ways of approaching this problem.  </p>
+<p><strong>The Score Function Gradient Estimator (aka REINFORCE)</strong><br>
+The little trick here is to format the gradient as a second Monte Carlo problem (assuming <a href="https://en.wikipedia.org/wiki/Leibniz_integral_rule">certain conditions</a> are met). We also make use of the log derivative trick.   </p>
+<p><span class="math">\(\frac{d}{d\theta}E[f(x, \theta)]=\frac{d}{d\theta} \int_{\Omega} p(\overline{\mathbf{x}}_i; \theta)f(\overline{\mathbf{x}}_i, \theta)\)</span>  </p>
+<p><span class="math">\(\frac{d}{d\theta}E[f(x, \theta)]= \int_{\Omega} \frac{d}{d\theta}p(\overline{\mathbf{x}}_i; \theta)f(\overline{\mathbf{x}}_i, \theta)\)</span> + <span class="math">\(\int_{\Omega} p(\overline{\mathbf{x}}_i; \theta)\frac{d}{d\theta}f(\overline{\mathbf{x}}_i, \theta)\)</span> </p>
+<p><span class="math">\(\frac{d}{d\theta}E[f(x, \theta)]= \int_{\Omega} \frac{\frac{d}{d\theta}p(\overline{\mathbf{x}}_i; \theta)}{p(\overline{\mathbf{x}}_i; \theta)}f(\overline{\mathbf{x}}_i, \theta)p(\overline{\mathbf{x}}_i; \theta)\)</span> + <span class="math">\(\int_{\Omega} p(\overline{\mathbf{x}}_i; \theta)\frac{d}{d\theta}f(\overline{\mathbf{x}}_i, \theta)\)</span>  </p>
+<p><span class="math">\(\frac{d}{d\theta}E[f(x, \theta)]= \int_{\Omega} \frac{d}{d\theta}\log(p(\overline{\mathbf{x}}_i; \theta))\)</span><span class="math">\(f(\overline{\mathbf{x}}_i, \theta)p(\overline{\mathbf{x}}_i; \theta)\)</span> + <span class="math">\(\int_{\Omega} p(\overline{\mathbf{x}}_i; \theta)\frac{d}{d\theta}f(\overline{\mathbf{x}}_i, \theta)\)</span>  </p>
+<p><span class="math">\(\frac{d}{d\theta}E[f(x, \theta)]= E[\frac{d}{d\theta}\log(p(\overline{\mathbf{x}}_i; \theta))\)</span><span class="math">\(f(\overline{\mathbf{x}}_i, \theta)]\)</span> + <span class="math">\(E[\frac{d}{d\theta}f(\overline{\mathbf{x}}_i, \theta)]\)</span></p>
+<p><em>Pros</em><br>
+- Incredibly simple. Fairly general.<br>
+<em>Cons</em><br>
+- Several people seem to agree that high variance is a problem with this method. <a href="https://timvieira.github.io/blog/post/2019/04/20/the-likelihood-ratio-gradient/">Tim Vieria</a> call the basic method "useless on top of noisy". It seems like controlling the variance is an active area of research.<br>
+- You need to be able to represent the derivative of <span class="math">\(p(\overline{\mathbf{x}}_i; \theta)\)</span> analytically (which rules out categorical variables for example).
+From what I've seen this approach does not easily fit into an auto differentiation framework  </p>
+<p><strong>The Reparameterization Trick</strong><br>
+As far as I can tell, the reparameterization trick was established by Kingma et al in their paper about Variational AutoEncoders.  </p>
+<p>The insight here is that some families of distributions can be defined in terms of a differentiable transformation applied to constant underlying distribution. What does that mean?<br>
+<p align="center">
+    <img src="/images/differentiable-monte-carlo/reparam-vae.png" width="65%" > 
+</p>  </p>
+<p>Let's consider the family of normal distributions parameterized by mean <span class="math">\(\mu\)</span> and variance <span class="math">\(\sigma\)</span>. If we tried to differentiate through the samples drawn from the normal distribution parameterized by <span class="math">\(\mu\)</span> and <span class="math">\(\sigma\)</span> directly we'd have to resort to something like the likelihood trick.  </p>
+<p>Alternatively, if we draw samples from <span class="math">\(Normal(0,1)\)</span> then multiply the result by <span class="math">\(\sigma\)</span> and add <span class="math">\(\mu\)</span>, we can differentiate with respect to <span class="math">\(\sigma\)</span> and <span class="math">\(\mu\)</span> directly through auto differentiation without having to deal with any randomness. This trick works because the normal distribution parameterized by <span class="math">\(\mu\)</span> and <span class="math">\(\sigma\)</span> is equal to the scaled / translated unit normal distribution. Not all distributions have nice properties like this, but for the ones that do reparametrization tricks can be quite nice. </p>
+<p><em>Pros</em><br>
+- Easy to use with existing autodiff frameworks<br>
+- At least empirically less variance<br>
+<em>Cons</em><br>
+- Not generalizable because you need a specific "trick" per distribution. Not many distributions have one.  </p>
+<p><strong>The Gumbel Softmax Trick</strong><br>
+In my previous post, the random variables I was dealing with were categorical. After learning about the reparameterization trick for normal distributions, I was immediately curious if there was a trick for categorical variables. It turns out there is an approximate one called the <a href="https://arxiv.org/pdf/1611.01144.pdf%20http://arxiv.org/abs/1611.01144.pdf">Gumbel Softmax Trick</a>.  </p>
+<p>To understand the Gumbel Softmax Trick we will first talk about the non-differentiable version called the Gumbel Max Trick.  </p>
+<p>The Gumbel Max trick says that sampling from a categorical distribution with n classes (with probabilities <span class="math">\(p_{1}, ..., p_{n}\)</span>) is equivalent to:  </p>
+<p><span class="math">\(argmax_{i \in \{1,..,n\}}\)</span>  <span class="math">\(x_i + log(p_i)\)</span>    </p>
+<p>where the <span class="math">\(x_i\)</span>'s are drawn from a standard Gumbel Distribution. I'm not going to post the derivation of this trick but a walk through can be found <a href="https://lips.cs.princeton.edu/the-gumbel-max-trick-for-discrete-distributions/">here</a>.    </p>
+<p>The problem with this trick of course is that it's still not differentiable. However we can use a common deep learning trick and replace the discontinuous max with the approximate but continuous softmax function.  </p>
+<p><span class="math">\(softmax([(x_0 + log(p_0))/t, ..., (x_n + log(p_n))/t])\)</span>  </p>
+<p><span class="math">\(t\)</span> is an tempreture parameter, which controls how smooth the softmax is. I coded up a <a href="https://gist.github.com/Mr4k/fbb096baf20354b3fdcbd082a00e20d6">quick example of this trick</a> in Jax here if you want to see it in action. </p>
+<p>This post is a high level overview but if you're curious, here is some <a href="http://gregorygundersen.com/blog/2018/04/29/reparameterization/">good</a> <a href="https://timvieira.github.io/blog/post/2019/04/20/the-likelihood-ratio-gradient/">further</a> <a href="https://casmls.github.io/general/2017/02/01/GumbelSoftmax.html">reading</a>. </p>
+<p>Have questions / comments / corrections?<br>
+Get in touch: <a href="mailto:pstefek.dev@gmail.com">pstefek.dev@gmail.com</a>   </p>
+<script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width < 768) ? "left" : align;
+        indent = (screen.width < 768) ? "0em" : indent;
+        linebreak = (screen.width < 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/latest.js?config=TeX-AMS-MML_HTMLorMML';
+
+    var configscript = document.createElement('script');
+    configscript.type = 'text/x-mathjax-config';
+    configscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'none' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        availableFonts: ['STIX', 'TeX']," +
+        "        preferredFont: 'STIX'," +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+</script>
+ </div>
+</div>
+<footer>
+    <a href="/">home</a>
+</footer>
+    </div>
+
+    <!-- Google Analytics -->
+    <script>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+        
+        ga('create', 'UA-157308007-1', 'auto');
+        ga('set', 'anonymizeIp', true);
+        ga('send', 'pageview');
+    </script>
+    <!-- End Google Analytics -->
+</body>
+
+</html>
