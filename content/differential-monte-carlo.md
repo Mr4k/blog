@@ -17,14 +17,13 @@ Suppose we want to compute a complex expectation. This problem pops in up machin
   
 The basic idea behind using Monte Carlo Sampling to compute expectations is to take:  
 
-$E_{\Omega}[f(x)]$  
+$E_{p}[f(x)]$  
 
 and approximate it as follows:  
 
-$E_{\Omega}[f(x)]$ $\approx$ $\frac{1}{N} \sum_{i=1}^N p_{\Omega}(\overline{\mathbf{x}}_i)f(\overline{\mathbf{x}}_i)$  
+$E_{p}[f(x)]$ $\approx$ $\frac{1}{N} \sum_{i=1}^N f(\overline{\mathbf{x}}_i); \overline{\mathbf{x}}_i$ ~ $p$  
 
-where the $x_i$'s are drawn from a random distribution (uniform in the simplest case).
-There are many fancier extensions which improve on the basic formulation by doing things such as converging faster.  
+where the $x_i$'s are drawn from the distribution you are sampling over.
   
 If we want to including Monte Carlo estimations inside a differentiable system (such as a neural network) we need a way to differentiate through the simulation. 
 
@@ -34,7 +33,7 @@ If we want to including Monte Carlo estimations inside a differentiable system (
 </p>  
 Let's start with something simple. If the shape of the probability distribution we are taking the monte carlo estimate over is not a parameter, then differentiating through a Monte Carlo simulation is simple. No adjustments at all have to be made. Mathematically this looks like the following:  
   
-$\frac{d}{d\theta}E[f(x, \theta)]$ $\approx$ $\frac{d}{d\theta} \frac{1}{N} \sum_{i=1}^N p(\overline{\mathbf{x}}_i)f(\overline{\mathbf{x}}_i, \theta)$  
+$\frac{d}{d\theta}E_p[f(x, \theta)]$ $\approx$ $\frac{d}{d\theta} \frac{1}{N} \sum_{i=1}^N f(\overline{\mathbf{x}}_i, \theta); \overline{\mathbf{x}}_i$ ~ $p$  
   
   
 **Hard Mode** 
@@ -44,7 +43,7 @@ $\frac{d}{d\theta}E[f(x, \theta)]$ $\approx$ $\frac{d}{d\theta} \frac{1}{N} \sum
 However often some parameters will affect the shape of the sampling distribution. For example, in my previous post the probabilities of each palette color being chosen per pixel are variables.  
 Mathemtically this looks like:  
   
-$\frac{d}{d\theta}E[f(x, \theta)]$ $\approx$ $\frac{d}{d\theta} \frac{1}{N} \sum_{i=1}^N p(\overline{\mathbf{x}}_i; \theta)f(\overline{\mathbf{x}}_i, \theta)$  
+$\frac{d}{d\theta}E_{p(\theta)}[f(x, \theta)]$ $\approx$ $\frac{d}{d\theta} \frac{1}{N} \sum_{i=1}^N f(\overline{\mathbf{x}}_i, \theta); \overline{\mathbf{x}}_i$ ~ $p(\theta)$  
   
 This is where things get a little trickier. I generally found two common ways of approaching this problem.  
   
@@ -100,7 +99,7 @@ https://lips.cs.princeton.edu/the-gumbel-max-trick-for-discrete-distributions/).
   
 The problem with this trick of course is that it's still not differentiable. However we can use a common deep learning trick and replace the discontinuous max with the approximate but continuous softmax function.  
 
-$softmax([(x_0 + log(p_0))/t, ..., (x_n + log(p_n))/t])$  
+$softmax([(x_0 + log(p_0))/t, ...$$, (x_n + log(p_n))/t])$  
 
 $t$ is an tempreture parameter, which controls how smooth the softmax is. I coded up a [quick example of this trick](https://gist.github.com/Mr4k/fbb096baf20354b3fdcbd082a00e20d6) in Jax here if you want to see it in action. 
 
