@@ -50,15 +50,15 @@ This is where things get a little trickier. I generally found two common ways of
 **The Score Function Gradient Estimator (aka REINFORCE)**  
 The little trick here is to format the gradient as a second Monte Carlo problem (assuming [certain conditions](https://en.wikipedia.org/wiki/Leibniz_integral_rule) are met). We also make use of the log derivative trick.   
 
-$\frac{d}{d\theta}E[f(x, \theta)]=\frac{d}{d\theta} \int_{\Omega} p(\overline{\mathbf{x}}_i; \theta)f(\overline{\mathbf{x}}_i, \theta)$  
+$\frac{d}{d\theta}E_{p(\theta)}[f(x, \theta)]=\frac{d}{d\theta} \int_{\Omega} p(\overline{\mathbf{x}}_i; \theta)f(\overline{\mathbf{x}}_i, \theta)$  
 
-$\frac{d}{d\theta}E[f(x, \theta)]= \int_{\Omega} \frac{d}{d\theta}p(\overline{\mathbf{x}}_i; \theta)f(\overline{\mathbf{x}}_i, \theta)$ + $\int_{\Omega} p(\overline{\mathbf{x}}_i; \theta)\frac{d}{d\theta}f(\overline{\mathbf{x}}_i, \theta)$ 
+$\frac{d}{d\theta}E_{p(\theta)}[f(x, \theta)]= \int_{\Omega} \frac{d}{d\theta}p(\overline{\mathbf{x}}_i; \theta)f(\overline{\mathbf{x}}_i, \theta)$ + $\int_{\Omega} p(\overline{\mathbf{x}}_i; \theta)\frac{d}{d\theta}f(\overline{\mathbf{x}}_i, \theta)$ 
 
-$\frac{d}{d\theta}E[f(x, \theta)]= \int_{\Omega} \frac{\frac{d}{d\theta}p(\overline{\mathbf{x}}_i; \theta)}{p(\overline{\mathbf{x}}_i; \theta)}f(\overline{\mathbf{x}}_i, \theta)p(\overline{\mathbf{x}}_i; \theta)$ + $\int_{\Omega} p(\overline{\mathbf{x}}_i; \theta)\frac{d}{d\theta}f(\overline{\mathbf{x}}_i, \theta)$  
+$\frac{d}{d\theta}E_{p(\theta)}[f(x, \theta)]= \int_{\Omega} \frac{\frac{d}{d\theta}p(\overline{\mathbf{x}}_i; \theta)}{p(\overline{\mathbf{x}}_i; \theta)}f(\overline{\mathbf{x}}_i, \theta)p(\overline{\mathbf{x}}_i; \theta)$ + $\int_{\Omega} p(\overline{\mathbf{x}}_i; \theta)\frac{d}{d\theta}f(\overline{\mathbf{x}}_i, \theta)$  
 
-$\frac{d}{d\theta}E[f(x, \theta)]= \int_{\Omega} \frac{d}{d\theta}\log(p(\overline{\mathbf{x}}_i; \theta))$$f(\overline{\mathbf{x}}_i, \theta)p(\overline{\mathbf{x}}_i; \theta)$ + $\int_{\Omega} p(\overline{\mathbf{x}}_i; \theta)\frac{d}{d\theta}f(\overline{\mathbf{x}}_i, \theta)$  
+$\frac{d}{d\theta}E_{p(\theta)}[f(x, \theta)]= \int_{\Omega} \frac{d}{d\theta}\log(p(\overline{\mathbf{x}}_i; \theta))$$f(\overline{\mathbf{x}}_i, \theta)p(\overline{\mathbf{x}}_i; \theta)$ + $\int_{\Omega} p(\overline{\mathbf{x}}_i; \theta)\frac{d}{d\theta}f(\overline{\mathbf{x}}_i, \theta)$  
 
-$\frac{d}{d\theta}E[f(x, \theta)]= E[\frac{d}{d\theta}\log(p(\overline{\mathbf{x}}_i; \theta))$$f(\overline{\mathbf{x}}_i, \theta)]$ + $E[\frac{d}{d\theta}f(\overline{\mathbf{x}}_i, \theta)]$
+$\frac{d}{d\theta}E_{p(\theta)}[f(x, \theta)]= E_{p(\theta)}[\frac{d}{d\theta}\log(p(\overline{\mathbf{x}}_i; \theta))$$f(\overline{\mathbf{x}}_i, \theta)]$ + $E_{p(\theta)}[\frac{d}{d\theta}f(\overline{\mathbf{x}}_i, \theta)]$
 
 *Pros*  
 - Incredibly simple. Fairly general.  
