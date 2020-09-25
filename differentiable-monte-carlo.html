@@ -21,25 +21,24 @@ If you haven't read my <a href="https://www.peterstefek.me/differentiable-dither
 <p><strong>Problem</strong><br>
 Suppose we want to compute a complex expectation. This problem pops in up machine learning in a few places (some ELBO losses for example). Often these problems can be solve using Monte Carlo Sampling.  </p>
 <p>The basic idea behind using Monte Carlo Sampling to compute expectations is to take:  </p>
-<p><span class="math">\(E_{\Omega}[f(x)]\)</span>  </p>
+<p><span class="math">\(E_{p}[f(x)]\)</span>  </p>
 <p>and approximate it as follows:  </p>
-<p><span class="math">\(E_{\Omega}[f(x)]\)</span> <span class="math">\(\approx\)</span> <span class="math">\(\frac{1}{N} \sum_{i=1}^N p_{\Omega}(\overline{\mathbf{x}}_i)f(\overline{\mathbf{x}}_i)\)</span>  </p>
-<p>where the <span class="math">\(x_i\)</span>'s are drawn from a random distribution (uniform in the simplest case).
-There are many fancier extensions which improve on the basic formulation by doing things such as converging faster.  </p>
+<p><span class="math">\(E_{p}[f(x)]\)</span> <span class="math">\(\approx\)</span> <span class="math">\(\frac{1}{N} \sum_{i=1}^N f(\overline{\mathbf{x}}_i); \overline{\mathbf{x}}_i\)</span> ~ <span class="math">\(p\)</span>  </p>
+<p>where the <span class="math">\(x_i\)</span>'s are drawn from the distribution you are sampling over.</p>
 <p>If we want to including Monte Carlo estimations inside a differentiable system (such as a neural network) we need a way to differentiate through the simulation. </p>
 <p><strong>Easy Mode</strong><br>
 <p align="center">
     <img src="/images/differentiable-monte-carlo/angel-dice.png" width="30%" > 
 </p><br>
 Let's start with something simple. If the shape of the probability distribution we are taking the monte carlo estimate over is not a parameter, then differentiating through a Monte Carlo simulation is simple. No adjustments at all have to be made. Mathematically this looks like the following:  </p>
-<p><span class="math">\(\frac{d}{d\theta}E[f(x, \theta)]\)</span> <span class="math">\(\approx\)</span> <span class="math">\(\frac{d}{d\theta} \frac{1}{N} \sum_{i=1}^N p(\overline{\mathbf{x}}_i)f(\overline{\mathbf{x}}_i, \theta)\)</span>  </p>
+<p><span class="math">\(\frac{d}{d\theta}E_p[f(x, \theta)]\)</span> <span class="math">\(\approx\)</span> <span class="math">\(\frac{d}{d\theta} \frac{1}{N} \sum_{i=1}^N f(\overline{\mathbf{x}}_i, \theta); \overline{\mathbf{x}}_i\)</span> ~ <span class="math">\(p\)</span>  </p>
 <p><strong>Hard Mode</strong> 
 <p align="center">
     <img src="/images/differentiable-monte-carlo/demon-dice.png" width="30%" > 
 </p> <br>
 However often some parameters will affect the shape of the sampling distribution. For example, in my previous post the probabilities of each palette color being chosen per pixel are variables.<br>
 Mathemtically this looks like:  </p>
-<p><span class="math">\(\frac{d}{d\theta}E[f(x, \theta)]\)</span> <span class="math">\(\approx\)</span> <span class="math">\(\frac{d}{d\theta} \frac{1}{N} \sum_{i=1}^N p(\overline{\mathbf{x}}_i; \theta)f(\overline{\mathbf{x}}_i, \theta)\)</span>  </p>
+<p><span class="math">\(\frac{d}{d\theta}E_{p(\theta)}[f(x, \theta)]\)</span> <span class="math">\(\approx\)</span> <span class="math">\(\frac{d}{d\theta} \frac{1}{N} \sum_{i=1}^N f(\overline{\mathbf{x}}_i, \theta); \overline{\mathbf{x}}_i\)</span> ~ <span class="math">\(p(\theta)\)</span>  </p>
 <p>This is where things get a little trickier. I generally found two common ways of approaching this problem.  </p>
 <p><strong>The Score Function Gradient Estimator (aka REINFORCE)</strong><br>
 The little trick here is to format the gradient as a second Monte Carlo problem (assuming <a href="https://en.wikipedia.org/wiki/Leibniz_integral_rule">certain conditions</a> are met). We also make use of the log derivative trick.   </p>
