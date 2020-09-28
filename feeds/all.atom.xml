@@ -11,11 +11,11 @@
 
 
 &lt;p&gt;So sum(1) returns 1, sum(2) returns 3 and sum(3) returns 6. What about sum(10000000)?&lt;br&gt;
-Most likely if you call sum(10000000) you will get the following error:&lt;br&gt;
-&lt;code&gt;Maximum recursion depth exceeded&lt;/code&gt;  &lt;/p&gt;
+Most likely if you call sum(10000000) you will get the following error:  &lt;/p&gt;
+&lt;p&gt;&lt;code&gt;Maximum recursion depth exceeded&lt;/code&gt;  &lt;/p&gt;
 &lt;p&gt;A quick google shows that we have exceeded a limit that Python has on how deep recursion can go. Why don't we just increase it to 10000001? Let's try it! Now what happens?&lt;br&gt;
-Most likely you will see a different error which looks like this:&lt;br&gt;
-&lt;code&gt;Segmentation fault: 11&lt;/code&gt;  &lt;/p&gt;
+Most likely you will see a different error which looks like this:  &lt;/p&gt;
+&lt;p&gt;&lt;code&gt;Segmentation fault: 11&lt;/code&gt;  &lt;/p&gt;
 &lt;p&gt;What happened here? It turns out that we ran out of memory. This is because every recursive call pops a new stack frame, containing new variables and function information, onto Python's call stack.  &lt;/p&gt;
 &lt;p&gt;But if you are incredibly observant or have taken a functional programming course, you might realize that the final result of this recursion is just the value returned by the base case. This value is then passed up a long chain back to the original call. It turns out in this case we don't need the chain. This observation is at the heart of so-called tail call optimization. The optimization eliminates unnecessary stack frames during recursion. Most languages (even some js runtimes) implement tail call optimization, however Python's design committee has always been stubbornly against it.  &lt;/p&gt;
 &lt;p&gt;Since I was looking for small projects to do during my first week at the &lt;a href="https://www.recurse.com/"&gt;Recurse Center&lt;/a&gt;, I decided to try to implement a basic version of tail call optimization in Python. Note this is not an original idea and I had already seen some clever hacks which used exceptions to break out of sub calls. I decided to try something different, although after presenting my implementation to the greater RC community I learned that another Recurser had given a &lt;a href="https://www.youtube.com/watch?v=Qk1I6ZxcceU&amp;amp;feature=share"&gt;fantastic talk&lt;/a&gt; which used the same idea back in 2015 (small world!)  &lt;/p&gt;

@@ -27,11 +27,11 @@
 
 
 <p>So sum(1) returns 1, sum(2) returns 3 and sum(3) returns 6. What about sum(10000000)?<br>
-Most likely if you call sum(10000000) you will get the following error:<br>
-<code>Maximum recursion depth exceeded</code>  </p>
+Most likely if you call sum(10000000) you will get the following error:  </p>
+<p><code>Maximum recursion depth exceeded</code>  </p>
 <p>A quick google shows that we have exceeded a limit that Python has on how deep recursion can go. Why don't we just increase it to 10000001? Let's try it! Now what happens?<br>
-Most likely you will see a different error which looks like this:<br>
-<code>Segmentation fault: 11</code>  </p>
+Most likely you will see a different error which looks like this:  </p>
+<p><code>Segmentation fault: 11</code>  </p>
 <p>What happened here? It turns out that we ran out of memory. This is because every recursive call pops a new stack frame, containing new variables and function information, onto Python's call stack.  </p>
 <p>But if you are incredibly observant or have taken a functional programming course, you might realize that the final result of this recursion is just the value returned by the base case. This value is then passed up a long chain back to the original call. It turns out in this case we don't need the chain. This observation is at the heart of so-called tail call optimization. The optimization eliminates unnecessary stack frames during recursion. Most languages (even some js runtimes) implement tail call optimization, however Python's design committee has always been stubbornly against it.  </p>
 <p>Since I was looking for small projects to do during my first week at the <a href="https://www.recurse.com/">Recurse Center</a>, I decided to try to implement a basic version of tail call optimization in Python. Note this is not an original idea and I had already seen some clever hacks which used exceptions to break out of sub calls. I decided to try something different, although after presenting my implementation to the greater RC community I learned that another Recurser had given a <a href="https://www.youtube.com/watch?v=Qk1I6ZxcceU&amp;feature=share">fantastic talk</a> which used the same idea back in 2015 (small world!)  </p>
