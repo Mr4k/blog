@@ -23,15 +23,15 @@ So sum(1) returns 1, sum(2) returns 3 and sum(3) returns 6. What about sum(10000
 Most likely if you call sum(10000000) you will get the following error:  
 `Maximum recursion depth exceeded`  
   
-A quick Google shows that we have exceeded a limit that Python has on how deep recursion can go. Why don't we just increase it to 10000001? Let's try it! Now what happens?  
+A quick google shows that we have exceeded a limit that Python has on how deep recursion can go. Why don't we just increase it to 10000001? Let's try it! Now what happens?  
 Most likely you will see a different error which looks like this:  
 `Segmentation fault: 11`  
   
 What happened here? It turns out that we ran out of memory. This is because every recursive call pops a new stack frame, containing new variables and function information, onto Python's call stack.  
   
-But if you are incredibly observant or have taken a functional programming course, you might realize that the final result of this recursion is just the value returned by the base case. This value is then passed up a long chain back to the original call. It turns out in this case we don't need the chain. This observation is at the heart of so-called Tail Call Optimization. The optimization eliminates unnecessary stack frames during recursion. Most languages (even some js runtimes) implement tail call optimization, however Python's design committee has always been stubbornly against it.  
+But if you are incredibly observant or have taken a functional programming course, you might realize that the final result of this recursion is just the value returned by the base case. This value is then passed up a long chain back to the original call. It turns out in this case we don't need the chain. This observation is at the heart of so-called tail call optimization. The optimization eliminates unnecessary stack frames during recursion. Most languages (even some js runtimes) implement tail call optimization, however Python's design committee has always been stubbornly against it.  
   
-Since I was looking for small projects to do during my first week at the Recurse Center, I decided to try to implement a basic version of tail call optimization in Python. Note this is not an original idea and I had already seen some clever hacks which used exceptions to break out of sub calls. I decided to try something different, although after presenting my implementation to the greater RC community I learned that another Recurser had given a fantastic talk which used the same idea in 2015 (small world!)  
+Since I was looking for small projects to do during my first week at the [Recurse Center](https://www.recurse.com/), I decided to try to implement a basic version of tail call optimization in Python. Note this is not an original idea and I had already seen some clever hacks which used exceptions to break out of sub calls. I decided to try something different, although after presenting my implementation to the greater RC community I learned that another Recurser had given a [fantastic talk](https://www.youtube.com/watch?v=Qk1I6ZxcceU&feature=share) which used the same idea back in 2015 (small world!)  
   
 Before I dive into the details let's look at prototype in action:  
 sum.py is a file which contains the same sum calculation from the beginning of this post:  
@@ -73,7 +73,7 @@ Now that we know which calls are tail call optimizable, all we have to do is to 
 However if we focus our attention on tail recursive calls (where the tail call functions call the parent function) there is another way to hack around our problem. The simple version is we can kind of replace the CALL_FUNCTION instruction with the JUMP_ABSOLUTE instruction, which we can use to take us back to the beginning of the current function.  
 
 <p align="center">
-	<img src="/images/ouroboros/bytecode-surgery.png" width="80%" > 
+	<img src="/images/ouroboros/bytecode-surgery.png" width="99%" > 
 </p>   
 
 Of course, reality is a little more complex. We actually have to insert more than one instruction to do things like store the args on the stack and pop off the initial function. To make things more complicated, Python will sometimes have jump statements elsewhere in the call. If we simply replace one instruction in the middle of the function with several all the indexes get messed up and things will break in subtle ways. The way I dealt with this problem was to replace CALL_FUNCTION with a jump which goes to the end of the function where we can append the rest of our instructions without having to worry about messing up other indexes. Of course this breaks for enormous functions but that's outside of the scope of this prototype.   
@@ -109,3 +109,6 @@ I think with a little work the AST based heuristic could be complete (it would n
 When I started this project I was wondering about diving into the cpython VM code itself. I think it was neat that I didn't have to but I wonder if being able to make these tail call optimization decisions at runtime would be better. This would allow us to know which function was about to be called at runtime and we could decide whether or not to jump then. We would no longer need any AST based heuristics.  
   
 Of course if I had full VM access, I could also potentially allow jumping between functions without having to resort to exceptions which would really allow full tail call optimization. That might be an undertaking though.
+
+Have questions / comments / corrections?  
+Get in touch: <a href="mailto:pstefek.dev@gmail.com">pstefek.dev@gmail.com</a>   

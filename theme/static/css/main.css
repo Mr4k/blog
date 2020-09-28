@@ -69,9 +69,9 @@
 body {
     font-family: "Neutral 2";
     background-color: #FEFEFE;
-    line-height: 150%;
+    line-height: 160%;
     color: #111;
-    width: 85%;
+    width: 65%;
     min-width: 400px;
     min-height: 200px;
     padding: 1em;
@@ -97,6 +97,8 @@ img{
 	body {
 		font-size: 250%;
 		line-height: 175%;
+		width: 100%;
+    	border: none;
 	}
     img{
         width: 100%;
