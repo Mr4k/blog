@@ -63,7 +63,7 @@ $\frac{d}{d\theta}E_{p(\theta)}[f(x, \theta)]= E_{p(\theta)}[\frac{d}{d\theta}\l
 *Pros*  
 - Incredibly simple. Fairly general.  
 *Cons*  
-- Several people seem to agree that high variance is a problem with this method. [Tim Vieria](https://timvieira.github.io/blog/post/2019/04/20/the-likelihood-ratio-gradient/) call the basic method "useless on top of noisy". It seems like controlling the variance is an active area of research.  
+- Several people seem to agree that high variance is a problem with this method. [Tim Vieria](https://timvieira.github.io/blog/post/2019/04/20/the-likelihood-ratio-gradient/) calsl the basic method "useless on top of noisy". It seems like controlling the variance is an active area of research.  
 - You need to be able to represent the derivative of $p(\overline{\mathbf{x}}_i; \theta)$ analytically (which rules out categorical variables for example).
 From what I've seen this approach does not easily fit into an auto differentiation framework  
   
