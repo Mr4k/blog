@@ -34,7 +34,7 @@ The little trick here is to format the gradient as a second Monte Carlo problem 
 &lt;p&gt;&lt;em&gt;Pros&lt;/em&gt;&lt;br&gt;
 - Incredibly simple. Fairly general.&lt;br&gt;
 &lt;em&gt;Cons&lt;/em&gt;&lt;br&gt;
-- Several people seem to agree that high variance is a problem with this method. &lt;a href="https://timvieira.github.io/blog/post/2019/04/20/the-likelihood-ratio-gradient/"&gt;Tim Vieria&lt;/a&gt; call the basic method "useless on top of noisy". It seems like controlling the variance is an active area of research.&lt;br&gt;
+- Several people seem to agree that high variance is a problem with this method. &lt;a href="https://timvieira.github.io/blog/post/2019/04/20/the-likelihood-ratio-gradient/"&gt;Tim Vieria&lt;/a&gt; calsl the basic method "useless on top of noisy". It seems like controlling the variance is an active area of research.&lt;br&gt;
 - You need to be able to represent the derivative of &lt;span class="math"&gt;\(p(\overline{\mathbf{x}}_i; \theta)\)&lt;/span&gt; analytically (which rules out categorical variables for example).
 From what I've seen this approach does not easily fit into an auto differentiation framework  &lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;The Reparameterization Trick&lt;/strong&gt;&lt;br&gt;
