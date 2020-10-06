@@ -5,7 +5,7 @@ Category: glsl, shader
 Tags: glsl, shader
 Slug: focused-render
 Authors: Peter Stefek
-Summary: Focusing on what's infront of me
+Summary: Seeing what's right in front of me
 
 <meta charset="utf-8"/>
 
@@ -21,18 +21,23 @@ This rendering scheme is motivated by biology. It turns out your eye notices mor
 I did not have the time, equipment or the background necessary to implement a full foveated rendering system but it was fun to fool around with the concept.  
 
 
-Before diving into the technical details let’s look at a simple shadertoy fragment shader.  
-```
-void mainImage( out vec4 fragColor, in vec2 fragCoord )
+Before diving into the technical details let’s look at a simple shadertoy fragment shader.   
+
+<code>
+void mainImage(out vec4 fragColor, in vec2 fragCoord)  
 {
-    // Normalized pixel coordinates (from 0 to 1)
+<div style='margin-left: 5%;'>
+    // Normalized pixel coordinates (from 0 to 1)  
     vec2 uv = fragCoord/iResolution.xy;
 
     // Output the pixel coordinates as a color to screen
-    // fragColor is a 4 vector of the form (red, green, blue, transparency)
+    // fragColor is a 4 vector of the form
+    // (red, green, blue, transparency)
     fragColor = vec4(uv, 0.0, 1.0);
-}
-``` 
+</div>
+}  
+</code>
+
 This program runs once for each pixel on the screen. Each time it runs, we receive the input variable `fragCoord`. `fragCoord` is a 2d vector which contains the x and y coordinates of the pixel being drawn. We normalize those coordinates by dividing by `iResolution`, another 2d vector, which contains the width and height of the image. Finally we output a color to the screen, whose red and green channels are proportional to the x and y position of the pixel being drawn. The output of this shader looks like this:  
 <p align="center">
   <img src="/images/focused-render/simple-shader-out.png" width="50%"> </img>
@@ -42,18 +47,26 @@ This program runs once for each pixel on the screen. Each time it runs, we recei
 Side note, why do these shader programs require their own language? Shaders are special because they run on the graphics card instead of the cpu. They are highly parallel. A helpful mental model might be imagining that each pixel is colored simultaneously. Therefore a lot of things that we take for granted in normal program languages such as liberally accessing memory and branching become much more difficult.  
 
 
-In shadertoy shaders the bottleneck is always in the pixel rendering step. So to speed them up we want to only render a subset of the all the pixels on the screen. It seems like selectively rendering pixels should be as simple as adding a branch to the per pixel shader code that looks like:
-```
-void mainImage( out vec4 fragColor, in vec2 fragCoord )
-{
-    if (fragCoord is in the subset of pixels to render) {
-      ... do computationally intensive work
-    } else {
-      // return a black pixel
-      return vec4(0, 0, 0, 1);
-    }
+In shadertoy shaders the bottleneck is always in the pixel rendering step. So to speed them up we want to only render a subset of the all the pixels on the screen. It seems like selectively rendering pixels should be as simple as adding a branch to the per pixel shader code that looks like:  
+
+<code>
+void mainImage(out vec4 fragColor, in vec2 fragCoord)   
+{  
+<div style='margin-left: 5%;'>
+    if (fragCoord is in the subset of pixels to render) {  
+      <div style='margin-left: 5%;'>
+      ... do computationally intensive work 
+      </div> 
+    } else {  
+      <div style='margin-left: 5%;'>
+      // return a black pixel  
+      return vec4(0, 0, 0, 1); 
+      </div> 
+    } 
+</div> 
 }
-```
+
+</code>
 
 Unfortunately we cannot just use an if statement inside of the shader to save us from rendering all the pixels. Unlike normal programming languages, fragment shaders always execute both parts of each branch due to gpu limitations. So while our above code will still have to spend the sample amount of time evaluating compuationally intensive work.  
 
