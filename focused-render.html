@@ -20,37 +20,46 @@
 <p>Some of these shaders are very computationally intensive and even in a small window, they crawl along well below their intended 60 frames per second on my old laptop. Inspired by a technique in the VR community called Foveated Rendering, I decided to try to optimize these shaders by only rendering a fully detailed image within a small focal region. As you move away from the focal point the image quality decreases.   </p>
 <p>This rendering scheme is motivated by biology. It turns out your eye notices more detail in the center of your vision than in the periphery. Some VR graphics programmers realized they could take advantage of this phenomenon to increase the effective resolution of images by increasing image quality towards the center of your vision. An in depth discussion of foveated rendering can be found in the “previous work section” of this <a href="https://ai.facebook.com/blog/deepfovea-using-deep-learning-for-foveated-reconstruction-in-ar-vr">paper</a>.  </p>
 <p>I did not have the time, equipment or the background necessary to implement a full foveated rendering system but it was fun to fool around with the concept.  </p>
-<p>Before diving into the technical details let’s look at a simple shadertoy fragment shader.  </p>
-<div class="highlight"><pre><span></span><span class="n">void</span> <span class="n">mainImage</span><span class="p">(</span> <span class="k">out</span> <span class="n">vec4</span> <span class="n">fragColor</span><span class="p">,</span> <span class="k">in</span> <span class="n">vec2</span> <span class="n">fragCoord</span> <span class="p">)</span>
-<span class="err">{</span>
-    <span class="o">//</span> <span class="n">Normalized</span> <span class="n">pixel</span> <span class="n">coordinates</span> <span class="p">(</span><span class="k">from</span> <span class="mi">0</span> <span class="k">to</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">vec2</span> <span class="n">uv</span> <span class="o">=</span> <span class="n">fragCoord</span><span class="o">/</span><span class="n">iResolution</span><span class="p">.</span><span class="n">xy</span><span class="p">;</span>
-
-    <span class="o">//</span> <span class="k">Output</span> <span class="n">the</span> <span class="n">pixel</span> <span class="n">coordinates</span> <span class="k">as</span> <span class="n">a</span> <span class="n">color</span> <span class="k">to</span> <span class="n">screen</span>
-    <span class="o">//</span> <span class="n">fragColor</span> <span class="k">is</span> <span class="n">a</span> <span class="mi">4</span> <span class="n">vector</span> <span class="k">of</span> <span class="n">the</span> <span class="n">form</span> <span class="p">(</span><span class="n">red</span><span class="p">,</span> <span class="n">green</span><span class="p">,</span> <span class="n">blue</span><span class="p">,</span> <span class="n">transparency</span><span class="p">)</span>
-    <span class="n">fragColor</span> <span class="o">=</span> <span class="n">vec4</span><span class="p">(</span><span class="n">uv</span><span class="p">,</span> <span class="mi">0</span><span class="p">.</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">.</span><span class="mi">0</span><span class="p">);</span>
-<span class="err">}</span>
+<p>Before diving into the technical details let’s look at a simple shadertoy fragment shader.   </p>
+<p><code>
+void mainImage(out vec4 fragColor, in vec2 fragCoord)<br>
+{
+<div style='margin-left: 5%;'>
+    // Normalized pixel coordinates (from 0 to 1)<br>
+    vec2 uv = fragCoord/iResolution.xy;</p>
+<div class="highlight"><pre><span></span><span class="o">//</span> <span class="k">Output</span> <span class="n">the</span> <span class="n">pixel</span> <span class="n">coordinates</span> <span class="k">as</span> <span class="n">a</span> <span class="n">color</span> <span class="k">to</span> <span class="n">screen</span>
+<span class="o">//</span> <span class="n">fragColor</span> <span class="k">is</span> <span class="n">a</span> <span class="mi">4</span> <span class="n">vector</span> <span class="k">of</span> <span class="n">the</span> <span class="n">form</span>
+<span class="o">//</span> <span class="p">(</span><span class="n">red</span><span class="p">,</span> <span class="n">green</span><span class="p">,</span> <span class="n">blue</span><span class="p">,</span> <span class="n">transparency</span><span class="p">)</span>
+<span class="n">fragColor</span> <span class="o">=</span> <span class="n">vec4</span><span class="p">(</span><span class="n">uv</span><span class="p">,</span> <span class="mi">0</span><span class="p">.</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">.</span><span class="mi">0</span><span class="p">);</span>
 </pre></div>
 
 
+<p></div>
+}<br>
+</code></p>
 <p>This program runs once for each pixel on the screen. Each time it runs, we receive the input variable <code>fragCoord</code>. <code>fragCoord</code> is a 2d vector which contains the x and y coordinates of the pixel being drawn. We normalize those coordinates by dividing by <code>iResolution</code>, another 2d vector, which contains the width and height of the image. Finally we output a color to the screen, whose red and green channels are proportional to the x and y position of the pixel being drawn. The output of this shader looks like this:<br>
 <p align="center">
   <img src="/images/focused-render/simple-shader-out.png" width="50%"> </img>
 </p></p>
 <p>Side note, why do these shader programs require their own language? Shaders are special because they run on the graphics card instead of the cpu. They are highly parallel. A helpful mental model might be imagining that each pixel is colored simultaneously. Therefore a lot of things that we take for granted in normal program languages such as liberally accessing memory and branching become much more difficult.  </p>
-<p>In shadertoy shaders the bottleneck is always in the pixel rendering step. So to speed them up we want to only render a subset of the all the pixels on the screen. It seems like selectively rendering pixels should be as simple as adding a branch to the per pixel shader code that looks like:</p>
-<div class="highlight"><pre><span></span><span class="nv">void</span> <span class="nv">mainImage</span><span class="ss">(</span> <span class="nv">out</span> <span class="nv">vec4</span> <span class="nv">fragColor</span>, <span class="nv">in</span> <span class="nv">vec2</span> <span class="nv">fragCoord</span> <span class="ss">)</span>
-{
-    <span class="k">if</span> <span class="ss">(</span><span class="nv">fragCoord</span> <span class="nv">is</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">subset</span> <span class="nv">of</span> <span class="nv">pixels</span> <span class="nv">to</span> <span class="nv">render</span><span class="ss">)</span> {
-      ... <span class="k">do</span> <span class="nv">computationally</span> <span class="nv">intensive</span> <span class="nv">work</span>
-    } <span class="k">else</span> {
-      <span class="o">//</span> <span class="k">return</span> <span class="nv">a</span> <span class="nv">black</span> <span class="nv">pixel</span>
-      <span class="k">return</span> <span class="nv">vec4</span><span class="ss">(</span><span class="mi">0</span>, <span class="mi">0</span>, <span class="mi">0</span>, <span class="mi">1</span><span class="ss">)</span><span class="c1">;</span>
-    }
-}
-</pre></div>
-
-
+<p>In shadertoy shaders the bottleneck is always in the pixel rendering step. So to speed them up we want to only render a subset of the all the pixels on the screen. It seems like selectively rendering pixels should be as simple as adding a branch to the per pixel shader code that looks like:  </p>
+<p><code>
+void mainImage(out vec4 fragColor, in vec2 fragCoord) <br>
+{<br>
+<div style='margin-left: 5%;'>
+    if (fragCoord is in the subset of pixels to render) {<br>
+      <div style='margin-left: 5%;'>
+      ... do computationally intensive work 
+      </div> 
+    } else {<br>
+      <div style='margin-left: 5%;'>
+      // return a black pixel<br>
+      return vec4(0, 0, 0, 1); 
+      </div> 
+    } 
+</div> 
+}</p>
+<p></code></p>
 <p>Unfortunately we cannot just use an if statement inside of the shader to save us from rendering all the pixels. Unlike normal programming languages, fragment shaders always execute both parts of each branch due to gpu limitations. So while our above code will still have to spend the sample amount of time evaluating compuationally intensive work.  </p>
 <p>Luckily, it turns out that graphics drivers can selectively mark which pixels not to shade by writing their location to a special buffer called the stencil buffer. We can use this stencil buffer to only shade the subset of pixels we are interested in.</p>
 <p>Once I could efficiently render a subset of the pixels, I needed to come up with a pre-generated sampling pattern. Most foveated rendering techniques seem to use a grid, but I decided to try a non uniform approach. Searching for some kind of optimal sampling pattern seemed like an interesting problem and if I was going to devote more time to this I'd explore options like <a href="https://blog.demofox.org/2018/01/30/what-the-heck-is-blue-noise/">blue noise</a>. However in the interest of time, I just decided fill in a small circle in the center and then use samples drawn from one low variance and one high variance gaussians centered at the middle of the screen to place the rest of the pixels. The final sampling pattern ended up looking like this:
