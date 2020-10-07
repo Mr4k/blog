@@ -123,4 +123,4 @@ Further questions:
 Have questions / comments / corrections?  
 Get in touch: <a href="mailto:pstefek.dev@gmail.com">pstefek.dev@gmail.com</a>   
 
-Dicussion on [Hacker News](https://news.ycombinator.com/item?id=24695275)
+Discussion on [Hacker News](https://news.ycombinator.com/item?id=24695275)
