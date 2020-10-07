@@ -108,7 +108,10 @@ Finally, here's the shader with 1/5th of the total pixels rendered (as opposed t
   <img src="/images/focused-render/1of5pixels.gif"> </img>
 </p>
 
+Okay that's all cool but does this technique actually increase performance? I did not do a rigerous benchmark, but [this shader](https://www.shadertoy.com/view/3l23Rh) goes from around 20-25 fps on my plugged in laptop to 60 fps when reduced to 1/5th of the total pixels. [Another shader](https://www.shadertoy.com/view/Ms2SD1) went from around 15 fps to 60 fps.  
+  
 One last side note is that this method can be used with any 3d scene and is not exclusive to shader toys. I just chose to use them because they are always bottlenecked by the pixel rendering step and they are really pretty!
+
 
 Further questions:
 
@@ -119,3 +122,5 @@ Further questions:
 
 Have questions / comments / corrections?  
 Get in touch: <a href="mailto:pstefek.dev@gmail.com">pstefek.dev@gmail.com</a>   
+
+Dicussion on [Hacker News](https://news.ycombinator.com/item?id=24695275)
