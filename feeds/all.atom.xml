@@ -75,6 +75,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) &lt;br&gt;
 &lt;p align="center"&gt;
   &lt;img src="/images/focused-render/1of5pixels.gif"&gt; &lt;/img&gt;
 &lt;/p&gt;&lt;/p&gt;
+&lt;p&gt;Okay that's all cool but does this technique actually increase performance? I did not do a rigerous benchmark, but &lt;a href="https://www.shadertoy.com/view/3l23Rh"&gt;this shader&lt;/a&gt; goes from around 20-25 fps on my plugged in laptop to 60 fps when reduced to 1/5th of the total pixels. &lt;a href="https://www.shadertoy.com/view/Ms2SD1"&gt;Another shader&lt;/a&gt; went from around 15 fps to 60 fps.  &lt;/p&gt;
 &lt;p&gt;One last side note is that this method can be used with any 3d scene and is not exclusive to shader toys. I just chose to use them because they are always bottlenecked by the pixel rendering step and they are really pretty!&lt;/p&gt;
 &lt;p&gt;Further questions:&lt;/p&gt;
 &lt;ul&gt;
@@ -84,7 +85,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) &lt;br&gt;
 &lt;li&gt;How does this actually look in VR?  &lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Have questions / comments / corrections?&lt;br&gt;
-Get in touch: &lt;a href="mailto:pstefek.dev@gmail.com"&gt;pstefek.dev@gmail.com&lt;/a&gt;   &lt;/p&gt;</content><category term="glsl"></category><category term="shader"></category></entry><entry><title>Using Bytecode Surgery to Create an Ouroboros</title><link href="/ouroboros.html" rel="alternate"></link><published>2020-09-28T00:00:00-07:00</published><updated>2020-09-28T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-09-28:/ouroboros.html</id><summary type="html">&lt;p&gt;Falling head over heels down the Python rabbit hole&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;meta charset="utf-8"/&gt;&lt;/p&gt;
+Get in touch: &lt;a href="mailto:pstefek.dev@gmail.com"&gt;pstefek.dev@gmail.com&lt;/a&gt;   &lt;/p&gt;
+&lt;p&gt;Dicussion on &lt;a href="https://news.ycombinator.com/item?id=24695275"&gt;Hacker News&lt;/a&gt;&lt;/p&gt;</content><category term="glsl"></category><category term="shader"></category></entry><entry><title>Using Bytecode Surgery to Create an Ouroboros</title><link href="/ouroboros.html" rel="alternate"></link><published>2020-09-28T00:00:00-07:00</published><updated>2020-09-28T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-09-28:/ouroboros.html</id><summary type="html">&lt;p&gt;Falling head over heels down the Python rabbit hole&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;meta charset="utf-8"/&gt;&lt;/p&gt;
 &lt;p&gt;The code associated with this article can be found &lt;a href="https://github.com/Mr4k/ouroboros"&gt;here&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;Consider the following function in Python which sums up the first n numbers:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="nv"&gt;def&lt;/span&gt; &lt;span class="nv"&gt;sum&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;n&lt;/span&gt;, &lt;span class="nv"&gt;acc&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;:
