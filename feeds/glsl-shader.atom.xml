@@ -86,4 +86,4 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) &lt;br&gt;
 &lt;/ul&gt;
 &lt;p&gt;Have questions / comments / corrections?&lt;br&gt;
 Get in touch: &lt;a href="mailto:pstefek.dev@gmail.com"&gt;pstefek.dev@gmail.com&lt;/a&gt;   &lt;/p&gt;
-&lt;p&gt;Dicussion on &lt;a href="https://news.ycombinator.com/item?id=24695275"&gt;Hacker News&lt;/a&gt;&lt;/p&gt;</content><category term="glsl"></category><category term="shader"></category></entry></feed>
+&lt;p&gt;Discussion on &lt;a href="https://news.ycombinator.com/item?id=24695275"&gt;Hacker News&lt;/a&gt;&lt;/p&gt;</content><category term="glsl"></category><category term="shader"></category></entry></feed>
