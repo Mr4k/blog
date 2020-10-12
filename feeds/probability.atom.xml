@@ -300,4 +300,4 @@ So this is cool little fact but what kinds of problems can we apply it too besid
     (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
     (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
 }
-&lt;/script&gt;</content><category term="probability"></category><category term="algorithms"></category></entry></feed>
+&lt;/script&gt;</content><category term="probability"></category><category term="probability"></category><category term="algorithms"></category></entry></feed>

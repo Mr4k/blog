@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>peterstefek.me</title><link href="/" rel="alternate"></link><link href="/feeds/all.atom.xml" rel="self"></link><id>/</id><updated>2020-09-28T00:00:00-07:00</updated><entry><title>Fooling Around with Foveated Rendering</title><link href="/focused-render.html" rel="alternate"></link><published>2020-09-28T00:00:00-07:00</published><updated>2020-09-28T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-09-28:/focused-render.html</id><summary type="html">&lt;p&gt;Seeing what's right in front of me&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;meta charset="utf-8"/&gt;&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>peterstefek.me</title><link href="/" rel="alternate"></link><link href="/feeds/all.atom.xml" rel="self"></link><id>/</id><updated>2020-10-06T00:00:00-07:00</updated><entry><title>Fooling Around with Foveated Rendering</title><link href="/focused-render.html" rel="alternate"></link><published>2020-10-06T00:00:00-07:00</published><updated>2020-10-06T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-10-06:/focused-render.html</id><summary type="html">&lt;p&gt;Seeing what's right in front of me&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;meta charset="utf-8"/&gt;&lt;/p&gt;
 &lt;p&gt;Shadertoy is a wonderful tool which lets users create and share a type of program called a fragment shader online. The true magic of shadertoy is its community of very talented graphics programmers who build incredible works of art despite having access to only a sliver of the traditional graphics pipeline.  &lt;/p&gt;
 &lt;p&gt;Some of these shaders are very computationally intensive and even in a small window, they crawl along well below their intended 60 frames per second on my old laptop. Inspired by a technique in the VR community called Foveated Rendering, I decided to try to optimize these shaders by only rendering a fully detailed image within a small focal region. As you move away from the focal point the image quality decreases.   &lt;/p&gt;
 &lt;p&gt;This rendering scheme is motivated by biology. It turns out your eye notices more detail in the center of your vision than in the periphery. Some VR graphics programmers realized they could take advantage of this phenomenon to increase the effective resolution of images by increasing image quality towards the center of your vision. An in depth discussion of foveated rendering can be found in the “previous work section” of this &lt;a href="https://ai.facebook.com/blog/deepfovea-using-deep-learning-for-foveated-reconstruction-in-ar-vr"&gt;paper&lt;/a&gt;.  &lt;/p&gt;
@@ -11,10 +11,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)&lt;br&gt;
 &lt;div style='margin-left: 5%;'&gt;
     // Normalized pixel coordinates (from 0 to 1)&lt;br&gt;
     vec2 uv = fragCoord/iResolution.xy;&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="o"&gt;//&lt;/span&gt; &lt;span class="k"&gt;Output&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;pixel&lt;/span&gt; &lt;span class="n"&gt;coordinates&lt;/span&gt; &lt;span class="k"&gt;as&lt;/span&gt; &lt;span class="n"&gt;a&lt;/span&gt; &lt;span class="n"&gt;color&lt;/span&gt; &lt;span class="k"&gt;to&lt;/span&gt; &lt;span class="n"&gt;screen&lt;/span&gt;
-&lt;span class="o"&gt;//&lt;/span&gt; &lt;span class="n"&gt;fragColor&lt;/span&gt; &lt;span class="k"&gt;is&lt;/span&gt; &lt;span class="n"&gt;a&lt;/span&gt; &lt;span class="mi"&gt;4&lt;/span&gt; &lt;span class="n"&gt;vector&lt;/span&gt; &lt;span class="k"&gt;of&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;form&lt;/span&gt;
-&lt;span class="o"&gt;//&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;red&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;green&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;blue&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;transparency&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="n"&gt;fragColor&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;vec4&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;uv&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="err"&gt;// Output the pixel coordinates as a color to screen&lt;/span&gt;
+&lt;span class="err"&gt;// fragColor is a 4 vector of the form&lt;/span&gt;
+&lt;span class="err"&gt;// (red, green, blue, transparency)&lt;/span&gt;
+&lt;span class="err"&gt;fragColor = vec4(uv, 0.0, 1.0);&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -86,14 +86,14 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) &lt;br&gt;
 &lt;/ul&gt;
 &lt;p&gt;Have questions / comments / corrections?&lt;br&gt;
 Get in touch: &lt;a href="mailto:pstefek.dev@gmail.com"&gt;pstefek.dev@gmail.com&lt;/a&gt;   &lt;/p&gt;
-&lt;p&gt;Discussion on &lt;a href="https://news.ycombinator.com/item?id=24695275"&gt;Hacker News&lt;/a&gt;&lt;/p&gt;</content><category term="glsl"></category><category term="shader"></category></entry><entry><title>Using Bytecode Surgery to Create an Ouroboros</title><link href="/ouroboros.html" rel="alternate"></link><published>2020-09-28T00:00:00-07:00</published><updated>2020-09-28T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-09-28:/ouroboros.html</id><summary type="html">&lt;p&gt;Falling head over heels down the Python rabbit hole&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;meta charset="utf-8"/&gt;&lt;/p&gt;
+&lt;p&gt;Discussion on &lt;a href="https://news.ycombinator.com/item?id=24695275"&gt;Hacker News&lt;/a&gt;&lt;/p&gt;</content><category term="glsl, shader"></category><category term="glsl"></category><category term="shader"></category></entry><entry><title>Using Bytecode Surgery to Create an Ouroboros</title><link href="/ouroboros.html" rel="alternate"></link><published>2020-09-28T00:00:00-07:00</published><updated>2020-09-28T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-09-28:/ouroboros.html</id><summary type="html">&lt;p&gt;Falling head over heels down the Python rabbit hole&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;meta charset="utf-8"/&gt;&lt;/p&gt;
 &lt;p&gt;The code associated with this article can be found &lt;a href="https://github.com/Mr4k/ouroboros"&gt;here&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;Consider the following function in Python which sums up the first n numbers:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="nv"&gt;def&lt;/span&gt; &lt;span class="nv"&gt;sum&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;n&lt;/span&gt;, &lt;span class="nv"&gt;acc&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;:
-  &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="nv"&gt;n&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;:
-    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nv"&gt;acc&lt;/span&gt;
-  &lt;span class="k"&gt;else&lt;/span&gt;:
-    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nv"&gt;sum&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;n&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;, &lt;span class="nv"&gt;acc&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="nv"&gt;n&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="err"&gt;def sum(n, acc=0):&lt;/span&gt;
+&lt;span class="err"&gt;  if n == 0:&lt;/span&gt;
+&lt;span class="err"&gt;    return acc&lt;/span&gt;
+&lt;span class="err"&gt;  else:&lt;/span&gt;
+&lt;span class="err"&gt;    return sum(n - 1, acc + n)&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -108,19 +108,19 @@ Most likely you will see a different error which looks like this:  &lt;/p&gt;
 &lt;p&gt;Since I was looking for small projects to do during my first week at the &lt;a href="https://www.recurse.com/"&gt;Recurse Center&lt;/a&gt;, I decided to try to implement a basic version of tail call optimization in Python. Note this is not an original idea and I had already seen some clever hacks which used exceptions to break out of sub calls. I decided to try something different, although after presenting my implementation to the greater RC community I learned that another Recurser had given a &lt;a href="https://www.youtube.com/watch?v=Qk1I6ZxcceU&amp;amp;feature=share"&gt;fantastic talk&lt;/a&gt; which used the same idea back in 2015 (small world!)  &lt;/p&gt;
 &lt;p&gt;Before I dive into the details let's look at the prototype in action:&lt;br&gt;
 sum.py is a file which contains the same sum calculation from the beginning of this post:  &lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="nv"&gt;def&lt;/span&gt; &lt;span class="nv"&gt;sum&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;n&lt;/span&gt;, &lt;span class="nv"&gt;acc&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;:
-  &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="nv"&gt;n&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;:
-    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nv"&gt;acc&lt;/span&gt;
-  &lt;span class="k"&gt;else&lt;/span&gt;:
-    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nv"&gt;sum&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;n&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;, &lt;span class="nv"&gt;acc&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="nv"&gt;n&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="n"&gt;def&lt;/span&gt; &lt;span class="k"&gt;sum&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;n&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;acc&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+  &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;n&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;acc&lt;/span&gt;
+  &lt;span class="k"&gt;else&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="k"&gt;sum&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;n&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;acc&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;n&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 
-&lt;span class="nv"&gt;print&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;sum&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1000000&lt;/span&gt;&lt;span class="ss"&gt;))&lt;/span&gt;
+&lt;span class="n"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;sum&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1000000&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;If type &lt;code&gt;python sum.py&lt;/code&gt; we will get an error.&lt;br&gt;
 Now let's try using my tool:  &lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="n"&gt;python&lt;/span&gt; &lt;span class="n"&gt;optimize&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;tail&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;calls&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;py&lt;/span&gt; &lt;span class="k"&gt;sum&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;py&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="err"&gt;python optimize-tail-calls.py sum.py&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -160,8 +160,8 @@ Unfortunately, there's one more major problem with our clean bytecode definition
     &lt;img src="/images/ouroboros/ouroboros.jpg" width="40%" &gt; 
 &lt;/p&gt; &lt;br&gt;
 The Ouroboros is a snake which is eating its own tail. It symbolizes eternal cyclic renewal. In Python I consider this function to represent an Ouroboros,  &lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="nv"&gt;def&lt;/span&gt; &lt;span class="nv"&gt;ouroboros&lt;/span&gt;&lt;span class="ss"&gt;()&lt;/span&gt;:
-    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nv"&gt;ouroboros&lt;/span&gt;&lt;span class="ss"&gt;()&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="err"&gt;def ouroboros():&lt;/span&gt;
+&lt;span class="err"&gt;    return ouroboros()&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -171,7 +171,7 @@ I think with a little work the AST based heuristic could be complete (it would n
 &lt;p&gt;When I started this project I was wondering about diving into the cpython VM code itself. I think it was neat that I didn't have to but I wonder if being able to make these tail call optimization decisions at runtime would be better. This would allow us to know which function was about to be called at runtime and we could decide whether or not to jump then. We would no longer need any AST based heuristics.  &lt;/p&gt;
 &lt;p&gt;Of course if I had full VM access, I could also potentially allow jumping between functions without having to resort to exceptions which would really allow full tail call optimization. That might be an undertaking though.&lt;/p&gt;
 &lt;p&gt;Have questions / comments / corrections?&lt;br&gt;
-Get in touch: &lt;a href="mailto:pstefek.dev@gmail.com"&gt;pstefek.dev@gmail.com&lt;/a&gt;   &lt;/p&gt;</content><category term="python"></category><category term="bytecode"></category></entry><entry><title>Quick Notes on Differentiable Monte Carlo Simulations</title><link href="/differentiable-monte-carlo.html" rel="alternate"></link><published>2020-09-23T00:00:00-07:00</published><updated>2020-09-23T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-09-23:/differentiable-monte-carlo.html</id><summary type="html">&lt;p&gt;Reversing Expectations&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;strong&gt;Background&lt;/strong&gt;&lt;br&gt;
+Get in touch: &lt;a href="mailto:pstefek.dev@gmail.com"&gt;pstefek.dev@gmail.com&lt;/a&gt;   &lt;/p&gt;</content><category term="python, bytecode"></category><category term="python"></category><category term="bytecode"></category></entry><entry><title>Quick Notes on Differentiable Monte Carlo Simulations</title><link href="/differentiable-monte-carlo.html" rel="alternate"></link><published>2020-09-23T00:00:00-07:00</published><updated>2020-09-23T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-09-23:/differentiable-monte-carlo.html</id><summary type="html">&lt;p&gt;Reversing Expectations&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;strong&gt;Background&lt;/strong&gt;&lt;br&gt;
 If you haven't read my &lt;a href="https://www.peterstefek.me/differentiable-dithering.html"&gt;last post&lt;/a&gt; and the next paragraph sounds like gibberish, don't worry! None of it is required.  &lt;/p&gt;
 &lt;p&gt;In my &lt;a href="https://www.peterstefek.me/differentiable-dithering.html"&gt;last post&lt;/a&gt;, I used variance as a proxy for image quality in the loss function. The nice thing about using variance, is that the sum of independent pixel variances is simple to compute (it's just the sum of the individual variances). However, I mentioned one could try using the expected value of a real image quality metric like &lt;a href="https://en.wikipedia.org/wiki/Structural_similarity"&gt;SSIM&lt;/a&gt; instead. Unfortunately computing the expectation of a function like SSIM (or something crazier like &lt;a href="https://ai.googleblog.com/2017/12/introducing-nima-neural-image-assessment.html"&gt;NIMA&lt;/a&gt;) is not so trivial. One way to compute the expectation of these crazier metrics, would be to use a Monte Carlo techinque. But it was not obvious to me how to get useful gradients out of that procedure.  &lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Problem&lt;/strong&gt;&lt;br&gt;
@@ -295,7 +295,7 @@ Get in touch: &lt;a href="mailto:pstefek.dev@gmail.com"&gt;pstefek.dev@gmail.com
     (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
     (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
 }
-&lt;/script&gt;</content><category term="jax"></category><category term="gradient descent"></category><category term="statistics"></category></entry><entry><title>Differentiable Dithering</title><link href="/differentiable-dithering.html" rel="alternate"></link><published>2020-09-09T00:00:00-07:00</published><updated>2020-09-09T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-09-09:/differentiable-dithering.html</id><summary type="html">&lt;p&gt;Coloring with calculus&lt;/p&gt;</summary><content type="html">&lt;p&gt;Colab source code can be found &lt;a href="https://gist.github.com/Mr4k/1f1b7ecaf30de073a50cbedd0da4dc82"&gt;here&lt;/a&gt;.&lt;/p&gt;
+&lt;/script&gt;</content><category term="jax, gradient descent, statistics"></category><category term="jax"></category><category term="gradient descent"></category><category term="statistics"></category></entry><entry><title>Differentiable Dithering</title><link href="/differentiable-dithering.html" rel="alternate"></link><published>2020-09-09T00:00:00-07:00</published><updated>2020-09-09T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-09-09:/differentiable-dithering.html</id><summary type="html">&lt;p&gt;Coloring with calculus&lt;/p&gt;</summary><content type="html">&lt;p&gt;Colab source code can be found &lt;a href="https://gist.github.com/Mr4k/1f1b7ecaf30de073a50cbedd0da4dc82"&gt;here&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Problem&lt;/strong&gt;&lt;br&gt;
 Let's say we want to reduce the number of colors in an image. For example consider the picture of fruit below:
 &lt;p align="center"&gt;
@@ -446,7 +446,7 @@ Get in touch: &lt;a href="mailto:pstefek.dev@gmail.com"&gt;pstefek.dev@gmail.com
     (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
     (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
 }
-&lt;/script&gt;</content><category term="colors"></category><category term="jax"></category><category term="gradient descent"></category></entry><entry><title>Art Class With Leibniz</title><link href="/art-class-with-leibniz.html" rel="alternate"></link><published>2020-09-01T00:00:00-07:00</published><updated>2020-09-01T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-09-01:/art-class-with-leibniz.html</id><summary type="html">&lt;p&gt;Doodling with derivatives&lt;/p&gt;</summary><content type="html">&lt;p align="center"&gt;
+&lt;/script&gt;</content><category term="colors, jax, gradient descent"></category><category term="colors"></category><category term="jax"></category><category term="gradient descent"></category></entry><entry><title>Art Class With Leibniz</title><link href="/art-class-with-leibniz.html" rel="alternate"></link><published>2020-09-01T00:00:00-07:00</published><updated>2020-09-01T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-09-01:/art-class-with-leibniz.html</id><summary type="html">&lt;p&gt;Doodling with derivatives&lt;/p&gt;</summary><content type="html">&lt;p align="center"&gt;
     &lt;img class='artpic' src="/images/art-class/mona-progress.gif" width="20%" &gt; 
 &lt;/p&gt;
 
@@ -643,7 +643,7 @@ How do the hyperparameters affect image quality?  &lt;/p&gt;
 &lt;p&gt;What if we used different shapes? What if we let the algorithm choose the shape?&lt;/p&gt;
 &lt;p&gt;What if we did it in 3d?  &lt;/p&gt;
 &lt;p&gt;Have questions / comments / corrections?&lt;br&gt;
-Get in touch: &lt;a href="mailto:pstefek.dev@gmail.com"&gt;pstefek.dev@gmail.com&lt;/a&gt;&lt;/p&gt;</content><category term="algorithms"></category><category term="jax"></category><category term="gradient descent"></category></entry><entry><title>Optimizing an Open Source Texture Synthesis Library</title><link href="/texture-optimization.html" rel="alternate"></link><published>2020-07-26T00:00:00-07:00</published><updated>2020-07-26T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-07-26:/texture-optimization.html</id><summary type="html">&lt;p&gt;Adventures in learning to profile.&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;strong&gt;Background&lt;/strong&gt;&lt;br&gt;
+Get in touch: &lt;a href="mailto:pstefek.dev@gmail.com"&gt;pstefek.dev@gmail.com&lt;/a&gt;&lt;/p&gt;</content><category term="algorithms, jax, gradient descent"></category><category term="algorithms"></category><category term="jax"></category><category term="gradient descent"></category></entry><entry><title>Optimizing an Open Source Texture Synthesis Library</title><link href="/texture-optimization.html" rel="alternate"></link><published>2020-07-26T00:00:00-07:00</published><updated>2020-07-26T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-07-26:/texture-optimization.html</id><summary type="html">&lt;p&gt;Adventures in learning to profile.&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;strong&gt;Background&lt;/strong&gt;&lt;br&gt;
 Near the end of 2019 I stumbled across this &lt;a href="https://www.youtube.com/watch?v=fMbK7PYQux4&amp;amp;t=6m57s"&gt;talk&lt;/a&gt; by procedural generation researcher &lt;a href="https://www.anastasiaopara.com/"&gt;Anastasia Opara&lt;/a&gt;. In the talk she presents a novel algorithm for example based texture synthesis. The goal of example based texture synthesis is to take one or more example textures and synthesize a new visually similar output texture.    &lt;/p&gt;
 &lt;p&gt;Here's an example from the project README:
   &lt;p align="center"&gt;
@@ -707,16 +707,16 @@ Overall I was pretty excited by how this project turned out. However I think it'
 While I said many things above about optimization and profiling I am no expert and always looking to learn more so if you think something is incorrect or have any suggestions feel free to get in touch!&lt;br&gt;
 Also a big thanks to the people at &lt;a href="https://www.embark-studios.com/"&gt;Embark Studios&lt;/a&gt; who were nice enough to take the time to review my code / ideas!    &lt;/p&gt;
 &lt;p&gt;Have questions / comments / corrections?&lt;br&gt;
-Get in touch: &lt;a href="mailto:pstefek.dev@gmail.com"&gt;pstefek.dev@gmail.com&lt;/a&gt;   &lt;/p&gt;</content><category term="probability"></category><category term="algorithms"></category><category term="image processing"></category><category term="optimization"></category></entry><entry><title>A Note on Ray Marching with Heightfields</title><link href="/ray-marching-heightfields.html" rel="alternate"></link><published>2019-10-18T00:00:00-07:00</published><updated>2019-10-18T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2019-10-18:/ray-marching-heightfields.html</id><summary type="html">&lt;p&gt;Short stepping to avoid collisions&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;span class="math"&gt;\(\newcommand{\norm}[1]{\lvert \lvert #1 \rvert \rvert}\)&lt;/span&gt;&lt;/p&gt;
+Get in touch: &lt;a href="mailto:pstefek.dev@gmail.com"&gt;pstefek.dev@gmail.com&lt;/a&gt;   &lt;/p&gt;</content><category term="algorithms"></category><category term="probability"></category><category term="algorithms"></category><category term="image processing"></category><category term="optimization"></category></entry><entry><title>A Note on Ray Marching with Heightfields</title><link href="/ray-marching-heightfields.html" rel="alternate"></link><published>2019-10-18T00:00:00-07:00</published><updated>2019-10-18T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2019-10-18:/ray-marching-heightfields.html</id><summary type="html">&lt;p&gt;Short stepping to avoid collisions&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;span class="math"&gt;\(\newcommand{\norm}[1]{\lvert \lvert #1 \rvert \rvert}\)&lt;/span&gt;&lt;/p&gt;
 &lt;p&gt;Ray marching is a technique for testing ray intersections with a scene.
 If you are new to ray marching, I highly recommend reading one of these &lt;a href="https://www.iquilezles.org/www/articles/raymarchingdf/raymarchingdf.htm"&gt;great&lt;/a&gt; &lt;a href="http://jamie-wong.com/2016/07/15/ray-marching-signed-distance-functions/"&gt;introductions&lt;/a&gt;
 to the technique.
 The central idea in raymarching is that the scene is represented by a distance field function &lt;span class="math"&gt;\(D(pos)\)&lt;/span&gt;
 which gives the distance to the closest surface at each point. This distance field function for a scene is usually built by combining the distance fields of many primitives such as spheres, cubes and planes. Usually the distance field of each primitive can be analytically defined. A simple example of one of these primitives is a sphere at the origin
 with radius r whose distance field function is defined as follows in glsl:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="nv"&gt;function&lt;/span&gt; &lt;span class="nv"&gt;distSphere&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;vec3&lt;/span&gt; &lt;span class="nv"&gt;pos&lt;/span&gt;, &lt;span class="nv"&gt;float&lt;/span&gt; &lt;span class="nv"&gt;r&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt; {
-    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nv"&gt;mag&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;pos&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="nv"&gt;r&lt;/span&gt;&lt;span class="c1"&gt;;&lt;/span&gt;
-}
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="err"&gt;function distSphere(vec3 pos, float r) {&lt;/span&gt;
+&lt;span class="err"&gt;    return mag(pos) - r;&lt;/span&gt;
+&lt;span class="err"&gt;}&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -726,9 +726,9 @@ a function &lt;code&gt;h(vec2 pos)&lt;/code&gt; that takes a 2d coordinate and r
 at that point. They can be thought of as topographical maps. Heightfields are useful because they allow artists to easily define bumpy surfaces such as waves or terrain. 
 Common analytic heightfields include simplex noise, and sin / cosine waves.
 Typically people use a function like the one below for the heightfield's distance field function:  &lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="nv"&gt;function&lt;/span&gt; &lt;span class="nv"&gt;distHeightfield&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;vec3&lt;/span&gt; &lt;span class="nv"&gt;pos&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt; {
-    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nv"&gt;h&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;pos&lt;/span&gt;.&lt;span class="nv"&gt;xz&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="nv"&gt;pos&lt;/span&gt;.&lt;span class="nv"&gt;y&lt;/span&gt;&lt;span class="c1"&gt;;&lt;/span&gt;
-}
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="err"&gt;function distHeightfield(vec3 pos) {&lt;/span&gt;
+&lt;span class="err"&gt;    return h(pos.xz) + pos.y;&lt;/span&gt;
+&lt;span class="err"&gt;}&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -815,7 +815,7 @@ Finally using the pythagorean theorem we can find &lt;span class="math"&gt;\(\no
     (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
     (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
 }
-&lt;/script&gt;</content><category term="raymarching"></category><category term="graphics"></category></entry><entry><title>Optimal Stopping Policies</title><link href="/optimal-stopping.html" rel="alternate"></link><published>2018-10-06T00:00:00-07:00</published><updated>2019-10-15T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2018-10-06:/optimal-stopping.html</id><summary type="html">&lt;p&gt;Theoretical Recruiting&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;strong&gt;The Recruiter Problem&lt;/strong&gt;&lt;br&gt;
+&lt;/script&gt;</content><category term="graphics"></category><category term="raymarching"></category><category term="graphics"></category></entry><entry><title>Optimal Stopping Policies</title><link href="/optimal-stopping.html" rel="alternate"></link><published>2018-10-06T00:00:00-07:00</published><updated>2019-10-15T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2018-10-06:/optimal-stopping.html</id><summary type="html">&lt;p&gt;Theoretical Recruiting&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;strong&gt;The Recruiter Problem&lt;/strong&gt;&lt;br&gt;
 Pretend for a minute that you are a recruiter who's looking for people to fill a position. Maybe you're reading this post because I have applied for a position at your company and you're vetting me. Anyways the point is I'm one candidate among many. Even if you interview me and like me how do you know there's not someone better out there to fill the position? &lt;br&gt;&lt;br&gt;
 More formally, you are going to interview &lt;span class="math"&gt;\(N\)&lt;/span&gt; candidates for a job. The order in which they come is random, with all orderings equally likely. After each interview with a candidate you will come up with a quality score (a real number between 0 and 1) for them and then you have to choose whether to hire them on the spot or reject them and hope a better fit comes along. Your goal is to hire the best of the best (the candidate who has the highest score among all N candidates) but you have no idea what the applicant pool looks like (no information about the distribution from which these candidates are drawn). What is the probability that you succeed in your task given that you use the optimal hiring strategy? &lt;br&gt;&lt;br&gt;
 This problem is know sometimes as the best choice problem or the secretary problem. We will call it the Recruiter Problem. It is a very famous and well studied problem because of its very surprising solution: &lt;br&gt;&lt;br&gt;
@@ -1116,7 +1116,7 @@ So this is cool little fact but what kinds of problems can we apply it too besid
     (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
     (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
 }
-&lt;/script&gt;</content><category term="probability"></category><category term="algorithms"></category></entry><entry><title>The PCP Theorem and the Hardness of Approximation</title><link href="/pcp-theorem.html" rel="alternate"></link><published>2018-04-29T02:50:00-07:00</published><updated>2019-08-14T09:30:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2018-04-29:/pcp-theorem.html</id><summary type="html">&lt;p&gt;An introduction to the applications of the PCP theorem&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;strong&gt;Preamble&lt;/strong&gt;&lt;br&gt;
+&lt;/script&gt;</content><category term="probability"></category><category term="probability"></category><category term="algorithms"></category></entry><entry><title>The PCP Theorem and the Hardness of Approximation</title><link href="/pcp-theorem.html" rel="alternate"></link><published>2018-04-29T02:50:00-07:00</published><updated>2019-08-14T09:30:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2018-04-29:/pcp-theorem.html</id><summary type="html">&lt;p&gt;An introduction to the applications of the PCP theorem&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;strong&gt;Preamble&lt;/strong&gt;&lt;br&gt;
 This post uses a lot of computational complexity terms and is fairly dense. I've included some defintions of frequently used terminology below. &lt;br&gt;&lt;br&gt;&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
@@ -1452,7 +1452,7 @@ http://theory.cs.princeton.edu/complexity/ab_hastadchap.pdf
     (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
     (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
 }
-&lt;/script&gt;</content><category term="algorithms"></category><category term="theory"></category></entry><entry><title>The Alias Method for Fast Weighted Random</title><link href="/alias-method.html" rel="alternate"></link><published>2017-06-25T00:00:00-07:00</published><updated>2019-10-15T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2017-06-25:/alias-method.html</id><summary type="html">&lt;p&gt;Constant time draws from a discrete distribution.&lt;/p&gt;</summary><content type="html">&lt;style&gt;
+&lt;/script&gt;</content><category term="algorithms"></category><category term="algorithms"></category><category term="theory"></category></entry><entry><title>The Alias Method for Fast Weighted Random</title><link href="/alias-method.html" rel="alternate"></link><published>2017-06-25T00:00:00-07:00</published><updated>2019-10-15T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2017-06-25:/alias-method.html</id><summary type="html">&lt;p&gt;Constant time draws from a discrete distribution.&lt;/p&gt;</summary><content type="html">&lt;style&gt;
 thick.thicker {
     font-weight: 900;
 }
@@ -1486,10 +1486,10 @@ thick.thicker {
 &lt;span class="n"&gt;weights&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="mf"&gt;3.0&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mf"&gt;6.0&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;orange&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mf"&gt;6.0&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;blue&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mf"&gt;2.0&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mf"&gt;6.0&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;green&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;
 
 &lt;span class="n"&gt;counts&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;orange&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;blue&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;green&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;
-&lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="nb"&gt;xrange&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;600000&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+&lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;xrange&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;600000&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
     &lt;span class="n"&gt;counts&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;weightedRandom&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;weights&lt;/span&gt;&lt;span class="p"&gt;)]&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
 
-&lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;counts&lt;/span&gt;
+&lt;span class="nb"&gt;print&lt;/span&gt; &lt;span class="n"&gt;counts&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -1532,7 +1532,7 @@ Here's a visualization of the algorithm:
 &lt;br&gt;
 &lt;strong&gt;Here is an implementation of our algorithm:&lt;/strong&gt;&lt;br&gt;
 &lt;br&gt;&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;numpy&lt;/span&gt; &lt;span class="kn"&gt;as&lt;/span&gt; &lt;span class="nn"&gt;np&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;numpy&lt;/span&gt; &lt;span class="k"&gt;as&lt;/span&gt; &lt;span class="nn"&gt;np&lt;/span&gt;
 &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;bintrees&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;AVLTree&lt;/span&gt;
 &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;random&lt;/span&gt;
 
@@ -1547,7 +1547,7 @@ Here's a visualization of the algorithm:
     &lt;span class="n"&gt;numWeights&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;len&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;weights&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
     &lt;span class="c1"&gt;# We use a AVLTree to make our pull/push operations O(log n)&lt;/span&gt;
     &lt;span class="n"&gt;tree&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;AVLTree&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;weights&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-    &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="nb"&gt;xrange&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;numWeights&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;xrange&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;numWeights&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
         &lt;span class="n"&gt;smallestValue&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;smallestColor&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;tree&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pop_min&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="c1"&gt;# O(log n)&lt;/span&gt;
         &lt;span class="n"&gt;overfill&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="n"&gt;numWeights&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;smallestValue&lt;/span&gt;
         &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;overfill&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;epsilon&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
@@ -1579,11 +1579,11 @@ Here's a visualization of the algorithm:
 &lt;span class="n"&gt;partition&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;partitionWeights&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;weights&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 
 &lt;span class="n"&gt;counts&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;orange&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;blue&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;green&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;
-&lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="nb"&gt;xrange&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;600000&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+&lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;xrange&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;600000&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
     &lt;span class="n"&gt;counts&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;drawFromPartition&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;partition&lt;/span&gt;&lt;span class="p"&gt;)]&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
 
-&lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;counts&lt;/span&gt;
+&lt;span class="nb"&gt;print&lt;/span&gt; &lt;span class="n"&gt;counts&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;p&gt;&lt;strong&gt;One final note on runtime.&lt;/strong&gt; If you run our example code you'll notice the "slow" function is almost twice as fast as the "fast" one. Have I been lying this whole time? No. This is because in our example we used a small number of weights. In a &lt;a href="https://gist.github.com/Mr4k/eabaca318499bd54e5e18431efbc6622"&gt;separate speed test&lt;/a&gt; I use 1000 weights and draw from the distributions 100000 times each. In this case the fast algorithm runs in 0.35 seconds on my computer while the slow algorithm takes about 15 seconds.&lt;/p&gt;</content><category term="probability"></category><category term="algorithms"></category></entry></feed>
+&lt;p&gt;&lt;strong&gt;One final note on runtime.&lt;/strong&gt; If you run our example code you'll notice the "slow" function is almost twice as fast as the "fast" one. Have I been lying this whole time? No. This is because in our example we used a small number of weights. In a &lt;a href="https://gist.github.com/Mr4k/eabaca318499bd54e5e18431efbc6622"&gt;separate speed test&lt;/a&gt; I use 1000 weights and draw from the distributions 100000 times each. In this case the fast algorithm runs in 0.35 seconds on my computer while the slow algorithm takes about 15 seconds.&lt;/p&gt;</content><category term="algorithms"></category><category term="probability"></category><category term="algorithms"></category></entry></feed>

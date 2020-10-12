@@ -14,7 +14,7 @@
 <div class="row">
  <div class="col-md-8">
   <h1>Fooling Around with Foveated Rendering</h1>
-  <label>Posted on <strong>28 September 2020</strong></label>
+  <label>Posted on <strong>06 October 2020</strong></label>
   <p><meta charset="utf-8"/></p>
 <p>Shadertoy is a wonderful tool which lets users create and share a type of program called a fragment shader online. The true magic of shadertoy is its community of very talented graphics programmers who build incredible works of art despite having access to only a sliver of the traditional graphics pipeline.  </p>
 <p>Some of these shaders are very computationally intensive and even in a small window, they crawl along well below their intended 60 frames per second on my old laptop. Inspired by a technique in the VR community called Foveated Rendering, I decided to try to optimize these shaders by only rendering a fully detailed image within a small focal region. As you move away from the focal point the image quality decreases.   </p>
@@ -27,10 +27,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)<br>
 <div style='margin-left: 5%;'>
     // Normalized pixel coordinates (from 0 to 1)<br>
     vec2 uv = fragCoord/iResolution.xy;</p>
-<div class="highlight"><pre><span></span><span class="o">//</span> <span class="k">Output</span> <span class="n">the</span> <span class="n">pixel</span> <span class="n">coordinates</span> <span class="k">as</span> <span class="n">a</span> <span class="n">color</span> <span class="k">to</span> <span class="n">screen</span>
-<span class="o">//</span> <span class="n">fragColor</span> <span class="k">is</span> <span class="n">a</span> <span class="mi">4</span> <span class="n">vector</span> <span class="k">of</span> <span class="n">the</span> <span class="n">form</span>
-<span class="o">//</span> <span class="p">(</span><span class="n">red</span><span class="p">,</span> <span class="n">green</span><span class="p">,</span> <span class="n">blue</span><span class="p">,</span> <span class="n">transparency</span><span class="p">)</span>
-<span class="n">fragColor</span> <span class="o">=</span> <span class="n">vec4</span><span class="p">(</span><span class="n">uv</span><span class="p">,</span> <span class="mi">0</span><span class="p">.</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">.</span><span class="mi">0</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><span class="err">// Output the pixel coordinates as a color to screen</span>
+<span class="err">// fragColor is a 4 vector of the form</span>
+<span class="err">// (red, green, blue, transparency)</span>
+<span class="err">fragColor = vec4(uv, 0.0, 1.0);</span>
 </pre></div>
 
 

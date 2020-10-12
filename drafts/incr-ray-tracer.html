@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Incremental Ray Tracing In One Weekend</title>
+    <link rel="stylesheet" type="text/css" href="/theme/css/main.css" />
+</head>
+
+<body>
+    <div class="container">
+<header>
+    <a href="/">home</a>
+</header>
+<div class="row">
+ <div class="col-md-8">
+  <h1>Incremental Ray Tracing In One Weekend</h1>
+  <label>Posted on <strong>13 October 2020</strong></label>
+  <p><strong>Incremental Computation</strong><br>
+Incremental computation is programming abstraction which gives the user a way of writing calculations such that when some of the inputs change only a relevant subset of the calculation has to be recomputed.  </p>
+<p>The above definition is kind of vague and honestly it's best to start with an example. Let's take a look at the following mathematical expression.   </p>
+<div class="math">$$ (a+b)*c $$</div>
+<p>We can evaluate this expression in two steps, First by adding a and b together, then by multiplying the result by c. We can even write this compuatation out as a dependency graph:
+<p align="center">
+  <img src="/images/incr-ray-tracer/comp-dag.png" width=50%> </img>
+</p>
+Here the variables a,b,c are referred to as leaves because they have no dependencies. Now what if after we do out initial computation, the value of c changes?
+<p align="center">
+  <img src="/images/incr-ray-tracer/comp-dag-2.png" width=50%> </img>
+</p>
+We can see from this graph that since (a+b) does not depend on c, we do not need to recompute it. Now imagine scaling this idea up to larger, more complex expressions. If you are familar with spreadsheet software, you might have flashbacks to the huge interlinked computations created there. This brings us to a second, more intutive definition of incremental computation: Microsoft Excel on steroids.
+<p align="center">
+  <img src="/images/incr-ray-tracer/excel-on-steroids.png" width=50%> </img>
+</p>
+There are several different frameworks and projects that seek to give the programmer these incremental computing ablities. These include several rust libraries, Facebook's Skip Lang and an ocaml library called Incremental. I choose play around with Incremental for my experiments, because it seems to be the most battle tested option.</p>
+<p><strong>Pros/Cons</strong><br>
+So far it seems like incremental compuatation frameworks are magical abstractions which allow programmers to write incredibly efficient programs with ease. So why haven't you heard of them? Well like most things in software, incremental computation frameworks seem to come with a few trade offs.<br>
+Pros:</p>
+<ul>
+<li>An incremental computation framwork provides a simple abstraction around optimizing computations which allow programmers to write more efficently recompuatable programs with low mental overhead</li>
+<li>The abstraction provided by these frameworks generalizes well to many different types of problems</li>
+</ul>
+<p>Cons:</p>
+<ul>
+<li>There the framework has non neligable overhead both in speed and memory. We to make sure each incrmentalized step is heavy enough or the overhead of the framework could dwarf the actual time it takes to recompute it.</li>
+<li>Similar to the above point, the inital compuatation of the algorithm will be slower. You need to decide if you will be recomputing often enough to justify this slow down.</li>
+<li>There are always limitations to any particular abstraction. Therefore you will likely be able to come up with a custom algorithm for a specific problem that is much faster than the result you get using an incremental compute framework</li>
+</ul>
+<p>Those interested in exploring these tradeoffs in detail or wanting to peek behind the curtain will enjoy this talk (TODO add link).</p>
+<p><strong>What Should you do with Incremental Computation</strong><br>
+So where are people actually using incremental computation? As far as I know, there are a few different areas where these ideas are being applied: </p>
+<ul>
+<li>Finance, especially to deal with large spreadsheet like calculations. Most finance companies are a little vague about what they actually do so I'm the least confident about this usecase.</li>
+<li>Compliers, the rust compiler explored these techinques when building their incremental compiliation features</li>
+<li>Databases, the company Materialize uses technology based on the Timely Dataflow Model developed by Microsoft Research to create a better streaming database</li>
+<li>User Interface, user interfaces are a perfect place for incremental computation because it's important to figure out which compoenents you actually need to re-render when something on the page changes.</li>
+</ul>
+<p><strong>What Shouldn't you do with Incremental Computation</strong><br>
+Now we can get to the fun part. Over the last week, I've been trying to play around with Incremental (and picking up scraps of OCaml) to get a better idea of how to actually build incremental computations.  </p>
+<p>Of course the first thing I did was to break the library, but after that I decided I wanted to write a small but non trivial project which using it. Since I don't have legions of highly paid quants to create large spreadsheets, I decided that usecase was off the table. I felt that building a toy compiler or database would be at least a week long project by itself without incrementalizing it, so I ruled those out. I'm also not a huge frontend person, so a ui framework didn't seem appeal to me that much. So I decided to try something different:</p>
+<p align="center">
+  <img src="/images/incr-ray-tracer/in-one-weekend.jpg" width=50%> </img>
+</p>
+
+<script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width < 768) ? "left" : align;
+        indent = (screen.width < 768) ? "0em" : indent;
+        linebreak = (screen.width < 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/latest.js?config=TeX-AMS-MML_HTMLorMML';
+
+    var configscript = document.createElement('script');
+    configscript.type = 'text/x-mathjax-config';
+    configscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'none' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        availableFonts: ['STIX', 'TeX']," +
+        "        preferredFont: 'STIX'," +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+</script>
+ </div>
+</div>
+<footer>
+    <a href="/">home</a>
+</footer>
+    </div>
+
+    <!-- Google Analytics -->
+    <script>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+        
+        ga('create', 'UA-157308007-1', 'auto');
+        ga('set', 'anonymizeIp', true);
+        ga('send', 'pageview');
+    </script>
+    <!-- End Google Analytics -->
+</body>
+
+</html>

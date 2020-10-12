@@ -123,4 +123,4 @@ Get in touch: &lt;a href="mailto:pstefek.dev@gmail.com"&gt;pstefek.dev@gmail.com
     (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
     (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
 }
-&lt;/script&gt;</content><category term="jax"></category><category term="gradient descent"></category><category term="statistics"></category></entry></feed>
+&lt;/script&gt;</content><category term="jax, gradient descent, statistics"></category><category term="jax"></category><category term="gradient descent"></category><category term="statistics"></category></entry></feed>

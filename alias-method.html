@@ -49,10 +49,10 @@ thick.thicker {
 <span class="n">weights</span> <span class="o">=</span> <span class="p">{</span><span class="mf">3.0</span><span class="o">/</span><span class="mf">6.0</span> <span class="p">:</span> <span class="s2">&quot;orange&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="o">/</span><span class="mf">6.0</span> <span class="p">:</span> <span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="o">/</span><span class="mf">6.0</span> <span class="p">:</span> <span class="s2">&quot;green&quot;</span><span class="p">}</span>
 
 <span class="n">counts</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;orange&quot;</span> <span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;blue&quot;</span> <span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;green&quot;</span> <span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">600000</span><span class="p">):</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">600000</span><span class="p">):</span>
     <span class="n">counts</span><span class="p">[</span><span class="n">weightedRandom</span><span class="p">(</span><span class="n">weights</span><span class="p">)]</span> <span class="o">+=</span> <span class="mi">1</span>
 
-<span class="k">print</span> <span class="n">counts</span>
+<span class="nb">print</span> <span class="n">counts</span>
 </pre></div>
 
 
@@ -95,7 +95,7 @@ Here's a visualization of the algorithm:
 <br>
 <strong>Here is an implementation of our algorithm:</strong><br>
 <br></p>
-<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">bintrees</span> <span class="kn">import</span> <span class="n">AVLTree</span>
 <span class="kn">import</span> <span class="nn">random</span>
 
@@ -110,7 +110,7 @@ Here's a visualization of the algorithm:
     <span class="n">numWeights</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
     <span class="c1"># We use a AVLTree to make our pull/push operations O(log n)</span>
     <span class="n">tree</span> <span class="o">=</span> <span class="n">AVLTree</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">numWeights</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">numWeights</span><span class="p">):</span>
         <span class="n">smallestValue</span><span class="p">,</span> <span class="n">smallestColor</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">pop_min</span><span class="p">()</span> <span class="c1"># O(log n)</span>
         <span class="n">overfill</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">numWeights</span> <span class="o">-</span> <span class="n">smallestValue</span>
         <span class="k">if</span> <span class="n">overfill</span> <span class="o">&gt;</span> <span class="n">epsilon</span><span class="p">:</span>
@@ -142,10 +142,10 @@ Here's a visualization of the algorithm:
 <span class="n">partition</span> <span class="o">=</span> <span class="n">partitionWeights</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
 
 <span class="n">counts</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;orange&quot;</span> <span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;blue&quot;</span> <span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;green&quot;</span> <span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">600000</span><span class="p">):</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">600000</span><span class="p">):</span>
     <span class="n">counts</span><span class="p">[</span><span class="n">drawFromPartition</span><span class="p">(</span><span class="n">partition</span><span class="p">)]</span> <span class="o">+=</span> <span class="mi">1</span>
 
-<span class="k">print</span> <span class="n">counts</span>
+<span class="nb">print</span> <span class="n">counts</span>
 </pre></div>
 
 
