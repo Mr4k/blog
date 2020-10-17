@@ -48,7 +48,7 @@ $\frac{d}{d\theta}E_{p(\theta)}[f(x, \theta)]$ $\approx$ $\frac{d}{d\theta} \fra
 This is where things get a little trickier. I generally found two common ways of approaching this problem.  
   
 **The Score Function Gradient Estimator (aka REINFORCE)**  
-The little trick here is to format the gradient as a second Monte Carlo problem (assuming [certain conditions](https://en.wikipedia.org/wiki/Leibniz_integral_rule) are met). We also make use of the log derivative trick.   
+The idea here is to format the gradient as a second Monte Carlo problem over the same distribution (assuming [certain conditions](https://en.wikipedia.org/wiki/Leibniz_integral_rule) are met). We also make use of the log derivative trick.   
 
 $\frac{d}{d\theta}E_{p(\theta)}[f(x, \theta)]=\frac{d}{d\theta} \int_{\Omega} p(\overline{\mathbf{x}}_i; \theta)f(\overline{\mathbf{x}}_i, \theta)$  
 

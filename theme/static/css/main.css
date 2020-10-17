@@ -93,6 +93,15 @@ img{
     max-height: 100%;
 }
 
+table {
+	border-collapse: collapse;
+	font-size: 75%;
+}
+table, th, td {
+	border: 1px solid black;
+	text-align: center;
+}
+
 @media (max-width: 1000px) {
 	body {
 		font-size: 250%;
@@ -100,6 +109,16 @@ img{
 		width: 100%;
     	border: none;
 	}
+	table {
+		border-collapse: collapse;
+		width: 95%;
+		font-size: 75%;
+	}
+	table, th, td {
+		border: 1px solid black;
+		text-align: center;
+	}
+	
     img{
         width: 100%;
 	}

@@ -1,6 +1,6 @@
 Title: Fooling Around with Foveated Rendering
-Date: 2020-09-28
-Modified: 2020-09-28
+Date: 2020-10-6
+Modified: 2020-10-6
 Category: glsl, shader
 Tags: glsl, shader
 Slug: focused-render
