@@ -13,7 +13,7 @@ If you haven't read my [last post](https://www.peterstefek.me/differentiable-dit
 In my [last post](https://www.peterstefek.me/differentiable-dithering.html), I used variance as a proxy for image quality in the loss function. The nice thing about using variance, is that the sum of independent pixel variances is simple to compute (it's just the sum of the individual variances). However, I mentioned one could try using the expected value of a real image quality metric like [SSIM](https://en.wikipedia.org/wiki/Structural_similarity) instead. Unfortunately computing the expectation of a function like SSIM (or something crazier like [NIMA](https://ai.googleblog.com/2017/12/introducing-nima-neural-image-assessment.html)) is not so trivial. One way to compute the expectation of these crazier metrics, would be to use a Monte Carlo techinque. But it was not obvious to me how to get useful gradients out of that procedure.  
 
 **Problem**  
-Suppose we want to compute a complex expectation. This problem pops in up machine learning in a few places (some ELBO losses for example). Often these problems can be solve using Monte Carlo Sampling.  
+Suppose we want to compute a complex expectation. This problem pops in up machine learning in a few places (some ELBO losses for example). Often these problems can be solved using Monte Carlo Sampling.  
   
 The basic idea behind using Monte Carlo Sampling to compute expectations is to take:  
 

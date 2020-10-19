@@ -113,7 +113,7 @@ In the above gif, each material's color and fuzziness parameters are being chang
     <th>Non incremental render time (s) </th>
     <th>Inital incremental render time (s) </th>
     <th>50th percentile edit time (s)</th>
-    <th>99th percentile edit time (s)</th>
+    <th>95th percentile edit time (s)</th>
   </tr>
   <tr>
     <td>1x</td>
