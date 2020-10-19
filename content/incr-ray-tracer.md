@@ -51,8 +51,8 @@ So where are people actually using incremental computation? As far as I know, th
  
 - Finance, especially to deal with large spreadsheet-like calculations. Most finance companies are a little vague about what they actually do, so I don't know too much about this use case.
 - Compliers, the rust compiler explored these techniques when building their incremental compilation features.
-- Databases, the company Materialize uses technology based on the Timely Dataflow Model developed by Microsoft Research to create a better streaming database.
-- User Interface, user interfaces are a perfect place for incremental computation because it's important to figure out which components you actually need to re-render when something on the page changes.
+- Databases, the company [Materialize](https://materialize.io/) uses technology based on the [Timely Dataflow Model](https://cs.stanford.edu/~matei/courses/2015/6.S897/readings/naiad.pdf) developed by Microsoft Research to create a better streaming database.
+- User Interfaces, user interfaces are a perfect place for incremental computation because it's important to figure out which components you actually need to re-render when something on the page changes.
 
 **How people shouldn't use Incremental Computation**  
 Now we can get to the fun part. Over the last week, I tried to play around with Incremental (and picked up scraps of OCaml) to get a better idea of how to actually build incremental computations. 
@@ -180,14 +180,14 @@ The graph structure of incremental computations means that the nodes we read wil
 
 What about the garbage collector you may ask? In my experiments there was a solid GC overhead but its overall percentage seemed to remain constant. I think that the mark step of the gc was likely dominated by same trashing problem, because it had to walk through the graph structure to check what was reachable.  
 
-While I'm not 100% percent convinced that the memory overhead is reponsible for all of the slowdown I saw, it was interesting to think about.
+While I'm not 100% percent convinced that the memory overhead is reponsible for all of the slowdown I saw, it was interesting to think about.  
 
 **Take Aways**  
 So was incremental a good fit for ray tracing? It was not the worst idea, but was absolutely not a great idea. For one, ray tracing is better done in high parallel environments, and Incremental is single threaded. A second reason is that ray tracing is a really well studied problem. There are tons of ways to accelerate it, none of which we used. There are even far faster incremental approaches that use of a lot of problem specific domain knowledge.
  
 So why did I do this project? For me, it was a good way to play around with the limits of incremental computation. I think I learned a lot about structuring these graph computations and some of the specific pain points of the Incremental library. However I'm still pretty new to all of this so if you have any tips for me I'd love to hear from you!  
 
-Thanks to [Robert Lord](https://lord.io/) for teaching me everything I know about incremental computatio, Ilia Demianenko for helping me profile my code and [Gargi Sharma](https://gs0510.github.io/) for teaching me OCaml.   
+Thanks to [Robert Lord](https://lord.io/) for teaching me everything I know about incremental computation, Ilia Demianenko for helping me profile my code and [Gargi Sharma](https://gs0510.github.io/) for teaching me OCaml.   
 
 Have questions / comments / corrections?  
 Get in touch: <a href="mailto:pstefek.dev@gmail.com">pstefek.dev@gmail.com</a>   
