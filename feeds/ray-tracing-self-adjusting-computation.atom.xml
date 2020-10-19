@@ -82,7 +82,7 @@ Now we can get to the fun part. Over the last week, I tried to play around with 
     &lt;th&gt;Non incremental render time (s) &lt;/th&gt;
     &lt;th&gt;Inital incremental render time (s) &lt;/th&gt;
     &lt;th&gt;50th percentile edit time (s)&lt;/th&gt;
-    &lt;th&gt;99th percentile edit time (s)&lt;/th&gt;
+    &lt;th&gt;95th percentile edit time (s)&lt;/th&gt;
   &lt;/tr&gt;
   &lt;tr&gt;
     &lt;td&gt;1x&lt;/td&gt;
@@ -144,7 +144,7 @@ At first glance, accounting for the runtime overhead of Incremental seems like i
 &lt;p&gt;&lt;strong&gt;Take Aways&lt;/strong&gt;&lt;br&gt;
 So was incremental a good fit for ray tracing? It was not the worst idea, but was absolutely not a great idea. For one, ray tracing is better done in high parallel environments, and Incremental is single threaded. A second reason is that ray tracing is a really well studied problem. There are tons of ways to accelerate it, none of which we used. There are even far faster incremental approaches that use of a lot of problem specific domain knowledge.&lt;/p&gt;
 &lt;p&gt;So why did I do this project? For me, it was a good way to play around with the limits of incremental computation. I think I learned a lot about structuring these graph computations and some of the specific pain points of the Incremental library. However I'm still pretty new to all of this so if you have any tips for me I'd love to hear from you!  &lt;/p&gt;
-&lt;p&gt;Thanks to &lt;a href="https://lord.io/"&gt;Robert Lord&lt;/a&gt; for teaching me everything I know about incremental computation and Ilia Demianenko for helping me profile my code.  &lt;/p&gt;
+&lt;p&gt;Thanks to &lt;a href="https://lord.io/"&gt;Robert Lord&lt;/a&gt; for teaching me everything I know about incremental computatio, Ilia Demianenko for helping me profile my code and &lt;a href="https://gs0510.github.io/"&gt;Gargi Sharma&lt;/a&gt; for teaching me OCaml.   &lt;/p&gt;
 &lt;p&gt;Have questions / comments / corrections?&lt;br&gt;
 Get in touch: &lt;a href="mailto:pstefek.dev@gmail.com"&gt;pstefek.dev@gmail.com&lt;/a&gt;   &lt;/p&gt;
 &lt;script type="text/javascript"&gt;if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {

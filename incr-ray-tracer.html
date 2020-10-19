@@ -98,7 +98,7 @@ Now we can get to the fun part. Over the last week, I tried to play around with 
     <th>Non incremental render time (s) </th>
     <th>Inital incremental render time (s) </th>
     <th>50th percentile edit time (s)</th>
-    <th>99th percentile edit time (s)</th>
+    <th>95th percentile edit time (s)</th>
   </tr>
   <tr>
     <td>1x</td>
@@ -160,7 +160,7 @@ At first glance, accounting for the runtime overhead of Incremental seems like i
 <p><strong>Take Aways</strong><br>
 So was incremental a good fit for ray tracing? It was not the worst idea, but was absolutely not a great idea. For one, ray tracing is better done in high parallel environments, and Incremental is single threaded. A second reason is that ray tracing is a really well studied problem. There are tons of ways to accelerate it, none of which we used. There are even far faster incremental approaches that use of a lot of problem specific domain knowledge.</p>
 <p>So why did I do this project? For me, it was a good way to play around with the limits of incremental computation. I think I learned a lot about structuring these graph computations and some of the specific pain points of the Incremental library. However I'm still pretty new to all of this so if you have any tips for me I'd love to hear from you!  </p>
-<p>Thanks to <a href="https://lord.io/">Robert Lord</a> for teaching me everything I know about incremental computation and Ilia Demianenko for helping me profile my code.  </p>
+<p>Thanks to <a href="https://lord.io/">Robert Lord</a> for teaching me everything I know about incremental computatio, Ilia Demianenko for helping me profile my code and <a href="https://gs0510.github.io/">Gargi Sharma</a> for teaching me OCaml.   </p>
 <p>Have questions / comments / corrections?<br>
 Get in touch: <a href="mailto:pstefek.dev@gmail.com">pstefek.dev@gmail.com</a>   </p>
 <script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
