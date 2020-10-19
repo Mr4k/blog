@@ -187,7 +187,7 @@ So was incremental a good fit for ray tracing? It was not the worst idea, but wa
  
 So why did I do this project? For me, it was a good way to play around with the limits of incremental computation. I think I learned a lot about structuring these graph computations and some of the specific pain points of the Incremental library. However I'm still pretty new to all of this so if you have any tips for me I'd love to hear from you!  
 
-Thanks to [Robert Lord](https://lord.io/) for teaching me everything I know about incremental computation and Ilia Demianenko for helping me profile my code.  
+Thanks to [Robert Lord](https://lord.io/) for teaching me everything I know about incremental computatio, Ilia Demianenko for helping me profile my code and [Gargi Sharma](https://gs0510.github.io/) for teaching me OCaml.   
 
 Have questions / comments / corrections?  
 Get in touch: <a href="mailto:pstefek.dev@gmail.com">pstefek.dev@gmail.com</a>   
