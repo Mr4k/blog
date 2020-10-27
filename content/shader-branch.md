@@ -34,13 +34,13 @@ Consider the [following fragment shader](https://www.shadertoy.com/view/WdyyWV):
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {    
   <div style='margin-left: 5%;'>
-  // TUNE THIS AMOUNT TO YOUR GPU STRENGTH
-  int workAmount = 2000;
-  float incr = 1. / float(workAmount);
-  float outColor = 0.0;
+  // TUNE THIS AMOUNT TO YOUR GPU STRENGTH  
+  int workAmount = 2000;  
+  float incr = 1. / float(workAmount);  
+  float outColor = 0.0;  
   
-  // USE THIS VARIABLE TO TOGGLE BRANCHING
-  bool branch = true;
+  // USE THIS VARIABLE TO TOGGLE BRANCHING  
+  bool branch = true;  
   
   if (mod(fragCoord.x, 2.) < 1. && branch) {
     <div style='margin-left: 5%;'>
@@ -74,13 +74,13 @@ However, let's look a [second shader](https://www.shadertoy.com/view/tsVyzG):
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
   <div style='margin-left: 5%;'>
-  // USE THIS VARIABLE TO TOGGLE BRANCHING
-  int workAmount = 2000;
-  float incr = 1. / float(workAmount);
-  float outColor = 0.0;
+  // USE THIS VARIABLE TO TOGGLE BRANCHING  
+  int workAmount = 2000;  
+  float incr = 1. / float(workAmount);  
+  float outColor = 0.0;  
   
-  // USE THIS VARIABLE TO TOGGLE BRANCHING
-  bool branch = true;
+  // USE THIS VARIABLE TO TOGGLE BRANCHING  
+  bool branch = true;  
   
   if (fragCoord.x < iResolution.x / 2.0 && branch) {
     <div style='margin-left: 5%;'>
