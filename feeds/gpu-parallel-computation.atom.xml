@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>peterstefek.me - gpu, parallel computation</title><link href="/" rel="alternate"></link><link href="/feeds/gpu-parallel-computation.atom.xml" rel="self"></link><id>/</id><updated>2020-10-26T00:00:00-07:00</updated><entry><title>A Note on Branching within a Shader</title><link href="/shader-branch.html" rel="alternate"></link><published>2020-10-26T00:00:00-07:00</published><updated>2020-10-26T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-10-26:/shader-branch.html</id><summary type="html">&lt;p&gt;A gpu picks up the fork in the road&lt;/p&gt;</summary><content type="html">&lt;p&gt;An &lt;a href="https://www.google.com/search?q=three+weeks&amp;amp;oq=three+weeks"&gt;eternity&lt;/a&gt; ago, I published a &lt;a href="https://www.peterstefek.me/focused-render.html"&gt;blog post&lt;/a&gt; about a shader I wrote. In that post, I casually repeated a piece of gpu folklore I picked up as a wee opengl enthusiast almost a decade ago,   &lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>peterstefek.me - gpu, parallel computation</title><link href="/" rel="alternate"></link><link href="/feeds/gpu-parallel-computation.atom.xml" rel="self"></link><id>/</id><updated>2020-10-26T00:00:00-07:00</updated><entry><title>A Note on Branching Within a Shader</title><link href="/shader-branch.html" rel="alternate"></link><published>2020-10-26T00:00:00-07:00</published><updated>2020-10-26T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-10-26:/shader-branch.html</id><summary type="html">&lt;p&gt;A gpu picks up the fork in the road&lt;/p&gt;</summary><content type="html">&lt;p&gt;An &lt;a href="https://www.google.com/search?q=three+weeks&amp;amp;oq=three+weeks"&gt;eternity&lt;/a&gt; ago, I published a &lt;a href="https://www.peterstefek.me/focused-render.html"&gt;blog post&lt;/a&gt; about a shader I wrote. In that post, I casually repeated a piece of gpu folklore I picked up as a wee opengl enthusiast almost a decade ago,   &lt;/p&gt;
 &lt;p align="center"&gt;
 "Using if statements inside a shader will cause performance degradation."  
 &lt;/p&gt;
 
 &lt;p&gt;People on the internet seemed a little skeptical about this statement, and I realized my advice might be outdated. So this post is a quick follow up about the cost of branching on more modern gpus.  &lt;/p&gt;
 &lt;p&gt;Before we talk about branching, what is a gpu? A GPU or graphics processing unit, is a special piece of hardware initially developed to crunch numbers for graphics calculations. It accomplishes this goal quickly through a large amount of parallelization.   &lt;/p&gt;
-&lt;p&gt;GPUs can run many threads at the same time in parallel. These threads are generally executed in groups called warps (CUDA), invocations (Vulkan) and waves (I will use the term warp, but they are all interchangeable). On recent Nvidia hardware (Ampere/ Volta / Pascal) these wraps contain 32 threads. Pascal for example can theoretically run up to four independent instructions per warp over 56 warps of 32 threads which comes out to a mind blowing 7168 instructions per cycle. &lt;/p&gt;
+&lt;p&gt;GPUs can run many threads at the same time in parallel. These threads are generally executed in groups called warps (CUDA), invocations (Vulkan) and waves (I will use the term warp, but they are all interchangeable). On recent Nvidia hardware (Ampere/ Volta / Pascal) these warps contain 32 threads. Pascal for example can theoretically run up to four independent instructions per warp over 56 warps of 32 threads which comes out to a mind blowing 7168 instructions per cycle. &lt;/p&gt;
 &lt;p&gt;Each warp can only execute one instruction at a time. However that instruction can be executed for each of the threads in the warp. This means the GPU can execute 32 copies of the same instruction in parallel for each thread in the warp at once.   &lt;/p&gt;
 &lt;p&gt;However, taking both sides of a branch will cause the threads inside a warp to "diverge". This means some threads will need to execute one side of the branch and some will need to execute the other. Unfortunately, both instructions can not be executed simultaneously for threads in the same warp. So these divergent instructions must be executed sequentially.   &lt;/p&gt;
 &lt;p align="center"&gt;
@@ -19,12 +19,12 @@
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {  &lt;br&gt;
   &lt;div style='margin-left: 5%;'&gt;
-  // TUNE THIS AMOUNT TO YOUR GPU STRENGTH
-  int workAmount = 2000;
-  float incr = 1. / float(workAmount);
-  float outColor = 0.0;&lt;/p&gt;
-&lt;p&gt;// USE THIS VARIABLE TO TOGGLE BRANCHING
-  bool branch = true;&lt;/p&gt;
+  // TUNE THIS AMOUNT TO YOUR GPU STRENGTH&lt;br&gt;
+  int workAmount = 2000;&lt;br&gt;
+  float incr = 1. / float(workAmount);&lt;br&gt;
+  float outColor = 0.0;  &lt;/p&gt;
+&lt;p&gt;// USE THIS VARIABLE TO TOGGLE BRANCHING&lt;br&gt;
+  bool branch = true;  &lt;/p&gt;
 &lt;p&gt;if (mod(fragCoord.x, 2.) &amp;lt; 1. &amp;amp;&amp;amp; branch) {
     &lt;div style='margin-left: 5%;'&gt;
       for (int i = 0; i &amp;lt; workAmount; i++) {
@@ -53,12 +53,12 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
   &lt;div style='margin-left: 5%;'&gt;
-  // USE THIS VARIABLE TO TOGGLE BRANCHING
-  int workAmount = 2000;
-  float incr = 1. / float(workAmount);
-  float outColor = 0.0;&lt;/p&gt;
-&lt;p&gt;// USE THIS VARIABLE TO TOGGLE BRANCHING
-  bool branch = true;&lt;/p&gt;
+  // USE THIS VARIABLE TO TOGGLE BRANCHING&lt;br&gt;
+  int workAmount = 2000;&lt;br&gt;
+  float incr = 1. / float(workAmount);&lt;br&gt;
+  float outColor = 0.0;  &lt;/p&gt;
+&lt;p&gt;// USE THIS VARIABLE TO TOGGLE BRANCHING&lt;br&gt;
+  bool branch = true;  &lt;/p&gt;
 &lt;p&gt;if (fragCoord.x &amp;lt; iResolution.x / 2.0 &amp;amp;&amp;amp; branch) {
     &lt;div style='margin-left: 5%;'&gt;
       for (int i = 0; i &amp;lt; workAmount; i++) {

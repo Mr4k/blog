@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <title>A Note on Branching within a Shader</title>
+    <title>A Note on Branching Within a Shader</title>
     <link rel="stylesheet" type="text/css" href="/theme/css/main.css" />
 </head>
 
@@ -13,7 +13,7 @@
 </header>
 <div class="row">
  <div class="col-md-8">
-  <h1>A Note on Branching within a Shader</h1>
+  <h1>A Note on Branching Within a Shader</h1>
   <label>Posted on <strong>26 October 2020</strong></label>
   <p>An <a href="https://www.google.com/search?q=three+weeks&amp;oq=three+weeks">eternity</a> ago, I published a <a href="https://www.peterstefek.me/focused-render.html">blog post</a> about a shader I wrote. In that post, I casually repeated a piece of gpu folklore I picked up as a wee opengl enthusiast almost a decade ago,   </p>
 <p align="center">
@@ -22,7 +22,7 @@
 
 <p>People on the internet seemed a little skeptical about this statement, and I realized my advice might be outdated. So this post is a quick follow up about the cost of branching on more modern gpus.  </p>
 <p>Before we talk about branching, what is a gpu? A GPU or graphics processing unit, is a special piece of hardware initially developed to crunch numbers for graphics calculations. It accomplishes this goal quickly through a large amount of parallelization.   </p>
-<p>GPUs can run many threads at the same time in parallel. These threads are generally executed in groups called warps (CUDA), invocations (Vulkan) and waves (I will use the term warp, but they are all interchangeable). On recent Nvidia hardware (Ampere/ Volta / Pascal) these wraps contain 32 threads. Pascal for example can theoretically run up to four independent instructions per warp over 56 warps of 32 threads which comes out to a mind blowing 7168 instructions per cycle. </p>
+<p>GPUs can run many threads at the same time in parallel. These threads are generally executed in groups called warps (CUDA), invocations (Vulkan) and waves (I will use the term warp, but they are all interchangeable). On recent Nvidia hardware (Ampere/ Volta / Pascal) these warps contain 32 threads. Pascal for example can theoretically run up to four independent instructions per warp over 56 warps of 32 threads which comes out to a mind blowing 7168 instructions per cycle. </p>
 <p>Each warp can only execute one instruction at a time. However that instruction can be executed for each of the threads in the warp. This means the GPU can execute 32 copies of the same instruction in parallel for each thread in the warp at once.   </p>
 <p>However, taking both sides of a branch will cause the threads inside a warp to "diverge". This means some threads will need to execute one side of the branch and some will need to execute the other. Unfortunately, both instructions can not be executed simultaneously for threads in the same warp. So these divergent instructions must be executed sequentially.   </p>
 <p align="center">
@@ -35,12 +35,12 @@
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {  <br>
   <div style='margin-left: 5%;'>
-  // TUNE THIS AMOUNT TO YOUR GPU STRENGTH
-  int workAmount = 2000;
-  float incr = 1. / float(workAmount);
-  float outColor = 0.0;</p>
-<p>// USE THIS VARIABLE TO TOGGLE BRANCHING
-  bool branch = true;</p>
+  // TUNE THIS AMOUNT TO YOUR GPU STRENGTH<br>
+  int workAmount = 2000;<br>
+  float incr = 1. / float(workAmount);<br>
+  float outColor = 0.0;  </p>
+<p>// USE THIS VARIABLE TO TOGGLE BRANCHING<br>
+  bool branch = true;  </p>
 <p>if (mod(fragCoord.x, 2.) &lt; 1. &amp;&amp; branch) {
     <div style='margin-left: 5%;'>
       for (int i = 0; i &lt; workAmount; i++) {
@@ -69,12 +69,12 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
   <div style='margin-left: 5%;'>
-  // USE THIS VARIABLE TO TOGGLE BRANCHING
-  int workAmount = 2000;
-  float incr = 1. / float(workAmount);
-  float outColor = 0.0;</p>
-<p>// USE THIS VARIABLE TO TOGGLE BRANCHING
-  bool branch = true;</p>
+  // USE THIS VARIABLE TO TOGGLE BRANCHING<br>
+  int workAmount = 2000;<br>
+  float incr = 1. / float(workAmount);<br>
+  float outColor = 0.0;  </p>
+<p>// USE THIS VARIABLE TO TOGGLE BRANCHING<br>
+  bool branch = true;  </p>
 <p>if (fragCoord.x &lt; iResolution.x / 2.0 &amp;&amp; branch) {
     <div style='margin-left: 5%;'>
       for (int i = 0; i &lt; workAmount; i++) {
