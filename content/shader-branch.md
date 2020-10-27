@@ -17,7 +17,7 @@ People on the internet seemed a little skeptical about this statement, and I rea
 
 Before we talk about branching, what is a gpu? A GPU or graphics processing unit, is a special piece of hardware initially developed to crunch numbers for graphics calculations. It accomplishes this goal quickly through a large amount of parallelization.   
 
-GPUs can run many threads at the same time in parallel. These threads are generally executed in groups called warps (CUDA), invocations (Vulkan) and waves (I will use the term warp, but they are all interchangeable). On recent Nvidia hardware (Ampere/ Volta / Pascal) these wraps contain 32 threads. Pascal for example can theoretically run up to four independent instructions per warp over 56 warps of 32 threads which comes out to a mind blowing 7168 instructions per cycle. 
+GPUs can run many threads at the same time in parallel. These threads are generally executed in groups called warps (CUDA), invocations (Vulkan) and waves (I will use the term warp, but they are all interchangeable). On recent Nvidia hardware (Ampere/ Volta / Pascal) these warps contain 32 threads. Pascal for example can theoretically run up to four independent instructions per warp over 56 warps of 32 threads which comes out to a mind blowing 7168 instructions per cycle. 
 
 Each warp can only execute one instruction at a time. However that instruction can be executed for each of the threads in the warp. This means the GPU can execute 32 copies of the same instruction in parallel for each thread in the warp at once.   
 
