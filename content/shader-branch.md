@@ -1,4 +1,4 @@
-Title: A Note on Branching within a Shader
+Title: A Note on Branching Within a Shader
 Date: 2020-10-26
 Modified: 2020-10-26
 Category: gpu, parallel computation
