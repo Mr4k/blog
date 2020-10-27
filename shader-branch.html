@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>A Note on Branching within a Shader</title>
+    <link rel="stylesheet" type="text/css" href="/theme/css/main.css" />
+</head>
+
+<body>
+    <div class="container">
+<header>
+    <a href="/">home</a>
+</header>
+<div class="row">
+ <div class="col-md-8">
+  <h1>A Note on Branching within a Shader</h1>
+  <label>Posted on <strong>26 October 2020</strong></label>
+  <p>An <a href="https://www.google.com/search?q=three+weeks&amp;oq=three+weeks">eternity</a> ago, I published a <a href="https://www.peterstefek.me/focused-render.html">blog post</a> about a shader I wrote. In that post, I casually repeated a piece of gpu folklore I picked up as a wee opengl enthusiast almost a decade ago,   </p>
+<p align="center">
+"Using if statements inside a shader will cause performance degradation."  
+</p>
+
+<p>People on the internet seemed a little skeptical about this statement, and I realized my advice might be outdated. So this post is a quick follow up about the cost of branching on more modern gpus.  </p>
+<p>Before we talk about branching, what is a gpu? A GPU or graphics processing unit, is a special piece of hardware initially developed to crunch numbers for graphics calculations. It accomplishes this goal quickly through a large amount of parallelization.   </p>
+<p>GPUs can run many threads at the same time in parallel. These threads are generally executed in groups called warps (CUDA), invocations (Vulkan) and waves (I will use the term warp, but they are all interchangeable). On recent Nvidia hardware (Ampere/ Volta / Pascal) these wraps contain 32 threads. Pascal for example can theoretically run up to four independent instructions per warp over 56 warps of 32 threads which comes out to a mind blowing 7168 instructions per cycle. </p>
+<p>Each warp can only execute one instruction at a time. However that instruction can be executed for each of the threads in the warp. This means the GPU can execute 32 copies of the same instruction in parallel for each thread in the warp at once.   </p>
+<p>However, taking both sides of a branch will cause the threads inside a warp to "diverge". This means some threads will need to execute one side of the branch and some will need to execute the other. Unfortunately, both instructions can not be executed simultaneously for threads in the same warp. So these divergent instructions must be executed sequentially.   </p>
+<p align="center">
+    <img src="/images/shader-branch/pascal-divergence.png" width="65%" > 
+</p>
+
+<p>The above image is taken from the Volta whitepaper.  </p>
+<p>Consider the <a href="https://www.shadertoy.com/view/WdyyWV">following fragment shader</a>:<br>
+<code>
+void mainImage( out vec4 fragColor, in vec2 fragCoord )
+{  <br>
+  <div style='margin-left: 5%;'>
+  // TUNE THIS AMOUNT TO YOUR GPU STRENGTH
+  int workAmount = 2000;
+  float incr = 1. / float(workAmount);
+  float outColor = 0.0;</p>
+<p>// USE THIS VARIABLE TO TOGGLE BRANCHING
+  bool branch = true;</p>
+<p>if (mod(fragCoord.x, 2.) &lt; 1. &amp;&amp; branch) {
+    <div style='margin-left: 5%;'>
+      for (int i = 0; i &lt; workAmount; i++) {
+        <div style='margin-left: 5%;'>
+          outColor += incr;
+          </div>
+      }<br>
+      fragColor = vec4(0.0,outColor,0.0,1.0);
+      </div>
+  } else {
+    <div style='margin-left: 5%;'>
+      for (int i = 0; i &lt; workAmount; i++) {
+        <div style='margin-left: 5%;'>
+          outColor += incr;
+          </div>
+      }<br>
+      fragColor = vec4(outColor,0.0,0.0,1.0);
+      </div>
+  }
+  </div>
+}</p>
+<p></code></p>
+<p>In fragment shaders like the one above, each warp is composed of a set of spatially close pixels. Each warp in this shader should diverge because each horizontally adjacent pixel takes a different side of the branch. Let's say the cost of each inner loop is n cycles. Since each side of the branch is executed in series, each warp must take at least 2n cycles, even though each thread uses only one side of the branch. These effects scale with the number of threads in the distinct divergent paths taken (up to 32x in Nvidia hardware). Here's another shader which should have roughly four branches per warp. <a href="https://www.shadertoy.com/view/wsVyzG">This shader</a> will take at least 4n cycles.  </p>
+<p>However, let's look a <a href="https://www.shadertoy.com/view/tsVyzG">second shader</a>:   </p>
+<p><code>
+void mainImage( out vec4 fragColor, in vec2 fragCoord )
+{
+  <div style='margin-left: 5%;'>
+  // USE THIS VARIABLE TO TOGGLE BRANCHING
+  int workAmount = 2000;
+  float incr = 1. / float(workAmount);
+  float outColor = 0.0;</p>
+<p>// USE THIS VARIABLE TO TOGGLE BRANCHING
+  bool branch = true;</p>
+<p>if (fragCoord.x &lt; iResolution.x / 2.0 &amp;&amp; branch) {
+    <div style='margin-left: 5%;'>
+      for (int i = 0; i &lt; workAmount; i++) {
+        <div style='margin-left: 5%;'>
+          outColor += incr;
+          </div>
+      }<br>
+      fragColor = vec4(0.0,outColor,0.0,1.0);
+    </div>
+  } else {
+    <div style='margin-left: 5%;'>
+        for (int i = 0; i &lt; workAmount; i++) {
+          <div style='margin-left: 5%;'>
+          outColor += incr;
+          </div>
+      }<br>
+      fragColor = vec4(outColor,0.0,0.0,1.0);
+      </div>
+  }
+  </div>
+}
+</code></p>
+<p>This shader should run roughly twice as fast as the other shader even though roughly the same number of pixels take each branch. This is because most of the warps do not diverge (with the exception of a few around half way across the screen).   </p>
+<p><strong>Nvidia Specifics</strong><br>
+As far as I can tell, there are roughly two different ways of nvidia graphics cards handle divergence with in a warp.</p>
+<p><strong>Thread Masking (Pre Volta)</strong><br>
+On pre volta Nvidia card, divergence was handled by something called thread masking.   </p>
+<p>Basically when a conditional is hit, a thread mask is generated.  We can think of this mask as a 32 entry array. Each entry specifies whether the corresponding thread takes the first side of the branch or not. The first side is then executed for each of those threads. After the first side of the branch is then executed, the mask is reversed and the other side of the branch is executed.   </p>
+<p>This thread mask strategy exists in part because there is only one program counter per warp on pre volta gpus. So essential every thread in the warp must be at the same place in the program. The only way we know which threads to execute, is by using the mask.</p>
+<p align="center">
+    <img src="/images/shader-branch/pascal-divergence.png" width="65%" > 
+</p>
+
+<p>The above image is taken from the Volta whitepaper.</p>
+<p>It's worth noting that only the threads which need to execute the branch actually are assigned to computational cores. So if no threads execute one side of the branch, no work is done.</p>
+<p><strong>Independent Thread Scheduling (Volta and Beyond)</strong><br>
+One big change in the Volta architecture and beyond is the introduction of "Independent Thread Scheduling".   </p>
+<p>In Independent thread scheduling, each thread has its own program counter. This allows each warp to track the execution of every thread at a fine grain level. However, we can still only execute only one instruction at a time. So the actual runtime of a branch does not change.  </p>
+<p>So if Independent Thread Scheduling does not speed up branching, what does it do? Independent Thread Scheduling enables both sides of a branch to execute concurrently but not in parallel.   </p>
+<p align="center">
+    <img src="/images/shader-branch/volta-divergence.png" width="65%" > 
+</p>
+
+<p>The above image is taken from the Volta whitepaper.</p>
+<p>The reason for this shift is because before Volta, branches were places where deceptive deadlocks could occur. <br>
+<code>
+leader_id = 0<br>
+If (threadIdx.x == leader_id) {<br>
+  <div style='margin-left: 5%;'>
+    // Do some inital work
+  </div>
+} else {<br>
+  <div style='margin-left: 5%;'>
+    // Wait for leader to finish it's work<br>
+    // then do my work
+  </div>
+}<br>
+</code></p>
+<p>In the above compute shader pseudo code, we have 31 "follower" threads waiting for the "leader thread" to finish (using in-warp shared local memory) before executing their own instructions. </p>
+<p>On a Pascal GPU or below, if the else side of the branch is executed first, a deadlock will occur. The leader will never get a chance to start it's work because its followers will be waiting for it. </p>
+<p>Independent Thread Scheduling gets around these locking problems by interlacing the two diverging paths. </p>
+<p><strong>Article TLDR</strong><br>
+Branch divergence in warp makes all parts of the branch execute in sequence which slows down the shader. Branching divergence between warps does not affect runtime.  </p>
+<p><strong>Further Reading</strong><br>
+Branch execution on gpus is surprisingly deep, and there are many edge cases I didn't address and I also didn't touch gpu vendors other than Nvidia. Here are some good sources if you want to learn more:  </p>
+<p><a href="https://images.nvidia.com/content/volta-architecture/pdf/volta-architecture-whitepaper.pdf">The Volta Whitepaper</a> (Most of this post can be found between figures 20 and 22)<br>
+<a href="http://taylorlloyd.ca/gpu,/pascal,/cuda/2017/01/07/gpu-pipelines.html">Understanding the Pascal GPU Instruction Pipeline</a><br>
+<a href="https://aschrein.github.io/jekyll/update/2019/06/13/whatsup-with-my-branches-on-gpu.html#figure-8-divergent-threads-execution-time">What's up with My Branch on GPU</a> (this post covers some diabolical edge cases, including some around texture sampling)  </p>
+<p>Have questions / comments / corrections?<br>
+Get in touch: <a href="mailto:pstefek.dev@gmail.com">pstefek.dev@gmail.com</a>   </p>
+ </div>
+</div>
+<footer>
+    <a href="/">home</a>
+</footer>
+    </div>
+
+    <!-- Google Analytics -->
+    <script>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+        
+        ga('create', 'UA-157308007-1', 'auto');
+        ga('set', 'anonymizeIp', true);
+        ga('send', 'pageview');
+    </script>
+    <!-- End Google Analytics -->
+</body>
+
+</html>
