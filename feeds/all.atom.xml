@@ -207,6 +207,7 @@ So I guess it's kind of cool that we can granularly track data dependencies, but
 &lt;li&gt;Constructing minimal auto differentiation graphs.&lt;/li&gt;
 &lt;li&gt;Determining trace purity at runtime.&lt;/li&gt;
 &lt;/ul&gt;
+&lt;p&gt;Thanks to Jemma Issroff and Robert Lord for providing feedback on this post.&lt;/p&gt;
 &lt;p&gt;Have questions / comments / corrections?&lt;br&gt;
 Get in touch: &lt;a href="mailto:pstefek.dev@gmail.com"&gt;pstefek.dev@gmail.com&lt;/a&gt;   &lt;/p&gt;
 &lt;script type="text/javascript"&gt;if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
