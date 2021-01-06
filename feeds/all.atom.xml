@@ -51,12 +51,16 @@ Another way to think of these programs is as directed graphs. Each node represen
 &lt;p&gt;Before we start our algorithm, let's create a set called cyclic_nodes. This is a subset of all the nodes which are guaranteed to connect to a cycle in the unmodified graph. Initially this set will contain all the red nodes in the first loop.   &lt;/p&gt;
 &lt;p&gt;Now let's try flipping one of our red jmp / nop nodes (call it Node A). That node's edge now points somewhere else in the graph (Node B). There are two cases here:  &lt;/p&gt;
 &lt;ol&gt;
-&lt;li&gt;Node B is already in cyclic_nodes. This means that we are guaranteed to get stuck in a cycle so we can know Node A isn't the correct node to flip. To see why consider these two sub cases:
-There is a path from Node B to Node A. In this case we know we are still in a cycle. We know this because even though the graph has been modified, the only modification is to the edge leaving Node A so none of the nodes on the path from B to A will have been changed.
-There is a path from Node B to a different cycle. By similar logic to the first part, since no node on that path or in that cycle has been modified the program will loop.&lt;/li&gt;
-&lt;li&gt;Node A points to a node not yet in cyclic nodes. In this case we follow the path until we either hit a node in cyclic nodes, loop in a never before seen cycle, or hit the end of the program.
-If we hit the end of the program we have found the instruction to flip and we are done
-In the other two cases we have entered a cycle. Add all nodes we walked over to the cyclic_nodes set and move to the next instruction. &lt;/li&gt;
+&lt;li&gt;Node B is already in cyclic_nodes. This means that we are guaranteed to get stuck in a cycle so we can know Node A isn't the correct node to flip. To see why consider these two sub cases: &lt;ul&gt;
+&lt;li&gt;There is a path from Node B to Node A. In this case we know we are still in a cycle. We know this because even though the graph has been modified, the only modification is to the edge leaving Node A so none of the nodes on the path from B to A will have been changed.  &lt;/li&gt;
+&lt;li&gt;There is a path from Node B to a different cycle. By similar logic to the first part, since no node on that path or in that cycle has been modified the program will loop.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Node A points to a node not yet in cyclic nodes. In this case we follow the path until we either hit a node in cyclic nodes, loop in a never before seen cycle, or hit the end of the program.&lt;ul&gt;
+&lt;li&gt;If we hit the end of the program we have found the instruction to flip and we are done&lt;/li&gt;
+&lt;li&gt;In the other two cases we have entered a cycle. Add all nodes we walked over to the cyclic_nodes set and move to the next instruction. &lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
 &lt;/ol&gt;
 &lt;p&gt;What is the runtime of this algorithm? Well we only go over each potential switch once. However unlike the simple algorithm, we also know during the check for cycle step each node is only added to the cyclic_nodes set once. Therefore the runtime is linear with respect to the number of instructions.&lt;/p&gt;</content><category term="algorithms"></category><category term="algorithms"></category></entry><entry><title>Dynamically Deducing Data Dependencies</title><link href="/dependency-tracking.html" rel="alternate"></link><published>2020-12-14T00:00:00-08:00</published><updated>2020-12-14T00:00:00-08:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-12-14:/dependency-tracking.html</id><summary type="html">&lt;p&gt;Also an amazing alliteration&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;strong&gt;Background&lt;/strong&gt;&lt;br&gt;
 A few weeks ago, I was talking to &lt;a href="https://jemma.dev/"&gt;Jemma Issroff&lt;/a&gt;, a fellow &lt;a href="https://www.recurse.com/"&gt;Recurser&lt;/a&gt;, about a toy programming language she was building. We ended up thinking about automatically memoizing pure functions based on their parameters. As we thought about this problem more and more, we decided it would be interesting to be able to tell which parameters of function were actually required to compute its result at runtime. The idea at the time was that we could cache just based on those parameters. It turned out that just figuring out how to compute those dependencies was an interesting question in itself.&lt;/p&gt;
