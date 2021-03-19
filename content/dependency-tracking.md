@@ -232,7 +232,7 @@ On the other hand, let $x$ be a child of $b$ which corresponds to $e$, $deps(e) 
 A quick note about the computation feasibility of this rule. This rule as is applied recursively to every element in a and b so it is very computational intensive when you have large multidimensional arrays. I'd recommend using some kind of lazy evaluation for this rule in practice to avoid having to compute it for every element when unnecessary. 
 
 **Can I try this out?**  
-You may have noticed that all the code in this article looked a little strange. That's because it is all written the [custom programming](https://github.com/jemmaissroff/koko) Jemma has been building. The language supports all of the dependency tracking operations I talked about above and you can [play around with it yourself](https://mr4k.github.io/konsole/)! If you need inspiration, every linked function in this blog post is a working example.
+You may have noticed that all the code in this article looked a little strange. That's because it is all written the [custom programming language](https://github.com/jemmaissroff/koko) Jemma has been building. The language supports all of the dependency tracking operations I talked about above and you can [play around with it yourself](https://mr4k.github.io/konsole/)! If you need inspiration, every linked function in this blog post is a working example.
 
 **Where would stuff like this every come up?**
 So I guess it's kind of cool that we can granularly track data dependencies, but more importantly why would we every want to? The answer is I'm not totally sure! But here are some quick ideas:
@@ -241,6 +241,8 @@ So I guess it's kind of cool that we can granularly track data dependencies, but
 - JITs which compile at only statements which are used.
 - Constructing minimal auto differentiation graphs.
 - Determining trace purity at runtime.
+
+Thanks to Jemma Issroff and Robert Lord for providing feedback on this post.
 
 Have questions / comments / corrections?  
 Get in touch: <a href="mailto:pstefek.dev@gmail.com">pstefek.dev@gmail.com</a>   
