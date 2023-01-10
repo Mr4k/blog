@@ -38,5 +38,5 @@ STATIC_PATHS = ['images']
 
 # Plugins
 PLUGIN_PATHS=['./plugins']
-PLUGINS = ['render_math']
+PLUGINS = ['render_math', "simple_footnotes"]
 
