@@ -2,25 +2,24 @@
 <feed xmlns="http://www.w3.org/2005/Atom"><title>peterstefek.me - programming languages</title><link href="/" rel="alternate"></link><link href="/feeds/programming-languages.atom.xml" rel="self"></link><id>/</id><updated>2020-12-14T00:00:00-08:00</updated><entry><title>Dynamically Deducing Data Dependencies</title><link href="/dependency-tracking.html" rel="alternate"></link><published>2020-12-14T00:00:00-08:00</published><updated>2020-12-14T00:00:00-08:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-12-14:/dependency-tracking.html</id><summary type="html">&lt;p&gt;Also an amazing alliteration&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;strong&gt;Background&lt;/strong&gt;&lt;br&gt;
 A few weeks ago, I was talking to &lt;a href="https://jemma.dev/"&gt;Jemma Issroff&lt;/a&gt;, a fellow &lt;a href="https://www.recurse.com/"&gt;Recurser&lt;/a&gt;, about a toy programming language she was building. We ended up thinking about automatically memoizing pure functions based on their parameters. As we thought about this problem more and more, we decided it would be interesting to be able to tell which parameters of function were actually required to compute its result at runtime. The idea at the time was that we could cache just based on those parameters. It turned out that just figuring out how to compute those dependencies was an interesting question in itself.&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Problem Statement&lt;/strong&gt;&lt;br&gt;
-Let's say we have a function &lt;span class="math"&gt;\(f\)&lt;/span&gt; that takes arguments &lt;span class="math"&gt;\(x_1,...,x_n\)&lt;/span&gt; and outputs some result &lt;span class="math"&gt;\(res\)&lt;/span&gt;. We want to check at runtime which of those arguments are really necessary to compute &lt;span class="math"&gt;\(res\)&lt;/span&gt;. Let's take a very simple example:&lt;br&gt;
+Let's say we have a function &lt;span class="math"&gt;\(f\)&lt;/span&gt; that takes arguments &lt;span class="math"&gt;\(x_1,...,x_n\)&lt;/span&gt; and outputs some result &lt;span class="math"&gt;\(res\)&lt;/span&gt;. We want to check at runtime which of those arguments are really necessary to compute &lt;span class="math"&gt;\(res\)&lt;/span&gt;. Let's take a very simple example:  &lt;/p&gt;
 &lt;pre&gt;
 let f = fn(x, y, z) {
   return y
 }
 &lt;/pre&gt;
-Now if we call 
+&lt;p&gt;Now if we call 
 &lt;a href="https://mr4k.github.io/konsole/?program=let%20f%20%3D%20fn(x%2C%20y%2C%20z)%20%7B%0A%20%20return%20y%0A%7D%0A%2F%2F%20this%20is%20a%20special%20builtin%20which%20renders%20the%20dependency%20of%20it%27s%20arguments%20as%20a%20graph%0Adep_diagraph(f(1%2C%202%2C%203))%0A"&gt;&lt;span class="math"&gt;\(f(1,2,3)\)&lt;/span&gt;&lt;/a&gt;
 , it's pretty clear that the result &lt;span class="math"&gt;\(2\)&lt;/span&gt; only depends on &lt;span class="math"&gt;\(2\)&lt;/span&gt;, the value of the second argument. Of course we could have figured that out at compile time (and in fact most compilers will yell at you to tell you &lt;span class="math"&gt;\(x\)&lt;/span&gt; and &lt;span class="math"&gt;\(z\)&lt;/span&gt; are unused).
 But now let's take a slightly more interesting case:  &lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="err"&gt;let f = fn(x, y, z) {&lt;/span&gt;
-&lt;span class="err"&gt;  if (x &amp;gt; 0) {&lt;/span&gt;
-&lt;span class="err"&gt;    return y&lt;/span&gt;
-&lt;span class="err"&gt;  } else {&lt;/span&gt;
-&lt;span class="err"&gt;    return z&lt;/span&gt;
-&lt;span class="err"&gt;  }&lt;/span&gt;
-&lt;span class="err"&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="nv"&gt;let&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;f&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;fn&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;x&lt;/span&gt;,&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;y&lt;/span&gt;,&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;z&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;{&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;x&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;{&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="k"&gt;return&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;y&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;}&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;else&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;{&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="k"&gt;return&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;z&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;}&lt;span class="w"&gt;&lt;/span&gt;
+}&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;Unlike the first example, clearly all the variables are used here. However, if we evaluate
  &lt;a href="https://mr4k.github.io/konsole/?program=let%20f%20%3D%20fn(x%2C%20y%2C%20z)%20%7B%0A%20%20if%20(x%20%3E%200)%20%7B%0A%20%20%20%20return%20y%0A%20%20%7D%20else%20%7B%0A%20%20%20%20return%20z%0A%20%20%7D%0A%7D%0A%2F%2F%20this%20is%20a%20special%20builtin%20which%20renders%20the%20dependencies%20of%20its%20argument%20as%20a%20graph%0A%2F%2F%20to%20just%20get%20the%20normal%20output%20of%20f%20use%20the%20following%20instead%0A%2F%2F%20f(1%2C2%2C3)%0Adep_diagraph(f(1%2C%202%2C%203))%0A"&gt;&lt;span class="math"&gt;\(f(1,2,3)\)&lt;/span&gt;&lt;/a&gt;
@@ -35,24 +34,22 @@ So far, we've been talking about what dependence means informally. For all the &
 &lt;p&gt;&lt;strong&gt;Rules of Dependency Propagation&lt;/strong&gt;&lt;br&gt;
 Now that we have an intuitive understanding of how to determine which dependencies a function needs, let's try to make this intuition into a concrete algorithm.  &lt;/p&gt;
 &lt;p&gt;First we're going to quickly introduce one more operator &lt;span class="math"&gt;\(+\)&lt;/span&gt;.   &lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="err"&gt;let f = fn(x,y) {&lt;/span&gt;
-&lt;span class="err"&gt;  return x + y&lt;/span&gt;
-&lt;span class="err"&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="nv"&gt;let&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;f&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;fn&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;x&lt;/span&gt;,&lt;span class="nv"&gt;y&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;{&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="k"&gt;return&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;x&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;y&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+}&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;The dependencies of any call to this function, for example &lt;a href="https://mr4k.github.io/konsole/?program=let%20f%20%3D%20fn(x%2C%20y)%20%7B%0A%20%20return%20x%20%2B%20y%0A%7D%0A%2F%2F%20this%20is%20a%20special%20builtin%20which%20renders%20the%20dependencies%20of%20its%20argument%20as%20a%20graph%0A%2F%2F%20to%20just%20get%20the%20normal%20output%20of%20f%20use%20the%20following%20instead%0A%2F%2F%20f(1%2C2%2C3)%0Adep_diagraph(f(1%2C%202))%0A"&gt;&lt;span class="math"&gt;\(f(1,2)\)&lt;/span&gt;&lt;/a&gt;, are simply x and y.
 But now let's look at a more complicated example:  &lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="err"&gt;Let f = fn(x, y, z) {&lt;/span&gt;
-&lt;span class="err"&gt;  let s = z + y&lt;/span&gt;
-&lt;span class="err"&gt;  if (s &amp;lt; 0) {&lt;/span&gt;
-&lt;span class="err"&gt;    return x&lt;/span&gt;
-&lt;span class="err"&gt;  } else {&lt;/span&gt;
-&lt;span class="err"&gt;    return s&lt;/span&gt;
-&lt;span class="err"&gt;  }&lt;/span&gt;
-&lt;span class="err"&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="nv"&gt;Let&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;f&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;fn&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;x&lt;/span&gt;,&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;y&lt;/span&gt;,&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;z&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;{&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nv"&gt;let&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;s&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;z&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;y&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;s&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;{&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="k"&gt;return&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;x&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;}&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;else&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;{&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="k"&gt;return&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;s&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;}&lt;span class="w"&gt;&lt;/span&gt;
+}&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;This example isn't too much more complicated than any of the previous ones. A quick look will tell us 
 &lt;a href="https://mr4k.github.io/konsole/?program=let%20f%20%3D%20fn(x%2C%20y%2C%20z)%20%7B%0A%20%20let%20s%20%3D%20z%20%2B%20y%0A%20%20if%20(s%20%3C%200)%20%7B%0A%20%20%20%20return%20x%0A%20%20%7D%20else%20%7B%0A%20%20%20%20return%20s%0A%20%20%7D%0A%7D%0A%2F%2F%20this%20is%20a%20special%20builtin%20which%20renders%20the%20dependencies%20of%20its%20argument%20as%20a%20graph%0A%2F%2F%20to%20just%20get%20the%20normal%20output%20of%20f%20use%20the%20following%20instead%0A%2F%2F%20f(1%2C2%2C3)%0Adep_diagraph(f(1%2C%202%2C%203))%0A"&gt;&lt;span class="math"&gt;\(f(1,2,3)\)&lt;/span&gt;&lt;/a&gt;
@@ -72,11 +69,10 @@ Here are our two rules:  &lt;/p&gt;
 Unlike in grade school, here arithmetic is simple. Almost all arithmetic operators follow the exact same rules as "+" (except multiplication).  &lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Short Circuit Operators&lt;/strong&gt;&lt;br&gt;
 Okay now let's do multiplication. Imagine you have the following statement:  &lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="err"&gt;let f = fn(m, a, n, y, a, r, g, s) {&lt;/span&gt;
-&lt;span class="err"&gt;  return m * a * n * y * a * r * g * s&lt;/span&gt;
-&lt;span class="err"&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="nv"&gt;let&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;f&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;fn&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;m&lt;/span&gt;,&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt;,&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;n&lt;/span&gt;,&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;y&lt;/span&gt;,&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt;,&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;r&lt;/span&gt;,&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;g&lt;/span&gt;,&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;s&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;{&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="k"&gt;return&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;m&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;n&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;y&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;r&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;g&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;s&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+}&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;A call like &lt;a href="https://mr4k.github.io/konsole/?program=let%20f%20%3D%20fn(m%2C%20a%2C%20n%2C%20y%2C%20a%2C%20r%2C%20g%2C%20s)%20%7B%0A%20%20return%20m%20*%20a%20*%20n%20*%20y%20*%20a%20*%20r%20*%20g%20*%20s%0A%7D%0A%2F%2F%20this%20is%20a%20special%20builtin%20which%20renders%20the%20dependencies%20of%20its%20argument%20as%20a%20graph%0A%2F%2F%20to%20just%20get%20the%20normal%20output%20of%20f%20use%20the%20following%20instead%0A%2F%2F%20f(1%2C2%2C3%2C4%2C5%2C6%2C7%2C8)%0Adep_diagraph(f(1%2C%202%2C%203%2C%204%2C%205%2C%206%2C%207%2C%208))%0A"&gt;&lt;span class="math"&gt;\(f(1, 2, 3, 4, 5, 6, 7, 8)\)&lt;/span&gt;&lt;/a&gt; depends on every argument passed to f. However, what about this call &lt;a href="https://mr4k.github.io/konsole/?program=let%20f%20%3D%20fn(m%2C%20a%2C%20n%2C%20y%2C%20a%2C%20r%2C%20g%2C%20s)%20%7B%0A%20%20return%20m%20*%20a%20*%20n%20*%20y%20*%20a%20*%20r%20*%20g%20*%20s%0A%7D%0A%2F%2F%20this%20is%20a%20special%20builtin%20which%20renders%20the%20dependencies%20of%20its%20argument%20as%20a%20graph%0A%2F%2F%20to%20just%20get%20the%20normal%20output%20of%20f%20use%20the%20following%20instead%0A%2F%2F%20f(0%2C2%2C3%2C4%2C5%2C6%2C7%2C8)%0Adep_diagraph(f(0%2C%202%2C%203%2C%204%2C%205%2C%206%2C%207%2C%208))%0A"&gt;&lt;span class="math"&gt;\(f(0, 2, 3, 4, 5, 6, 7, 8)\)&lt;/span&gt;&lt;/a&gt;? Notice that the only variable which really affects the output of the product is &lt;span class="math"&gt;\(m\)&lt;/span&gt; with value 0. As long as the value of &lt;span class="math"&gt;\(m\)&lt;/span&gt; remains 0, the value of the result will be 0 no matter what value any other variable takes. This idea is conceptually similar to &lt;a href="https://en.wikipedia.org/wiki/Short-circuit_evaluation"&gt;short circuit evaluation for boolean values&lt;/a&gt;.   &lt;/p&gt;
 &lt;p&gt;Now you might ask what if there are multiple values that are all zero &lt;span class="math"&gt;\(f(0, 2, 3, 0, 5, 6, 7, 0)\)&lt;/span&gt;? Which one should we choose to depend on? &lt;br&gt;
@@ -101,18 +97,17 @@ Otherwise &lt;span class="math"&gt;\(let\,i = argmin_{i}\{x_i == false\},\)&lt;/
 &lt;/ul&gt;
 &lt;p&gt;&lt;strong&gt;Functions Calls&lt;/strong&gt;&lt;br&gt;
 Here's a slightly trickier case:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="err"&gt;let g = fn(x, y, z) {&lt;/span&gt;
-&lt;span class="err"&gt;  if (x &amp;gt; 0) {&lt;/span&gt;
-&lt;span class="err"&gt;    return y&lt;/span&gt;
-&lt;span class="err"&gt;  } else {&lt;/span&gt;
-&lt;span class="err"&gt;    return z&lt;/span&gt;
-&lt;span class="err"&gt;  }&lt;/span&gt;
-&lt;span class="err"&gt;}&lt;/span&gt;
-&lt;span class="err"&gt;let f = fn(x, y, z) {&lt;/span&gt;
-&lt;span class="err"&gt; return g(z,x,y)&lt;/span&gt;
-&lt;span class="err"&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="nv"&gt;let&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;g&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;fn&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;x&lt;/span&gt;,&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;y&lt;/span&gt;,&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;z&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;{&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;x&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;{&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="k"&gt;return&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;y&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;}&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;else&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;{&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="k"&gt;return&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;z&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;}&lt;span class="w"&gt;&lt;/span&gt;
+}&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="nv"&gt;let&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;f&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;fn&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;x&lt;/span&gt;,&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;y&lt;/span&gt;,&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;z&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;{&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;return&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;g&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;z&lt;/span&gt;,&lt;span class="nv"&gt;x&lt;/span&gt;,&lt;span class="nv"&gt;y&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+}&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;The above example represents a function call within a function call. In order to define this rule we need a few quick definitions:&lt;/p&gt;
 &lt;p&gt;Let's define a function called &lt;span class="math"&gt;\(argdeps(f, a_0, a_1,...,a_n)\)&lt;/span&gt;. &lt;span class="math"&gt;\(argdeps\)&lt;/span&gt; takes a function &lt;span class="math"&gt;\(f\)&lt;/span&gt; and its arguments &lt;span class="math"&gt;\(a_0,...,a_n\)&lt;/span&gt; and returns indices of the arguments which are needed to compute the corresponding value of &lt;span class="math"&gt;\(f\)&lt;/span&gt;. Under the hood, this function is computed in the exact same way that we have been computing deps.&lt;/p&gt;
@@ -121,27 +116,24 @@ Here's a slightly trickier case:&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Lists&lt;/strong&gt;&lt;br&gt;
 Now that we're feeling warmed up we can tackle one of the more complex rules sets.  &lt;/p&gt;
 &lt;p&gt;Let's take a quick look at a function involving lists.  &lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="err"&gt;let f = fn(a) {&lt;/span&gt;
-&lt;span class="err"&gt;  return a[0] + a[2]&lt;/span&gt;
-&lt;span class="err"&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="nv"&gt;let&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;f&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;fn&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;{&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="k"&gt;return&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt;[&lt;span class="mi"&gt;0&lt;/span&gt;]&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt;[&lt;span class="mi"&gt;2&lt;/span&gt;]&lt;span class="w"&gt;&lt;/span&gt;
+}&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;Now fellow travellers, we have come to a fork in the road. To one side, lies the simple path on which we treat the entire list &lt;span class="math"&gt;\(a\)&lt;/span&gt; as a single unit. We would then say that the output of &lt;span class="math"&gt;\(f\)&lt;/span&gt; merely depends on a. To the other side lies the difficult path, to treat each element of &lt;span class="math"&gt;\(a\)&lt;/span&gt; as its own unit. &lt;/p&gt;
 &lt;p&gt;Many would say, we can choose the best route to take based on tradeoffs and product requirements. Normally, I would agree that taking the simple path is a totally reasonable option. However on this particular journey, I believe we don't really have a choice, we have a responsibility.&lt;/p&gt;
 &lt;p&gt;Let's look back at our example from above:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="err"&gt;let f = fn(a) {&lt;/span&gt;
-&lt;span class="err"&gt;  return a[0] + a[2]&lt;/span&gt;
-&lt;span class="err"&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="nv"&gt;let&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;f&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;fn&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;{&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="k"&gt;return&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt;[&lt;span class="mi"&gt;0&lt;/span&gt;]&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt;[&lt;span class="mi"&gt;2&lt;/span&gt;]&lt;span class="w"&gt;&lt;/span&gt;
+}&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;The dependencies of this function are &lt;span class="math"&gt;\(a[0]\)&lt;/span&gt; and &lt;span class="math"&gt;\(a[2]\)&lt;/span&gt;. This new notation is very simple but important, especially when talking about multi dimensional arrays. One subtle note is that this notation allows us to specify different levels of granularity. &lt;span class="math"&gt;\(a[0]\)&lt;/span&gt; for example, could be a single element or an entire array. I have also not actually defined what the set &lt;span class="math"&gt;\(deps(a[0])\)&lt;/span&gt; is yet. Before we actually get there, it will be useful to look at a few more examples.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="err"&gt;let f = fn(a) {&lt;/span&gt;
-&lt;span class="err"&gt;  return a&lt;/span&gt;
-&lt;span class="err"&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="nv"&gt;let&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;f&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;fn&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;{&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="k"&gt;return&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+}&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;This example is incredibly simple but important to look at. Let's look at &lt;a href="https://mr4k.github.io/konsole/?program=let%20f%20%3D%20fn(a)%20%7B%0A%20%20return%20a%0A%7D%0A%2F%2F%20this%20is%20a%20special%20builtin%20which%20renders%20the%20dependencies%20of%20its%20argument%20as%20a%20graph%0A%2F%2F%20to%20just%20get%20the%20normal%20output%20of%20f%20use%20the%20following%20instead%0A%2F%2F%20f(%5B1%2C2%2C3%5D)%0Adep_diagraph(f(%5B1%2C2%2C3%5D))%0A"&gt;&lt;span class="math"&gt;\(f([1,2,3])\)&lt;/span&gt;&lt;/a&gt;. So it might seem like &lt;span class="math"&gt;\(f([1,2,3])\)&lt;/span&gt; just depends on the expressions at &lt;span class="math"&gt;\(a[0], a[1], a[2]\)&lt;/span&gt;, but is that really correct?&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;The Recomputablity Test&lt;/strong&gt;&lt;br&gt;
@@ -157,11 +149,10 @@ One way to fix our problem is to take an additional dependency on the length of 
 &lt;p&gt;&lt;span class="math"&gt;\(lendeps(res) = lendeps(a)\)&lt;/span&gt;&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;List Concatenation&lt;/strong&gt; &lt;br&gt;
 Now let's talk about concatenation:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="err"&gt;let f = fn(a, b) {&lt;/span&gt;
-&lt;span class="err"&gt;  return a + b&lt;/span&gt;
-&lt;span class="err"&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="nv"&gt;let&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;f&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;fn&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt;,&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;b&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;{&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="k"&gt;return&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;b&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+}&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;If a and b are two lists, the resulting third list depends on both a, b, and their lengths. Let's define &lt;span class="math"&gt;\(res = a + b\)&lt;/span&gt;. The rules for computing deps(res) and lendeps(res) are as follows:&lt;/p&gt;
 &lt;ul&gt;
@@ -169,12 +160,11 @@ Now let's talk about concatenation:&lt;/p&gt;
 &lt;li&gt;&lt;span class="math"&gt;\(lendeps(res) = lendeps(a) \cup lendeps(b)\)&lt;/span&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;But we are not actually quite done yet. Check out the function below:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="err"&gt;let f = fn(a, b) {&lt;/span&gt;
-&lt;span class="err"&gt;  let c = b + a&lt;/span&gt;
-&lt;span class="err"&gt;  return c[3]&lt;/span&gt;
-&lt;span class="err"&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="nv"&gt;let&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;f&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;fn&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt;,&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;b&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;{&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nv"&gt;let&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;c&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;b&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="k"&gt;return&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;c&lt;/span&gt;[&lt;span class="mi"&gt;3&lt;/span&gt;]&lt;span class="w"&gt;&lt;/span&gt;
+}&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;This function returns the 4th element of the concatenated list &lt;span class="math"&gt;\(a + b\)&lt;/span&gt;. So
  &lt;a href="https://mr4k.github.io/konsole/?program=let%20f%20%3D%20fn(a%2C%20b)%20%7B%0A%20%20let%20c%20%3D%20b%20%2B%20a%0A%20%20return%20c%5B3%5D%0A%7D%0A%2F%2F%20this%20is%20a%20special%20builtin%20which%20renders%20the%20dependencies%20of%20its%20argument%20as%20a%20graph%0A%2F%2F%20to%20just%20get%20the%20normal%20output%20of%20f%20use%20the%20following%20instead%0A%2F%2F%20f(%5B1%2C2%5D%2C%20%5B3%2C4%2C5%5D)%0Adep_diagraph(f(%5B1%2C2%5D%2C%5B3%2C4%2C5%5D))%0A"&gt;&lt;span class="math"&gt;\(f([1,2], [3,4,5])\)&lt;/span&gt;&lt;/a&gt;

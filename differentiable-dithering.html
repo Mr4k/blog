@@ -10,6 +10,7 @@
     <div class="container">
 <header>
     <a href="/">home</a>
+    <meta charset="UTF-8">
 </header>
 <div class="row">
  <div class="col-md-8">
@@ -17,19 +18,19 @@
   <label>Posted on <strong>09 September 2020</strong></label>
   <p>Colab source code can be found <a href="https://gist.github.com/Mr4k/1f1b7ecaf30de073a50cbedd0da4dc82">here</a>.</p>
 <p><strong>Problem</strong><br>
-Let's say we want to reduce the number of colors in an image. For example consider the picture of fruit below:
+Let's say we want to reduce the number of colors in an image. For example consider the picture of fruit below:</p>
 <p align="center">
     <img src="/images/differentiable-dithering/fruit.jpg" width="50%" > 
-</p> <br>
-If we run a count of how many colors are in the above image we get a whopping 157376 (for a 900 x 450 pixel image). Are all those colors really necessary?
+</p>
+<p>If we run a count of how many colors are in the above image we get a whopping 157376 (for a 900 x 450 pixel image). Are all those colors really necessary?</p>
 <p align="center">
     <img src="/images/differentiable-dithering/fruit-16-final.png" width="50%" > 
-</p> <br>
-The image above has 16 colors and the one below only has 8.
+</p>
+<p>The image above has 16 colors and the one below only has 8.</p>
 <p align="center">
     <img src="/images/differentiable-dithering/fruit-8-final.png" width="50%" > 
-</p> <br>
-The problem of color palette reduction has been studied extensively and the typical approach works roughly as follows:  </p>
+</p>
+<p>The problem of color palette reduction has been studied extensively and the typical approach works roughly as follows:  </p>
 <ol>
 <li>
 <p>Build a reduced color palette of size N by dividing the color space up into N distinct regions where each region is represented by one color. This is usually accomplished by one of several <a href="https://en.wikipedia.org/wiki/Color_quantization">popular approaches</a>.  </p>
@@ -71,11 +72,11 @@ The problem of color palette reduction has been studied extensively and the typi
     </div> 
 </p>
 
-<p>Now let's try 16 colors:
+<p>Now let's try 16 colors:</p>
 <p align="center">
     <img src="/images/differentiable-dithering/fruit-16-noisy.png" width="50%" > 
-</p> <br>
-The above image highlights one weakness of our current loss function. It's very noisy, even when it doesn't have to be.   </p>
+</p>
+<p>The above image highlights one weakness of our current loss function. It's very noisy, even when it doesn't have to be.   </p>
 <p>To give an extreme example, consider an image with three colors red, blue and purple (a mix of 50% red and 50% blue). Let's say we have room for 3 colors in our palette. In the eyes of equation 1 both of the following solutions would have the same loss:  </p>
 <ol>
 <li>
@@ -87,15 +88,16 @@ The above image highlights one weakness of our current loss function. It's very 
 </ol>
 <p>To control for this weakness, I added an additional term to the loss function which penalizes the sum of the pixel variances with a coeffcient given below by <span class="math">\(c\)</span>. The new loss function looks like this:  </p>
 <p><span class="math">\(loss(output, target)=\sum_{i\in pixels}(target_i\)</span> <span class="math">\(-\)</span> <span class="math">\(E[output_i])^2 + cVar(output_i)\)</span> (equation 3) </p>
-<p>Right now I just hand tune the coefficient of the variance penalty. A good rule of thumb seems to be larger palettes should weigh variance more heavily. Applying this penalty (variance coefficient = 0.25) gives us the 16 color image from the top of this post:
+<p>Right now I just hand tune the coefficient of the variance penalty. A good rule of thumb seems to be larger palettes should weigh variance more heavily. Applying this penalty (variance coefficient = 0.25) gives us the 16 color image from the top of this post:</p>
 <p align="center">
     <img src="/images/differentiable-dithering/fruit-16-final.png" width="50%" > 
-</p>   </p>
-<p>The tradeoff is that too little variance removes too much noise which, due to the absence of dithering, makes the final image appear to contain fewer colors and also creates <a href="https://en.wikipedia.org/wiki/Colour_banding">banding effects</a>. The image below has 16 colors and variance coefficient = 1.0. It demonstrates both of these problems:<br>
+</p>
+
+<p>The tradeoff is that too little variance removes too much noise which, due to the absence of dithering, makes the final image appear to contain fewer colors and also creates <a href="https://en.wikipedia.org/wiki/Colour_banding">banding effects</a>. The image below has 16 colors and variance coefficient = 1.0. It demonstrates both of these problems:  </p>
 <p align="center">
     <img src="/images/differentiable-dithering/fruit-16-saturated.png" width="50%" > 
-</p> <br>
-In fact when the variance coefficent = 1.0, a little algebra shows equation 3 is equal to our rejected equation 2.</p>
+</p>
+<p>In fact when the variance coefficent = 1.0, a little algebra shows equation 3 is equal to our rejected equation 2.</p>
 <p>Note there are many valid choices of loss function here and I'm not claiming mine is perfect at all. For example <a href="https://blog.demofox.org/2017/12/23/c-differentiable-programming-searching-for-an-optimal-dither-pattern/">this article</a> on creating optimal dither patterns blurs both images and takes the difference between those. We could try to use this idea or search for something else to replace our simple squared error. It would also be interesting to try to use a real image quality metric like <a href="https://www.cns.nyu.edu/~lcv/ssim/">SSIM</a> to measure image quality instead of using variance as a proxy.   </p>
 <p>Another place for improvement is that our approach is sloooow (up to several minutes). It also does not scale well memory wise to large palettes (when I try using more than 200 colors for the 900x450 pixel fruit image my colab notebook runs out of ram). This is because in that case there are more than 200x950x450 variables to optimize over. We could potentially tackle these problems in two ways. To address speed we could try to break the image up into mini batches. To address memory usage we could try to use a neural network to output probabilities at each pixel location instead of storing them all explicitly.   </p>
 <p><strong>Why do I think this approach is interesting?</strong><br>

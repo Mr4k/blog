@@ -18,68 +18,74 @@
 &lt;code&gt;
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {  &lt;br&gt;
-  &lt;div style='margin-left: 5%;'&gt;
-  // TUNE THIS AMOUNT TO YOUR GPU STRENGTH&lt;br&gt;
-  int workAmount = 2000;&lt;br&gt;
-  float incr = 1. / float(workAmount);&lt;br&gt;
-  float outColor = 0.0;  &lt;/p&gt;
-&lt;p&gt;// USE THIS VARIABLE TO TOGGLE BRANCHING&lt;br&gt;
-  bool branch = true;  &lt;/p&gt;
-&lt;p&gt;if (mod(fragCoord.x, 2.) &amp;lt; 1. &amp;amp;&amp;amp; branch) {
+&lt;br&gt;
+&lt;div style='margin-left: 5%;'&gt;
+  // TUNE THIS AMOUNT TO YOUR GPU STRENGTH  
+  int workAmount = 2000;  
+  float incr = 1. / float(workAmount);  
+  float outColor = 0.0;  
+
+  // USE THIS VARIABLE TO TOGGLE BRANCHING  
+  bool branch = true;  
+
+  if (mod(fragCoord.x, 2.) &lt; 1. &amp;&amp; branch) {
     &lt;div style='margin-left: 5%;'&gt;
-      for (int i = 0; i &amp;lt; workAmount; i++) {
+      for (int i = 0; i &lt; workAmount; i++) {
         &lt;div style='margin-left: 5%;'&gt;
           outColor += incr;
           &lt;/div&gt;
-      }&lt;br&gt;
+      }  
       fragColor = vec4(0.0,outColor,0.0,1.0);
       &lt;/div&gt;
   } else {
     &lt;div style='margin-left: 5%;'&gt;
-      for (int i = 0; i &amp;lt; workAmount; i++) {
+      for (int i = 0; i &lt; workAmount; i++) {
         &lt;div style='margin-left: 5%;'&gt;
           outColor += incr;
           &lt;/div&gt;
-      }&lt;br&gt;
+      }  
       fragColor = vec4(outColor,0.0,0.0,1.0);
       &lt;/div&gt;
   }
-  &lt;/div&gt;
-}&lt;/p&gt;
+  &lt;/div&gt;&lt;/p&gt;
+&lt;p&gt;}&lt;/p&gt;
 &lt;p&gt;&lt;/code&gt;&lt;/p&gt;
 &lt;p&gt;In fragment shaders like the one above, each warp is composed of a set of spatially close pixels. Each warp in this shader should diverge because each horizontally adjacent pixel takes a different side of the branch. Let's say the cost of each inner loop is n cycles. Since each side of the branch is executed in series, each warp must take at least 2n cycles, even though each thread uses only one side of the branch. These effects scale with the number of threads in the distinct divergent paths taken (up to 32x in Nvidia hardware). Here's another shader which should have roughly four branches per warp. &lt;a href="https://www.shadertoy.com/view/wsVyzG"&gt;This shader&lt;/a&gt; will take at least 4n cycles.  &lt;/p&gt;
 &lt;p&gt;However, let's look a &lt;a href="https://www.shadertoy.com/view/tsVyzG"&gt;second shader&lt;/a&gt;:   &lt;/p&gt;
 &lt;p&gt;&lt;code&gt;
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
-  &lt;div style='margin-left: 5%;'&gt;
-  // USE THIS VARIABLE TO TOGGLE BRANCHING&lt;br&gt;
-  int workAmount = 2000;&lt;br&gt;
-  float incr = 1. / float(workAmount);&lt;br&gt;
-  float outColor = 0.0;  &lt;/p&gt;
-&lt;p&gt;// USE THIS VARIABLE TO TOGGLE BRANCHING&lt;br&gt;
-  bool branch = true;  &lt;/p&gt;
-&lt;p&gt;if (fragCoord.x &amp;lt; iResolution.x / 2.0 &amp;amp;&amp;amp; branch) {
+&lt;br&gt;
+&lt;div style='margin-left: 5%;'&gt;
+  // USE THIS VARIABLE TO TOGGLE BRANCHING  
+  int workAmount = 2000;  
+  float incr = 1. / float(workAmount);  
+  float outColor = 0.0;  
+
+  // USE THIS VARIABLE TO TOGGLE BRANCHING  
+  bool branch = true;  
+
+  if (fragCoord.x &lt; iResolution.x / 2.0 &amp;&amp; branch) {
     &lt;div style='margin-left: 5%;'&gt;
-      for (int i = 0; i &amp;lt; workAmount; i++) {
+      for (int i = 0; i &lt; workAmount; i++) {
         &lt;div style='margin-left: 5%;'&gt;
           outColor += incr;
           &lt;/div&gt;
-      }&lt;br&gt;
+      }  
       fragColor = vec4(0.0,outColor,0.0,1.0);
     &lt;/div&gt;
   } else {
     &lt;div style='margin-left: 5%;'&gt;
-        for (int i = 0; i &amp;lt; workAmount; i++) {
+        for (int i = 0; i &lt; workAmount; i++) {
           &lt;div style='margin-left: 5%;'&gt;
           outColor += incr;
           &lt;/div&gt;
-      }&lt;br&gt;
+      }  
       fragColor = vec4(outColor,0.0,0.0,1.0);
       &lt;/div&gt;
   }
-  &lt;/div&gt;
-}
+  &lt;/div&gt;&lt;/p&gt;
+&lt;p&gt;}
 &lt;/code&gt;&lt;/p&gt;
 &lt;p&gt;This shader should run roughly twice as fast as the other shader even though roughly the same number of pixels take each branch. This is because most of the warps do not diverge (with the exception of a few around half way across the screen).   &lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Nvidia Specifics&lt;/strong&gt;&lt;br&gt;
@@ -91,7 +97,6 @@ On pre volta Nvidia card, divergence was handled by something called thread mask
 &lt;p align="center"&gt;
     &lt;img src="/images/shader-branch/pascal-divergence.png" width="65%" &gt; 
 &lt;/p&gt;
-
 &lt;p&gt;The above image is taken from the Volta whitepaper.&lt;/p&gt;
 &lt;p&gt;It's worth noting that only the threads which need to execute the branch actually are assigned to computational cores. So if no threads execute one side of the branch, no work is done.&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Independent Thread Scheduling (Volta and Beyond)&lt;/strong&gt;&lt;br&gt;
@@ -107,15 +112,17 @@ One big change in the Volta architecture and beyond is the introduction of "Inde
 &lt;code&gt;
 leader_id = 0&lt;br&gt;
 If (threadIdx.x == leader_id) {&lt;br&gt;
-  &lt;div style='margin-left: 5%;'&gt;
+&lt;br&gt;
+&lt;div style='margin-left: 5%;'&gt;
     // Do some inital work
-  &lt;/div&gt;
-} else {&lt;br&gt;
-  &lt;div style='margin-left: 5%;'&gt;
-    // Wait for leader to finish it's work&lt;br&gt;
+  &lt;/div&gt;&lt;/p&gt;
+&lt;p&gt;} else {&lt;br&gt;
+&lt;br&gt;
+&lt;div style='margin-left: 5%;'&gt;
+    // Wait for leader to finish it's work  
     // then do my work
-  &lt;/div&gt;
-}&lt;br&gt;
+  &lt;/div&gt;&lt;/p&gt;
+&lt;p&gt;}&lt;br&gt;
 &lt;/code&gt;&lt;/p&gt;
 &lt;p&gt;In the above compute shader pseudo code, we have 31 "follower" threads waiting for the "leader thread" to finish (using in-warp shared local memory) before executing their own instructions. &lt;/p&gt;
 &lt;p&gt;On a Pascal GPU or below, if the else side of the branch is executed first, a deadlock will occur. The leader will never get a chance to start it's work because its followers will be waiting for it. &lt;/p&gt;

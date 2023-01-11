@@ -10,6 +10,7 @@
     <div class="container">
 <header>
     <a href="/">home</a>
+    <meta charset="UTF-8">
 </header>
 <div class="row">
  <div class="col-md-8">
@@ -28,7 +29,7 @@ thick.thicker {
 <strong>Finally now let's look at a different general discrete distribution.</strong> For example, the distribution of orange, blue and green marbles with weights: p(orange) = 251/1000, p(blue) = 479/1000 and p(green) = 270/1000. We cannot use the first technique because there is no easy way to simplify these numbers. The second technique would require us to create 1000 boxes, so it also seems pretty bad. The weakness of our second technique is that the setup time depends on the weights, so the messier the numbers are the longer (and more space) it takes. This is not ideal. <br>
 <br>
 <strong>Now we can talk about a simple algorithm which solves our problem.</strong> The plan is to partition the interval [0,1] into n different parts based on the probabilities of each event. In our above example we could partition the interval into three sections with sizes orange = 0.251, blue = 0.479 and green = 0.27. Below is an O(n) algorithm to do this.</p>
-<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">random</span>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">random</span>
 
 <span class="k">def</span> <span class="nf">weightedRandom</span><span class="p">(</span><span class="n">weights</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -53,8 +54,7 @@ thick.thicker {
     <span class="n">counts</span><span class="p">[</span><span class="n">weightedRandom</span><span class="p">(</span><span class="n">weights</span><span class="p">)]</span> <span class="o">+=</span> <span class="mi">1</span>
 
 <span class="nb">print</span> <span class="n">counts</span>
-</pre></div>
-
+</code></pre></div>
 
 <p><br>
 <strong>So can we do better?</strong> The answer is sort of. It depends on what we want to do. It turns out if we want to sample from the same distribution multiple times, then we can. We will do just one preprocessing step (which will be the same time/space complexity for any set of n weights) and after that each sample will be O(1). So the more times we want to sample from the same distribution, the better the performance will be.<br>
@@ -62,11 +62,11 @@ thick.thicker {
 <strong>How does this work?</strong>
 I'm going to go over the preprocessing step in a later section but first I'm going to describe how we do the O(1) lookups. Consider a general discrete probability distribution with n weights. We are going to divide it up into n boxes such that each box will contain pieces of either one or two different different weights and the pieces of these weights will sum to 1/n. From our definition the sum of all the pieces of all the weights in the boxes is 1 (the size of the entire distribution).<br>
 <br>
-<strong>The description can be difficult.</strong> I think a picture can really help. In this example we have three colored balls with weights p(blue) = 1/6, p(orange) = 3/6, p(green) = 2/6:
+<strong>The description can be difficult.</strong> I think a picture can really help. In this example we have three colored balls with weights p(blue) = 1/6, p(orange) = 3/6, p(green) = 2/6:</p>
 <p align="center">
     <img src="/images/alias-method/alias_diag.png" width="56%" > 
 </p>
-<strong>Once we have this partitioning, our algorithm is very simple:</strong> <br>
+<p><strong>Once we have this partitioning, our algorithm is very simple:</strong> <br>
 First we pick one of the 3 boxes. Then we choose a uniform random number between 0 and 1. We see which side of our chosen box it falls on and we return that color marble.<br>
 <br>
 <strong>Now we need to find these partitions.</strong> First of you might be asking yourself, why can we always partition the distribution like this? To answer that we will first provide an algorithm to construct these partitions then prove it always works.<br>
@@ -77,11 +77,11 @@ First we pick one of the 3 boxes. Then we choose a uniform random number between
 1) Sort the weights from least to greatest.<br>
 2) Choose the smallest weight and put it into a box. Then if there is any space left over, fill in the extra room with some of the largest weight.<br>
 3) Repeat steps 1 and 2 until all of the boxes have been filled.<br>
-Here's a visualization of the algorithm:
+Here's a visualization of the algorithm:</p>
 <p align="center">
     <img src="images/alias-method/alias_anim.gif" width="56%" > 
 </p>
-<strong>Now why can we always do this?</strong> Now that we have the algorithm we can use induction to give a formal proof. Our claim is a little more general than what we have been saying earlier but it will make the proof easier.<br>
+<p><strong>Now why can we always do this?</strong> Now that we have the algorithm we can use induction to give a formal proof. Our claim is a little more general than what we have been saying earlier but it will make the proof easier.<br>
 <br>
 <strong>Claim:</strong> Given a set of n non-zero real numbers (called weights) we can partition them into n boxes of size s/n (where s is the sum of all n weights) such that each box only contains pieces of at most 2 weights using our algorithm.<br>
 <br>
@@ -95,7 +95,7 @@ Here's a visualization of the algorithm:
 <br>
 <strong>Here is an implementation of our algorithm:</strong><br>
 <br></p>
-<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">bintrees</span> <span class="kn">import</span> <span class="n">AVLTree</span>
 <span class="kn">import</span> <span class="nn">random</span>
 
@@ -146,8 +146,7 @@ Here's a visualization of the algorithm:
     <span class="n">counts</span><span class="p">[</span><span class="n">drawFromPartition</span><span class="p">(</span><span class="n">partition</span><span class="p">)]</span> <span class="o">+=</span> <span class="mi">1</span>
 
 <span class="nb">print</span> <span class="n">counts</span>
-</pre></div>
-
+</code></pre></div>
 
 <p><strong>One final note on runtime.</strong> If you run our example code you'll notice the "slow" function is almost twice as fast as the "fast" one. Have I been lying this whole time? No. This is because in our example we used a small number of weights. In a <a href="https://gist.github.com/Mr4k/eabaca318499bd54e5e18431efbc6622">separate speed test</a> I use 1000 weights and draw from the distributions 100000 times each. In this case the fast algorithm runs in 0.35 seconds on my computer while the slow algorithm takes about 15 seconds.</p>
  </div>

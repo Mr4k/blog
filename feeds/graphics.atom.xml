@@ -6,11 +6,10 @@ to the technique.
 The central idea in raymarching is that the scene is represented by a distance field function &lt;span class="math"&gt;\(D(pos)\)&lt;/span&gt;
 which gives the distance to the closest surface at each point. This distance field function for a scene is usually built by combining the distance fields of many primitives such as spheres, cubes and planes. Usually the distance field of each primitive can be analytically defined. A simple example of one of these primitives is a sphere at the origin
 with radius r whose distance field function is defined as follows in glsl:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="err"&gt;function distSphere(vec3 pos, float r) {&lt;/span&gt;
-&lt;span class="err"&gt;    return mag(pos) - r;&lt;/span&gt;
-&lt;span class="err"&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="nv"&gt;function&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;distSphere&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;vec3&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;pos&lt;/span&gt;,&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;float&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;r&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;{&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="k"&gt;return&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;mag&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;pos&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;r&lt;/span&gt;&lt;span class="c1"&gt;;&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+}&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;On thing you might notice here is that if you are inside the sphere the distance field is negative. This is called a signed distance field. While we don't use the signed part in this article you can find more information about them &lt;a href="https://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm"&gt;here&lt;/a&gt;. &lt;br&gt;&lt;br&gt;
 People often tend to use heightfields as primitives in raymarching. A heightfield is
@@ -18,11 +17,10 @@ a function &lt;code&gt;h(vec2 pos)&lt;/code&gt; that takes a 2d coordinate and r
 at that point. They can be thought of as topographical maps. Heightfields are useful because they allow artists to easily define bumpy surfaces such as waves or terrain. 
 Common analytic heightfields include simplex noise, and sin / cosine waves.
 Typically people use a function like the one below for the heightfield's distance field function:  &lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="err"&gt;function distHeightfield(vec3 pos) {&lt;/span&gt;
-&lt;span class="err"&gt;    return h(pos.xz) + pos.y;&lt;/span&gt;
-&lt;span class="err"&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="nv"&gt;function&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;distHeightfield&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;vec3&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;pos&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;{&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="k"&gt;return&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;h&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;pos&lt;/span&gt;.&lt;span class="nv"&gt;xz&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;pos&lt;/span&gt;.&lt;span class="nv"&gt;y&lt;/span&gt;&lt;span class="c1"&gt;;&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+}&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;where &lt;code&gt;h(vec2 pos)&lt;/code&gt; is the heightfield function. However this function is really not a distance field. To see why we can look at the image below.&lt;br&gt;
 &lt;img alt="A ray can overshoot the closest surface when using heightfield distance" src="images/ray-marching-heightfields/heightfield-problem.png"&gt;&lt;br&gt;

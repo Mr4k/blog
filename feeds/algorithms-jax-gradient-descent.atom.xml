@@ -4,70 +4,76 @@
 &lt;/p&gt;
 
 &lt;p&gt;Recently I decided to try out Jax, Google's new library for differentiable programming. Essentially Jax allows you to take arbitrary derivatives of python. It claims to be simpler and more flexible than competing frameworks such as pytorch or tensorflow. It uses a fancy just in time compiler and auto parallelization to make your code faster. Since the easiest way for me to learn is by working, I thought about problems I could tackle with Jax.  &lt;/p&gt;
-&lt;p&gt;Inspired by impressionist painting I decided to try to answer the question, "how well can I represent an image with a fixed number of circles?" To give a more exact definition suppose we have n colored circles each having 7 parameters: x position, y position, radius, red, green, blue and alpha (transparency). Each circle also has a (non adjustable) depth which is used to determine which circle occludes another should they overlap. Here's a picture of 100 of these circles whose parameters have been randomly initialized rendered against a black background.&lt;br&gt;
+&lt;p&gt;Inspired by impressionist painting I decided to try to answer the question, "how well can I represent an image with a fixed number of circles?" To give a more exact definition suppose we have n colored circles each having 7 parameters: x position, y position, radius, red, green, blue and alpha (transparency). Each circle also has a (non adjustable) depth which is used to determine which circle occludes another should they overlap. Here's a picture of 100 of these circles whose parameters have been randomly initialized rendered against a black background.  &lt;/p&gt;
 &lt;p align="center"&gt;
     &lt;img class='artpic' src="/images/art-class/random-init-mattjj.png" width="25%" &gt; 
-&lt;/p&gt;   &lt;/p&gt;
-&lt;p&gt;The goal of this project is to find values for these parameters which minimize the squared error between the image made of circles and a target image. Throughout most of this project that target image happened to be frequent jax contributor &lt;a href="https://github.com/mattjj"&gt;Mattjj&lt;/a&gt;'s avatar because I was seeing it in every github issue. &lt;br&gt;
+&lt;/p&gt;
+
+&lt;p&gt;The goal of this project is to find values for these parameters which minimize the squared error between the image made of circles and a target image. Throughout most of this project that target image happened to be frequent jax contributor &lt;a href="https://github.com/mattjj"&gt;Mattjj&lt;/a&gt;'s avatar because I was seeing it in every github issue.   &lt;/p&gt;
 &lt;p align="center"&gt;
     &lt;img src="/images/art-class/goal.png" width="80%" &gt; 
-&lt;/p&gt;&lt;br&gt;
-So how do we tackle this complex optimization problem? That's right, we're just going to use gradient descent by differentiating through the rendering process.   &lt;/p&gt;
+&lt;/p&gt;
+&lt;p&gt;So how do we tackle this complex optimization problem? That's right, we're just going to use gradient descent by differentiating through the rendering process.   &lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Okay so what does that actually mean?&lt;/strong&gt;&lt;br&gt;
-Let's say we have a function which takes in our circles and draws them onto an image:&lt;br&gt;
+Let's say we have a function which takes in our circles and draws them onto an image:  &lt;/p&gt;
 &lt;script src="https://gist.github.com/Mr4k/a1d5dc553c4cafdd7f2835f995a61771.js"&gt;&lt;/script&gt;
-We can make a loss function which takes in circles and outputs the loss between the rendered image and our target image:  &lt;/p&gt;
+&lt;p&gt;We can make a loss function which takes in circles and outputs the loss between the rendered image and our target image:  &lt;/p&gt;
 &lt;script src="https://gist.github.com/Mr4k/01dca39b7f950e565d7414f52e6d26d1.js"&gt;&lt;/script&gt;
 
-&lt;p&gt;With the magic of Jax we can create a function which gives us the gradient of our loss function with respect to its parameters (the circles) by simply saying:&lt;br&gt;
-&lt;script src="https://gist.github.com/Mr4k/70f421c3052da727abd153776d20767c.js"&gt;&lt;/script&gt;&lt;/p&gt;
+&lt;p&gt;With the magic of Jax we can create a function which gives us the gradient of our loss function with respect to its parameters (the circles) by simply saying:  &lt;/p&gt;
+&lt;script src="https://gist.github.com/Mr4k/70f421c3052da727abd153776d20767c.js"&gt;&lt;/script&gt;
+
 &lt;p&gt;This line of thought is an extremely simplified version of &lt;a href="https://nerf-w.github.io/"&gt;differential&lt;/a&gt; &lt;a href="https://www.youtube.com/watch?v=tGJ4tEwhgo8"&gt;rendering&lt;/a&gt; &lt;a href="https://www.youtube.com/watch?v=cdwLJCb45Kk"&gt;techniques&lt;/a&gt; but instead of writing a &lt;a href="https://blog.evjang.com/2019/11/jaxpt.html"&gt;fully functioning 3d differential renderer from scratch&lt;/a&gt; we're just gonna approximate some guy's face with circles. &lt;/p&gt;
 &lt;p&gt;Now we just need to fill in our render function from above with a way to get from circles to pixels. The rendering technique that I used was pretty simple. All I did was start with a blank canvas then I looped over each pixel and looped through all the circles in back to front order. If a circle intersected the pixel in question I would blend it with the current r,g,b values of that pixel which came from the circles behind it. &lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Jax the Sharp Bits&lt;/strong&gt;&lt;br&gt;
 The jax documentation has a section called "Jax the Sharp Bits" which I ended up visiting very frequently during this project. Inspired by that, instead of just presenting the final method I'm gonna to dig through my memories (and git history) to tell the tale of how I fought with Jax to build this over the last week. If you don't want to see jax specific details, I'd skip to &lt;strong&gt;Math the Sharp Bits&lt;/strong&gt; or &lt;strong&gt;Results&lt;/strong&gt;.  &lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;First Attempt&lt;/strong&gt;&lt;br&gt;
 As stated above I took a very simple approach for the render function you can take. I used python's for loops to iterate over the width and height of the canvas and at each pixel I checked if the pixel in question intersected each circle (in back to front order). If it did I modified the pixel's color according to linear alpha blending rules: (1 - alpha) *previous color + alpha*new color.   &lt;/p&gt;
-&lt;p&gt;The code looked like this:
+&lt;p&gt;The code looked like this:&lt;/p&gt;
 &lt;script src="https://gist.github.com/Mr4k/c0bb02a713dab4a463fd239f52a081d7.js"&gt;&lt;/script&gt;
-Unfortunately as many people who have tried to use python for computationally intensive tasks can tell, this code was extremely slow (about 10s for one render call on my 2015 Macbook Pro).  &lt;/p&gt;
+&lt;p&gt;Unfortunately as many people who have tried to use python for computationally intensive tasks can tell, this code was extremely slow (about 10s for one render call on my 2015 Macbook Pro).  &lt;/p&gt;
 &lt;p&gt;Luckily, Jax claims to address these problems for repeatedly called routines through it's jit (a special kind of code optimization process). In theory one can just call jit(render) to get a jitted version of the render function. However translating the render code to fast jit-able jax code was not exactly that straight forward.   &lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Pitfall 1&lt;/strong&gt;&lt;br&gt;
 The code above will actually throw an error when I try to run it through Jax's jit function. This is due to the conditional in the &lt;code&gt;get_color&lt;/code&gt; function. It turns out Jax's jit cannot handle python's if statements so they provide their own &lt;code&gt;jax.lax.cond&lt;/code&gt; function which you can use instead.   &lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Pitfall 2&lt;/strong&gt;&lt;br&gt;
 After getting the function to jit I noticed it was actually slower than the original function. This was really disappointing, however I learned it is because jax unrolls python loops. Mattjj and hawkinsp both have detailed explanations of behavior &lt;a href="https://github.com/google/jax/issues/402"&gt;here&lt;/a&gt; and &lt;a href="https://github.com/google/jax/issues/1776"&gt;here&lt;/a&gt;. Basically Jax does not understand a python loop is a loop and treats each iteration as a distinct logical element producing a giant computation graph. Jax provides jitable functions such as &lt;code&gt;vmap&lt;/code&gt; and &lt;code&gt;scan&lt;/code&gt; which help prevent this problem.  &lt;/p&gt;
-&lt;p&gt;After fixing these problems the code became pretty usable. Here's what the render function looked like at this point:
+&lt;p&gt;After fixing these problems the code became pretty usable. Here's what the render function looked like at this point:&lt;/p&gt;
 &lt;script src="https://gist.github.com/Mr4k/e7f4f5aef6556996ff8fc851bcbef402.js"&gt;&lt;/script&gt;
-I'm not claiming this is the most efficient form of the code but it was now fast enough for me (especially when I discovered I could use a tpu on google colab). If we wanted to make it even faster we could probably implement an intersection acceleration structure like a grid or quad tree so we don't have to check every circle for every pixel. However that would probably also make the code a lot more complex and brittle.  &lt;/p&gt;
-&lt;p&gt;Now I was finally able to generate a real image:
+&lt;p&gt;I'm not claiming this is the most efficient form of the code but it was now fast enough for me (especially when I discovered I could use a tpu on google colab). If we wanted to make it even faster we could probably implement an intersection acceleration structure like a grid or quad tree so we don't have to check every circle for every pixel. However that would probably also make the code a lot more complex and brittle.  &lt;/p&gt;
+&lt;p&gt;Now I was finally able to generate a real image:&lt;/p&gt;
 &lt;p align="center"&gt;
     &lt;img class='artpic' src="/images/art-class/init-mattjj-attempt.png" width="40%" &gt; 
-&lt;/p&gt;  &lt;/p&gt;
+&lt;/p&gt;
+
 &lt;p&gt;Mattjj approximated with 1000 circles (loss ~4800). I'd recommend stepping back, squinting or viewing these images from an angle to really appreciate some of the blending tricks that are going on.  &lt;/p&gt;
 &lt;p&gt;Looking at the image, 1000 circles seemed like a few too many so I decided to try to push the technique by seeing what it could do with 100 circles.  &lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Math the Sharp Bits&lt;/strong&gt;&lt;br&gt;
 Before I started trying to generate images with fewer than 1000 circles I needed to fix the last few problems with the code that I had been putting off.  &lt;/p&gt;
 &lt;p&gt;First of all, the circles were not moving or changing their size. Even though I was taking the gradient with respect to those parameters as well as the color and alpha values, the gradient of the loss function with respect to position and radius was always zero.  &lt;/p&gt;
 &lt;p&gt;Technically you've already seen the source of this error in my description of the rendering algorithm. However it would have been very hard to catch this error because it was less of a code problem and more of a basic calculus dilemma. The simple way we render circles with a hard cutoff at the edge is not fully differentiable with respect to the position or size.   &lt;/p&gt;
-&lt;p&gt;To see why, let's look at a circle's influence on three different pixel positions. For a pixel outside of the circle's radius, the derivative is zero because the circle has no effect on it's color. For a pixel on the inside the circle's effect on the color of the pixel is constant with respect to its size and position so the derivative is still zero. For a pixel at the edge of the circle the derivative is actually undefined. This is a classic example of a &lt;a href="https://en.wikipedia.org/wiki/Heaviside_step_function"&gt;heaviside step function&lt;/a&gt;. A picture of a radial cross section of the circle's influence on the pixels around below shows the discontinuity. 
+&lt;p&gt;To see why, let's look at a circle's influence on three different pixel positions. For a pixel outside of the circle's radius, the derivative is zero because the circle has no effect on it's color. For a pixel on the inside the circle's effect on the color of the pixel is constant with respect to its size and position so the derivative is still zero. For a pixel at the edge of the circle the derivative is actually undefined. This is a classic example of a &lt;a href="https://en.wikipedia.org/wiki/Heaviside_step_function"&gt;heaviside step function&lt;/a&gt;. A picture of a radial cross section of the circle's influence on the pixels around below shows the discontinuity. &lt;/p&gt;
 &lt;p align="center"&gt;
     &lt;img src="/images/art-class/heaviside.png" width="40%" &gt; 
-&lt;/p&gt;  &lt;/p&gt;
+&lt;/p&gt;
+
 &lt;p&gt;It turns out some very smart people have put a lot of effort into tackling this problem with &lt;a href="https://people.csail.mit.edu/tzumao/diffrt/diffrt.pdf"&gt;edge sampling&lt;/a&gt;, &lt;a href="https://baileymiller-personal-page.s3.us-east-2.amazonaws.com/papers/zhang20-paper.pdf"&gt;fluid mechanics&lt;/a&gt; and &lt;a href="https://arxiv.org/pdf/1901.05567.pd"&gt;approximation&lt;/a&gt; based approaches.  &lt;/p&gt;
 &lt;p align="center"&gt;
     &lt;img src="/images/art-class/sigmoid.png" width="40%" &gt; 
 &lt;/p&gt;
 
 &lt;p&gt;For our purposes it's easiest to take the approximation path and make our circle's influence fall off with a differentiable function like &lt;a href="https://en.wikipedia.org/wiki/Sigmoid_function"&gt;sigmoid&lt;/a&gt; (pictured above) instead of the hard step function. The side effect of this is that our circles get a little blurrier. We also have to introduce a new "softness" parameter that defines how fast our sigmoid function falls off.&lt;/p&gt;
-&lt;p&gt;So for our purposes we can just replace hard conditional in the line:
+&lt;p&gt;So for our purposes we can just replace hard conditional in the line:&lt;/p&gt;
 &lt;script src="https://gist.github.com/Mr4k/cab2968aea526b7d33eaa6fbe13b84dc.js"&gt;&lt;/script&gt;
-with:
-&lt;script src="https://gist.github.com/Mr4k/fe4156ddf6a36a0604dbd43473be2edd.js"&gt;&lt;/script&gt;&lt;/p&gt;
+&lt;p&gt;with:&lt;/p&gt;
+&lt;script src="https://gist.github.com/Mr4k/fe4156ddf6a36a0604dbd43473be2edd.js"&gt;&lt;/script&gt;
+
 &lt;p&gt;Now our renderer is fully differentiable with respect to all the circle parameters.  &lt;/p&gt;
 &lt;p&gt;The last little loose end we have is that currently the red, green, blue and alpha parameters are technically unbounded as well. When you have a sigmoid shaped hammer everything looks like a differentiable nail so I decided to just wrap these parameters in a sigmoid, for example a would become sigmoid(a), which would bound their outputs to [0, 1].  &lt;/p&gt;
-&lt;p&gt;Now I was able to render my first 100 circle image. The gif below shows the optimization process. Notice how all of the circle parameters are being adjusted.
+&lt;p&gt;Now I was able to render my first 100 circle image. The gif below shows the optimization process. Notice how all of the circle parameters are being adjusted.&lt;/p&gt;
 &lt;p align="center"&gt;
     &lt;img class='artpic' src="/images/art-class/mattjj-first-100.gif" width="25%" &gt; 
-&lt;/p&gt;  &lt;/p&gt;
+&lt;/p&gt;
+
 &lt;p&gt;&lt;strong&gt;Minibatching&lt;/strong&gt;&lt;br&gt;
 One final optimization I implemented was minibatching (also known as stochastic gradient descent). For our purposes mini batching means only rendering and comparing a random fixed size subset of the pixel at each gradient descent step. I was able to achieve quality results using about 10% of the total samples from before (which greatly sped up the program).&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Results&lt;/strong&gt;&lt;br&gt;
@@ -166,15 +172,15 @@ Honestly I have not had time to do too much analysis of this algorithm (check fu
         &lt;img class='artpic' src="/images/art-class/mastercard/circle-overlap.png" width="25%" &gt; 
     &lt;/div&gt; 
 &lt;/p&gt;
-
-&lt;p&gt;Let's look at the output of our algorithm under two different random seeds:
+&lt;p&gt;Let's look at the output of our algorithm under two different random seeds:&lt;/p&gt;
 &lt;p align="center"&gt;
     &lt;p align="center"&gt;Seed 1&lt;/p&gt;
     &lt;div align="center"&gt;
         &lt;img class='artpic' src="/images/art-class/mastercard/mastercard-s-10-c-2-f1-final.png" width="25%" &gt; 
         &lt;img class='artpic' src="/images/art-class/mastercard/mastercard-s-10-c-2-f1-progress.gif" width="25%" &gt;
     &lt;/div&gt; 
-&lt;/p&gt;  &lt;/p&gt;
+&lt;/p&gt;
+
 &lt;p align="center"&gt;
     &lt;p align="center"&gt;Seed 2&lt;/p&gt;
     &lt;div align="center"&gt;

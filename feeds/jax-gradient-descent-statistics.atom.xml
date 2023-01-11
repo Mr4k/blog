@@ -10,17 +10,17 @@ Suppose we want to compute a complex expectation. This problem pops in up machin
 &lt;p&gt;&lt;span class="math"&gt;\(E_{p}[f(x)]\)&lt;/span&gt; &lt;span class="math"&gt;\(\approx\)&lt;/span&gt; &lt;span class="math"&gt;\(\frac{1}{N} \sum_{i=1}^N f(\overline{\mathbf{x}}_i); \overline{\mathbf{x}}_i\)&lt;/span&gt; ~ &lt;span class="math"&gt;\(p\)&lt;/span&gt;  &lt;/p&gt;
 &lt;p&gt;where the &lt;span class="math"&gt;\(x_i\)&lt;/span&gt;'s are drawn from the distribution you are sampling over.&lt;/p&gt;
 &lt;p&gt;If we want to including Monte Carlo estimations inside a differentiable system (such as a neural network) we need a way to differentiate through the simulation. &lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Easy Mode&lt;/strong&gt;&lt;br&gt;
+&lt;p&gt;&lt;strong&gt;Easy Mode&lt;/strong&gt;  &lt;/p&gt;
 &lt;p align="center"&gt;
     &lt;img src="/images/differentiable-monte-carlo/angel-dice.png" width="30%" &gt; 
-&lt;/p&gt;&lt;br&gt;
-Let's start with something simple. If the shape of the probability distribution we are taking the monte carlo estimate over is not a parameter, then differentiating through a Monte Carlo simulation is simple. No adjustments at all have to be made. Mathematically this looks like the following:  &lt;/p&gt;
+&lt;/p&gt;
+&lt;p&gt;Let's start with something simple. If the shape of the probability distribution we are taking the monte carlo estimate over is not a parameter, then differentiating through a Monte Carlo simulation is simple. No adjustments at all have to be made. Mathematically this looks like the following:  &lt;/p&gt;
 &lt;p&gt;&lt;span class="math"&gt;\(\frac{d}{d\theta}E_p[f(x, \theta)]\)&lt;/span&gt; &lt;span class="math"&gt;\(\approx\)&lt;/span&gt; &lt;span class="math"&gt;\(\frac{d}{d\theta} \frac{1}{N} \sum_{i=1}^N f(\overline{\mathbf{x}}_i, \theta); \overline{\mathbf{x}}_i\)&lt;/span&gt; ~ &lt;span class="math"&gt;\(p\)&lt;/span&gt;  &lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Hard Mode&lt;/strong&gt; 
+&lt;p&gt;&lt;strong&gt;Hard Mode&lt;/strong&gt; &lt;/p&gt;
 &lt;p align="center"&gt;
     &lt;img src="/images/differentiable-monte-carlo/demon-dice.png" width="30%" &gt; 
-&lt;/p&gt; &lt;br&gt;
-However often some parameters will affect the shape of the sampling distribution. For example, in my previous post the probabilities of each palette color being chosen per pixel are variables.&lt;br&gt;
+&lt;/p&gt;
+&lt;p&gt;However often some parameters will affect the shape of the sampling distribution. For example, in my previous post the probabilities of each palette color being chosen per pixel are variables.&lt;br&gt;
 Mathemtically this looks like:  &lt;/p&gt;
 &lt;p&gt;&lt;span class="math"&gt;\(\frac{d}{d\theta}E_{p(\theta)}[f(x, \theta)]\)&lt;/span&gt; &lt;span class="math"&gt;\(\approx\)&lt;/span&gt; &lt;span class="math"&gt;\(\frac{d}{d\theta} \frac{1}{N} \sum_{i=1}^N f(\overline{\mathbf{x}}_i, \theta); \overline{\mathbf{x}}_i\)&lt;/span&gt; ~ &lt;span class="math"&gt;\(p(\theta)\)&lt;/span&gt;  &lt;/p&gt;
 &lt;p&gt;This is where things get a little trickier. I generally found two common ways of approaching this problem.  &lt;/p&gt;
@@ -39,10 +39,11 @@ The idea here is to format the gradient as a second Monte Carlo problem over the
 From what I've seen this approach does not easily fit into an auto differentiation framework  &lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;The Reparameterization Trick&lt;/strong&gt;&lt;br&gt;
 As far as I can tell, the reparameterization trick was established by Kingma et al in their paper about Variational Auto Encoders.  &lt;/p&gt;
-&lt;p&gt;The insight here is that some families of distributions can be defined in terms of a differentiable transformation applied to constant underlying distribution. What does that mean?&lt;br&gt;
+&lt;p&gt;The insight here is that some families of distributions can be defined in terms of a differentiable transformation applied to constant underlying distribution. What does that mean?  &lt;/p&gt;
 &lt;p align="center"&gt;
     &lt;img src="/images/differentiable-monte-carlo/reparam-vae.png" width="65%" &gt; 
-&lt;/p&gt;  &lt;/p&gt;
+&lt;/p&gt;
+
 &lt;p&gt;Let's consider the family of normal distributions parameterized by mean &lt;span class="math"&gt;\(\mu\)&lt;/span&gt; and variance &lt;span class="math"&gt;\(\sigma\)&lt;/span&gt;. Let's say we wanted to differentiate through a function which includes samples drawn from the normal distribution parameterized by the variables &lt;span class="math"&gt;\(\mu\)&lt;/span&gt; and &lt;span class="math"&gt;\(\sigma\)&lt;/span&gt;. If we approached this directly, we'd have to resort to something like the likelihood trick.  &lt;/p&gt;
 &lt;p&gt;Alternatively, if we draw samples from &lt;span class="math"&gt;\(Normal(0,1)\)&lt;/span&gt; then multiply the result by &lt;span class="math"&gt;\(\sigma\)&lt;/span&gt; and add &lt;span class="math"&gt;\(\mu\)&lt;/span&gt;, we can differentiate with respect to &lt;span class="math"&gt;\(\sigma\)&lt;/span&gt; and &lt;span class="math"&gt;\(\mu\)&lt;/span&gt; directly through auto differentiation without having to deal with any randomness. This trick works because the normal distribution parameterized by &lt;span class="math"&gt;\(\mu\)&lt;/span&gt; and &lt;span class="math"&gt;\(\sigma\)&lt;/span&gt; is equal to the scaled / translated unit normal distribution. Not all distributions have nice properties like this, but for the ones that do reparametrization tricks can be quite nice. &lt;/p&gt;
 &lt;p&gt;&lt;em&gt;Pros&lt;/em&gt;&lt;br&gt;

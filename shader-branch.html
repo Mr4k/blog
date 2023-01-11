@@ -10,6 +10,7 @@
     <div class="container">
 <header>
     <a href="/">home</a>
+    <meta charset="UTF-8">
 </header>
 <div class="row">
  <div class="col-md-8">
@@ -34,68 +35,74 @@
 <code>
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {  <br>
-  <div style='margin-left: 5%;'>
-  // TUNE THIS AMOUNT TO YOUR GPU STRENGTH<br>
-  int workAmount = 2000;<br>
-  float incr = 1. / float(workAmount);<br>
-  float outColor = 0.0;  </p>
-<p>// USE THIS VARIABLE TO TOGGLE BRANCHING<br>
-  bool branch = true;  </p>
-<p>if (mod(fragCoord.x, 2.) &lt; 1. &amp;&amp; branch) {
+<br>
+<div style='margin-left: 5%;'>
+  // TUNE THIS AMOUNT TO YOUR GPU STRENGTH  
+  int workAmount = 2000;  
+  float incr = 1. / float(workAmount);  
+  float outColor = 0.0;  
+
+  // USE THIS VARIABLE TO TOGGLE BRANCHING  
+  bool branch = true;  
+
+  if (mod(fragCoord.x, 2.) < 1. && branch) {
     <div style='margin-left: 5%;'>
-      for (int i = 0; i &lt; workAmount; i++) {
+      for (int i = 0; i < workAmount; i++) {
         <div style='margin-left: 5%;'>
           outColor += incr;
           </div>
-      }<br>
+      }  
       fragColor = vec4(0.0,outColor,0.0,1.0);
       </div>
   } else {
     <div style='margin-left: 5%;'>
-      for (int i = 0; i &lt; workAmount; i++) {
+      for (int i = 0; i < workAmount; i++) {
         <div style='margin-left: 5%;'>
           outColor += incr;
           </div>
-      }<br>
+      }  
       fragColor = vec4(outColor,0.0,0.0,1.0);
       </div>
   }
-  </div>
-}</p>
+  </div></p>
+<p>}</p>
 <p></code></p>
 <p>In fragment shaders like the one above, each warp is composed of a set of spatially close pixels. Each warp in this shader should diverge because each horizontally adjacent pixel takes a different side of the branch. Let's say the cost of each inner loop is n cycles. Since each side of the branch is executed in series, each warp must take at least 2n cycles, even though each thread uses only one side of the branch. These effects scale with the number of threads in the distinct divergent paths taken (up to 32x in Nvidia hardware). Here's another shader which should have roughly four branches per warp. <a href="https://www.shadertoy.com/view/wsVyzG">This shader</a> will take at least 4n cycles.  </p>
 <p>However, let's look a <a href="https://www.shadertoy.com/view/tsVyzG">second shader</a>:   </p>
 <p><code>
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
-  <div style='margin-left: 5%;'>
-  // USE THIS VARIABLE TO TOGGLE BRANCHING<br>
-  int workAmount = 2000;<br>
-  float incr = 1. / float(workAmount);<br>
-  float outColor = 0.0;  </p>
-<p>// USE THIS VARIABLE TO TOGGLE BRANCHING<br>
-  bool branch = true;  </p>
-<p>if (fragCoord.x &lt; iResolution.x / 2.0 &amp;&amp; branch) {
+<br>
+<div style='margin-left: 5%;'>
+  // USE THIS VARIABLE TO TOGGLE BRANCHING  
+  int workAmount = 2000;  
+  float incr = 1. / float(workAmount);  
+  float outColor = 0.0;  
+
+  // USE THIS VARIABLE TO TOGGLE BRANCHING  
+  bool branch = true;  
+
+  if (fragCoord.x < iResolution.x / 2.0 && branch) {
     <div style='margin-left: 5%;'>
-      for (int i = 0; i &lt; workAmount; i++) {
+      for (int i = 0; i < workAmount; i++) {
         <div style='margin-left: 5%;'>
           outColor += incr;
           </div>
-      }<br>
+      }  
       fragColor = vec4(0.0,outColor,0.0,1.0);
     </div>
   } else {
     <div style='margin-left: 5%;'>
-        for (int i = 0; i &lt; workAmount; i++) {
+        for (int i = 0; i < workAmount; i++) {
           <div style='margin-left: 5%;'>
           outColor += incr;
           </div>
-      }<br>
+      }  
       fragColor = vec4(outColor,0.0,0.0,1.0);
       </div>
   }
-  </div>
-}
+  </div></p>
+<p>}
 </code></p>
 <p>This shader should run roughly twice as fast as the other shader even though roughly the same number of pixels take each branch. This is because most of the warps do not diverge (with the exception of a few around half way across the screen).   </p>
 <p><strong>Nvidia Specifics</strong><br>
@@ -107,7 +114,6 @@ On pre volta Nvidia card, divergence was handled by something called thread mask
 <p align="center">
     <img src="/images/shader-branch/pascal-divergence.png" width="65%" > 
 </p>
-
 <p>The above image is taken from the Volta whitepaper.</p>
 <p>It's worth noting that only the threads which need to execute the branch actually are assigned to computational cores. So if no threads execute one side of the branch, no work is done.</p>
 <p><strong>Independent Thread Scheduling (Volta and Beyond)</strong><br>
@@ -123,15 +129,17 @@ One big change in the Volta architecture and beyond is the introduction of "Inde
 <code>
 leader_id = 0<br>
 If (threadIdx.x == leader_id) {<br>
-  <div style='margin-left: 5%;'>
+<br>
+<div style='margin-left: 5%;'>
     // Do some inital work
-  </div>
-} else {<br>
-  <div style='margin-left: 5%;'>
-    // Wait for leader to finish it's work<br>
+  </div></p>
+<p>} else {<br>
+<br>
+<div style='margin-left: 5%;'>
+    // Wait for leader to finish it's work  
     // then do my work
-  </div>
-}<br>
+  </div></p>
+<p>}<br>
 </code></p>
 <p>In the above compute shader pseudo code, we have 31 "follower" threads waiting for the "leader thread" to finish (using in-warp shared local memory) before executing their own instructions. </p>
 <p>On a Pascal GPU or below, if the else side of the branch is executed first, a deadlock will occur. The leader will never get a chance to start it's work because its followers will be waiting for it. </p>

@@ -10,6 +10,7 @@
     <div class="container">
 <header>
     <a href="/">home</a>
+    <meta charset="UTF-8">
 </header>
 <div class="row">
  <div class="col-md-8">
@@ -18,16 +19,17 @@
   <p><strong>Background</strong><br>
 Near the end of 2019 I stumbled across this <a href="https://www.youtube.com/watch?v=fMbK7PYQux4&amp;t=6m57s">talk</a> by procedural generation researcher <a href="https://www.anastasiaopara.com/">Anastasia Opara</a>. In the talk she presents a novel algorithm for example based texture synthesis. The goal of example based texture synthesis is to take one or more example textures and synthesize a new visually similar output texture.    </p>
 <p>Here's an example from the project README:
-  <p align="center">
+<br>
+<p align="center">
     <img src="/images/texture-optimization/readme-example.jpeg" width="70%" > 
-</p> </p>
+</p>
+</p>
 <p>I was really curious about this algorithm and wanted to see if I could make it run faster as an exercise in profiling.  </p>
 <p><strong>Embarking on a Journey</strong><br>
 While I'm not going to go into great detail about how the algorithm works (see Anastasia's talk if you're curious!) it's helpful to understand the basic idea.  </p>
 <p align="center">
     <img src="/images/texture-optimization/synthesis-diagram.png" width="80%" > 
 </p>
-
 <p>We start with an empty output image and seed it with a few random pixels from our example images.<br>
 Then repeat the following procedure until the output image is filled: <br><br> 
 1. Choose an empty pixel in the output image. We will call this the center pixel.<br>

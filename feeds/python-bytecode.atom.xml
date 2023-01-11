@@ -2,13 +2,12 @@
 <feed xmlns="http://www.w3.org/2005/Atom"><title>peterstefek.me - python, bytecode</title><link href="/" rel="alternate"></link><link href="/feeds/python-bytecode.atom.xml" rel="self"></link><id>/</id><updated>2020-09-28T00:00:00-07:00</updated><entry><title>Using Bytecode Surgery to Create an Ouroboros</title><link href="/ouroboros.html" rel="alternate"></link><published>2020-09-28T00:00:00-07:00</published><updated>2020-09-28T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-09-28:/ouroboros.html</id><summary type="html">&lt;p&gt;Falling head over heels down the Python rabbit hole&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;meta charset="utf-8"/&gt;&lt;/p&gt;
 &lt;p&gt;The code associated with this article can be found &lt;a href="https://github.com/Mr4k/ouroboros"&gt;here&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;Consider the following function in Python which sums up the first n numbers:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="err"&gt;def sum(n, acc=0):&lt;/span&gt;
-&lt;span class="err"&gt;  if n == 0:&lt;/span&gt;
-&lt;span class="err"&gt;    return acc&lt;/span&gt;
-&lt;span class="err"&gt;  else:&lt;/span&gt;
-&lt;span class="err"&gt;    return sum(n - 1, acc + n)&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="nv"&gt;def&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;sum&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;n&lt;/span&gt;,&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;acc&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;:&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;n&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;:&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="k"&gt;return&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;acc&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="k"&gt;else&lt;/span&gt;:&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="k"&gt;return&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;sum&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;n&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;,&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;acc&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;n&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;So sum(1) returns 1, sum(2) returns 3 and sum(3) returns 6. What about sum(10000000)?&lt;br&gt;
 Most likely if you call sum(10000000) you will get the following error:  &lt;/p&gt;
@@ -21,21 +20,19 @@ Most likely you will see a different error which looks like this:  &lt;/p&gt;
 &lt;p&gt;Since I was looking for small projects to do during my first week at the &lt;a href="https://www.recurse.com/"&gt;Recurse Center&lt;/a&gt;, I decided to try to implement a basic version of tail call optimization in Python. Note this is not an original idea and I had already seen some clever hacks which used exceptions to break out of sub calls. I decided to try something different, although after presenting my implementation to the greater RC community I learned that another Recurser had given a &lt;a href="https://www.youtube.com/watch?v=Qk1I6ZxcceU&amp;amp;feature=share"&gt;fantastic talk&lt;/a&gt; which used the same idea back in 2015 (small world!)  &lt;/p&gt;
 &lt;p&gt;Before I dive into the details let's look at the prototype in action:&lt;br&gt;
 sum.py is a file which contains the same sum calculation from the beginning of this post:  &lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="n"&gt;def&lt;/span&gt; &lt;span class="k"&gt;sum&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;n&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;acc&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
-  &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;n&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
-    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;acc&lt;/span&gt;
-  &lt;span class="k"&gt;else&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
-    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="k"&gt;sum&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;n&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;acc&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;n&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="nv"&gt;def&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;sum&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;n&lt;/span&gt;,&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;acc&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;:&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;n&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;:&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="k"&gt;return&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;acc&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="k"&gt;else&lt;/span&gt;:&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="k"&gt;return&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;sum&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;n&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;,&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;acc&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;n&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
 
-&lt;span class="n"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;sum&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1000000&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
+&lt;span class="nv"&gt;print&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;sum&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1000000&lt;/span&gt;&lt;span class="ss"&gt;))&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;If type &lt;code&gt;python sum.py&lt;/code&gt; we will get an error.&lt;br&gt;
 Now let's try using my tool:  &lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="err"&gt;python optimize-tail-calls.py sum.py&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;python optimize-tail-calls.py sum.py
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;This prints &lt;code&gt;500000500000&lt;/code&gt; as expected.  &lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Identifying Tail Recursive Functions Calls&lt;/strong&gt; &lt;br&gt;
@@ -68,15 +65,14 @@ Unfortunately, there's one more major problem with our clean bytecode definition
 &lt;/ul&gt;
 &lt;p&gt;This heuristic further narrows the number of calls we can mark as tail recursive. I think it can be improved but I chose it partially for simplicity of implementation. One other quirk about python's bytecode is that it gives us the line where each instruction is based but does not give us any more granular information. This is why I have the same line requirement. &lt;/p&gt;
 &lt;p&gt;We can now mark all the lines with tail recursive calls. Then when going through the bytecode, if we see a function call next to a return statement we can check if it is a tail recursive call or not based on the line number.  &lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;An Ouroboros&lt;/strong&gt;&lt;br&gt;
+&lt;p&gt;&lt;strong&gt;An Ouroboros&lt;/strong&gt;  &lt;/p&gt;
 &lt;p align="center"&gt;
     &lt;img src="/images/ouroboros/ouroboros.jpg" width="40%" &gt; 
-&lt;/p&gt; &lt;br&gt;
-The Ouroboros is a snake which is eating its own tail. It symbolizes eternal cyclic renewal. In Python I consider this function to represent an Ouroboros,  &lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="err"&gt;def ouroboros():&lt;/span&gt;
-&lt;span class="err"&gt;    return ouroboros()&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
+&lt;/p&gt;
+&lt;p&gt;The Ouroboros is a snake which is eating its own tail. It symbolizes eternal cyclic renewal. In Python I consider this function to represent an Ouroboros,  &lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="nv"&gt;def&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;ouroboros&lt;/span&gt;&lt;span class="ss"&gt;()&lt;/span&gt;:&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="k"&gt;return&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;ouroboros&lt;/span&gt;&lt;span class="ss"&gt;()&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;Now that we can optimize tail recursive function calls, this function will run forever (read as until we send SIGINT), eating it's own stack in an endless cycle.  &lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Further Places to Improve&lt;/strong&gt;&lt;br&gt;
