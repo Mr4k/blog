@@ -117,7 +117,7 @@ Now let's talk about the actual architecture of the neural network which compute
 <p>The inputs to the network are the green boxes and the outputs are red boxes.  </p>
 <p>Initially the position (a vector embedding of size 60) is input at the very beginning of the network and then added in again at layer 5 by concatenating it with the output of layer 4. The idea behind this is that it helps the network "remember" the position in later layers. This is inspired by the skip connections in architectures such as <a href="https://arxiv.org/pdf/1512.03385.pdf">ResNet</a>.   </p>
 <p align="center">
-    <img src="/images/nerf/layer9_closeup2.png" width="40%"> 
+    <img src="/images/nerf/layer9_closeup3.png" width="70%"> 
 </p>
 
 <p>At layer 9 the scalar volume density value <span class="math">\(\sigma(pos)\)</span> is output and a ReLU is applied to it to make it non negative<sup id="sf-nerf-7-back"><a href="#sf-nerf-7" class="simple-footnote" title="One problem with rectifying the volume density with ReLU is that sometimes when training the network the ReLU will start &quot;dead&quot; (with a \(value \le 0\)) at which point the gradient is 0. The network will then make no progress producing all black images. The NeRF authors somewhat solve this problem by adding gaussian noise to the ReLU on their &quot;real world&quot; images but I'm not sure it's addressed fully.">7</a></sup>. Afterwards the direction embedding (a vector of size 24) is concatenated with the output of layer 9 minus the volume density and input into layer 10 which eventually outputs a 3 element vector representing the r, g and b pieces of the output color at that point looking at that direction.  </p>
