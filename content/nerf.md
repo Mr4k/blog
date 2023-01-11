@@ -137,7 +137,7 @@ The inputs to the network are the green boxes and the outputs are red boxes.
 Initially the position (a vector embedding of size 60) is input at the very beginning of the network and then added in again at layer 5 by concatenating it with the output of layer 4. The idea behind this is that it helps the network "remember" the position in later layers. This is inspired by the skip connections in architectures such as [ResNet](https://arxiv.org/pdf/1512.03385.pdf).   
 
 <p align="center">
-	<img src="/images/nerf/layer9_closeup2.png" width="40%"> 
+	<img src="/images/nerf/layer9_closeup3.png" width="70%"> 
 </p> 
 
 At layer 9 the scalar volume density value $\sigma(pos)$ is output and a ReLU is applied to it to make it non negative[ref]One problem with rectifying the volume density with ReLU is that sometimes when training the network the ReLU will start "dead" (with a $value \le 0$) at which point the gradient is 0. The network will then make no progress producing all black images. The NeRF authors somewhat solve this problem by adding gaussian noise to the ReLU on their "real world" images but I'm not sure it's addressed fully.[/ref]. Afterwards the direction embedding (a vector of size 24) is concatenated with the output of layer 9 minus the volume density and input into layer 10 which eventually outputs a 3 element vector representing the r, g and b pieces of the output color at that point looking at that direction.  
