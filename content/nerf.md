@@ -7,14 +7,16 @@ Slug: nerf
 Authors: Peter Stefek
 Summary: Radical Radiance
 
+*My NeRF Implementation which generated all the renderings for this post is on [github](https://github.com/Mr4k/NeRFImpl) and you can play with it in a minimal [colab](https://colab.research.google.com/drive/1Z5QlXSBfYhF1VNBP1uUA5RTuTqqngxvq?usp=sharing)*    
+
 <p align="center">
 	<img src="/images/nerf/excavator.png" width="100%"> 
 </p>   
 
 **A Computer Vision Problem**  
-Over the years computer graphics has gotten really good at rendering virtual worlds known as forward rendering. Forward rendering means taking some description of a 3d world stored in a computer and turning it into a realistic looking 2d image captured from a particular perspective inside that world.  
+Over the years computer graphics has gotten really good at rendering virtual worlds. This is known as forward rendering[ref]Forward rendering has a different meaning in realtime graphics for video games. This definition has nothing to do with that[/ref]. Forward rendering means taking some description of a 3d world stored in a computer and turning it into a realistic looking 2d image captured from a particular perspective inside that world.  
 
-The inverse problem, turning an image or collection of images into a 3d scene, is also very interesting. Up until recently these problems were solved in unrelated ways but new techniques called inverse graphics have tied the two problems together. NeRF (Neural Radiance Fields) is a wildly popular[ref]Over 50 papers derived from NeRF were submitted to CVPR in 2022. This number is courtesy of [Frank Dellart](https://dellaert.github.io/NeRF22/) [/ref] inverse graphics technique which beautifully formulates the problem in terms of forward rendering.  
+The inverse problem, turning an image or collection of images into a 3d scene, is also very interesting. Up until recently these problems were solved in unrelated ways but new techniques called inverse graphics have tied the two problems together. [NeRF](https://www.matthewtancik.com/nerf) (Neural Radiance Fields) is a wildly popular[ref]Over 50 papers derived from NeRF were submitted to CVPR in 2022. This number is courtesy of [Frank Dellart](https://dellaert.github.io/NeRF22/) [/ref] inverse graphics technique which beautifully formulates the problem in terms of forward rendering.  
 
 **Forward Rendering via Ray Tracing**  
 Before we talk about NeRF, I want to quickly go over the basic ideas of ray tracing, a forward rendering technique. NeRF relies on a very simplified version of ray tracing so understanding the basic ideas behind ray tracing is useful for understanding NeRF. If you already are familiar with ray tracing feel free to skip ahead! For a more comprehensive explanation please see the wonderful [Scratchapixel](https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-ray-tracing/how-does-it-work.html).  
@@ -54,7 +56,7 @@ To create a 2d view from this radiance field the authors use a forward rendering
 
 **Tracing Rays**  
 <p align="center">
-	<img src="/images/nerf/eye-tracing.png" width="70%"> 
+	<img src="/images/nerf/eye-tracing2.png" width="70%"> 
 </p> 
 To determine the color of a given pixel in the image plane we take its associated "reverse" ray and trace it through the radiance field.   
 
@@ -134,6 +136,10 @@ The inputs to the network are the green boxes and the outputs are red boxes.
 
 Initially the position (a vector embedding of size 60) is input at the very beginning of the network and then added in again at layer 5 by concatenating it with the output of layer 4. The idea behind this is that it helps the network "remember" the position in later layers. This is inspired by the skip connections in architectures such as [ResNet](https://arxiv.org/pdf/1512.03385.pdf).   
 
+<p align="center">
+	<img src="/images/nerf/layer9_closeup2.png" width="40%"> 
+</p> 
+
 At layer 9 the scalar volume density value $\sigma(pos)$ is output and a ReLU is applied to it to make it non negative[ref]One problem with rectifying the volume density with ReLU is that sometimes when training the network the ReLU will start "dead" (with a $value \le 0$) at which point the gradient is 0. The network will then make no progress producing all black images. The NeRF authors somewhat solve this problem by adding gaussian noise to the ReLU on their "real world" images but I'm not sure it's addressed fully.[/ref]. Afterwards the direction embedding (a vector of size 24) is concatenated with the output of layer 9 minus the volume density and input into layer 10 which eventually outputs a 3 element vector representing the r, g and b pieces of the output color at that point looking at that direction.  
 
 Very importantly the volume density is output before the direction is added into the network so the volume density remains independent of direction.  
@@ -190,7 +196,7 @@ An important implementation detail is the loss from both networks are summed tog
 **Limitations of the original NeRF Paper**  
 
 **Train time**  
-The biggest limitation of the original NeRF paper is the time it takes to render rays. The authors claim an 800x800 image takes 30 seconds to render on a V100 and 1-2 days to train a high resolution radiance field. Many people have since researched and made enormous progress on this topic. Recently Nvidia's [Instant NeRF](https://github.com/NVlabs/instant-ngp) reduced rendering to 10s of milliseconds and training to mere minutes which is wild given that NeRF is only a few years old.  
+The biggest limitation of the original NeRF paper is the time it takes to render rays. The authors claim an 800x800 image takes 30 seconds to render on a V100 and 1-2 days to train a high resolution radiance field[ref]For my renders, I use about 6000 iterations and render at 200x200 resolution which is much faster[/ref]. Many people have since researched and made enormous progress on this topic. Recently Nvidia's [Instant NeRF](https://github.com/NVlabs/instant-ngp) reduced rendering to 10s of milliseconds and training to mere minutes which is wild given that NeRF is only a few years old.  
 
 **Rigidity assumption**  
 Another huge assumption the original NeRF paper makes is that the scene it's capturing is static.   
@@ -247,7 +253,9 @@ My goal was to build the simplest and most testable parts first, slowly piece th
 I also got a lot of mileage out of just testing on my laptop before moving to the more complex world of gpus and colab. This allowed me not to worry about the complexities of gpus up front.  
 
 **Conclusion**  
-I had a great time learning about and implementing the original NeRF paper and will probably try some of the follow up work in the future (especially the real time version). If you've read this far you might also want to consider implementing NeRF yourself! It's not as intimidating as it might seem and it's a great way to practice neural networks and computer graphics.  
+I had a great time learning about and implementing the original NeRF paper and will probably try some of the follow up work in the future (especially the real time version). In a world of huge deep inscrutable models with little structure, NeRF is a ray of sunshine. If you've read this far you might also want to consider implementing NeRF yourself! It's not as intimidating as it might seem and it's a great way to practice neural networks and computer graphics.  
+
+*Thanks to [Alex Fox](https://www.afox.land), Laura Lindzey as well as several others for amazing feedback*  
 
 Have questions / comments / corrections?  
 Get in touch: <a href="mailto:pstefek.dev@gmail.com">pstefek.dev@gmail.com</a>  
