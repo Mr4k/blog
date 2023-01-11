@@ -72,7 +72,7 @@ Given the radiance field function, $\mathbf{\sigma(pos)}$ and $\mathbf{c(pos, di
 </p>  
 When you understand all the notation this integral is not as scary as it first appears. We are simply computing the expected color of a ray starting from initial position o and direction d going through the radiance field given by $\mathbf{\sigma(pos)}$ and $\mathbf{c(pos, dir)}$.  
 
-$\mathit{T(t)}$ is the probability that the ray has not terminated earlier before point $\mathbf{r(t)}$. $\mathit{T(t)}$ is calculated using Beer's law. Scratchapixel has a derivation of Beer's law using differential equations in their volume rendering section.  
+$\mathit{T(t)}$ is the probability that the ray has not terminated earlier before point $\mathbf{r(t)}$. $\mathit{T(t)}$ is calculated using Beer's law. Scratchapixel has a derivation of Beer's law using differential equations in their [volume rendering section](https://www.scratchapixel.com/lessons/3d-basic-rendering/volume-rendering-for-developers/volume-rendering-summary-equations).  
 
 $t_n$ is the location along the ray of the near plane (the image plane)  
 $t_f$ is the location of the far plane which is the furthest a ray will go before automatically terminating into the background.  
@@ -95,7 +95,7 @@ Notice that this loss function is differentiable with respect to $W$[ref]This is
 <p align="center">
 	<img src="/images/nerf/traindiagram.png" width="90%"> 
 </p> 
-The training process for nerf is pictured above. The basic idea is that for each of our known cameras we can render an image using our current network as the radiance field and then compare the rendered image to the ground truth reference image from the camera. We then take the derivative of the loss with respect to the network parameters and perform gradient descent to update the network for the next iteration.  
+The training process for nerf is pictured above. The basic idea is that for each of our known cameras we can render an image using our current network as the radiance field and then compare the rendered image to the ground truth reference image from the camera. We then take the derivative of the loss with respect to the network parameters[ref]No derivative computations are required here because [Pytorch's autodifferentiation](https://pytorch.org/tutorials/beginner/basics/autogradqs_tutorial.html) does it for us![/ref] and perform gradient descent to update the network for the next iteration.  
 
 In practice rendering an entire image per iteration can be expensive. Instead the authors sample a subset of rays and corresponding pixel colors from each known camera image and roll them all up into a batch. The batch size in the original NeRF paper is 4096 rays. This type of batching is a common technique in deep learning.  
 
