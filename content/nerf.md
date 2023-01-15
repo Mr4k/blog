@@ -27,7 +27,7 @@ The basic idea behind ray tracing is to use a virtual pinhole camera to capture 
 </p>  
 Light from the sun or other light source bounces off of an object and into the pinhole of the camera projecting the object upside down. In our virtual pinhole camera we usually assume the pinhole is infinitely small and has sufficient light exposure so there is no need for a lens and therefore no depth of field effects.  
 
-An important notational point is that graphics programmers prefer to talk about rendering in terms of an "eye" placed at the pinhole and an "image plane" placed in front of the camera one focal length unit away. This has no real life analog but is the right side up version of the image captured by the pinhole camera so it is easier to work with. Here is a diagram of the image plane:
+An important notational point is that graphics programmers prefer to talk about rendering in terms of an "eye" placed at the pinhole and an "image plane" placed in front of the camera one focal length[ref]This is kind of a confusing term in a pinhole camera model since there no lens, hence no "focus". However I can't find a better name for this distance.[/ref] unit away. This has no real life analog but is the right side up version of the image captured by the pinhole camera so it is easier to work with. Here is a diagram of the image plane:
 <p align="center">
 	<img src="/images/nerf/camdiagram2.png" width="70%"> 
 </p> 
