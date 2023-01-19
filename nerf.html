@@ -182,7 +182,7 @@ Another huge assumption the original NeRF paper makes is that the scene it's cap
 As we discussed earlier NeRF is based on a pinhole camera model which comes with a host of unrealistic assumptions about the structure of the camera used to take the input photos. It seems like a classic NeRF research project is rebuild NeRF based on a more accurate camera model.  </p>
 <p>One big assumption is to totally disregard depth of field. It's very possible that depth of field error can be modeled as per camera noise and disregarded by the techniques used in NeRF in the Wild (discussed above) but DoF information could also provide useful clues to estimate the scene. Wu et al build a <a href="https://github.com/zijinwuzijin/DoF-NeRF">NeRF which incorporates DoF</a>. They seem to find that it produces sharper radiance fields than vanilla NeRF when used on images with shallow depth of field. However I don't see them comparing their technique to <em>NeRF in the Wild</em> which would be nice. Other papers do similar types of camera corrections such as <a href="http://www.kecl.ntt.co.jp/people/kaneko.takuhiro/projects/ar-nerf/">AR NeRF</a> </p>
 <p><a href="https://limacv.github.io/deblurnerf/">Deblur NeRF</a> models a camera with non instantaneous shutter speed to reconstruct radiance fields from motion blurred images more accurately.  </p>
-<p><a href="https://jonbarron.info/mipnerf/">MIP NeRF</a> integrates the radiance field over cones instead of rays (it uses multiple samples per pixel) to more accurately capture the underlying field radiance.  </p>
+<p><a href="https://jonbarron.info/mipnerf/">MIP NeRF</a> integrates the radiance field over cones instead of rays (equivlant but faster to using multiple samples per pixel) to more accurately capture the underlying field radiance.  </p>
 <p><strong>Limits of the radiance field</strong><br>
 Unlike some differential rendering methods NeRF only predicts depth and color at first bounce in a scene. This means it does not learn deeper structures such as the position of light sources in the scene or unlit object textures. Many followup methods including <em>NeRF in the Wild</em> make strides to learn more of the underlying scene structure.  </p>
 <p><strong>My Own Journey Implementing NeRF</strong><br>
@@ -213,6 +213,8 @@ I had a great time learning about and implementing the original NeRF paper and w
 <p><em>Thanks to <a href="https://www.afox.land">Alex Fox</a>, Laura Lindzey as well as several others for amazing feedback</em>  </p>
 <p>Have questions / comments / corrections?<br>
 Get in touch: <a href="mailto:pstefek.dev@gmail.com">pstefek.dev@gmail.com</a>  </p>
+<p><em>Corrections</em><br>
+<em>1/18/2022: Fixed the description of Mip-NeRF to say that it does not use multiple samples per pixel</em></p>
 <hr>
 <script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
     var align = "center",

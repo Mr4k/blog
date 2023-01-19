@@ -165,7 +165,7 @@ Another huge assumption the original NeRF paper makes is that the scene it's cap
 As we discussed earlier NeRF is based on a pinhole camera model which comes with a host of unrealistic assumptions about the structure of the camera used to take the input photos. It seems like a classic NeRF research project is rebuild NeRF based on a more accurate camera model.  &lt;/p&gt;
 &lt;p&gt;One big assumption is to totally disregard depth of field. It's very possible that depth of field error can be modeled as per camera noise and disregarded by the techniques used in NeRF in the Wild (discussed above) but DoF information could also provide useful clues to estimate the scene. Wu et al build a &lt;a href="https://github.com/zijinwuzijin/DoF-NeRF"&gt;NeRF which incorporates DoF&lt;/a&gt;. They seem to find that it produces sharper radiance fields than vanilla NeRF when used on images with shallow depth of field. However I don't see them comparing their technique to &lt;em&gt;NeRF in the Wild&lt;/em&gt; which would be nice. Other papers do similar types of camera corrections such as &lt;a href="http://www.kecl.ntt.co.jp/people/kaneko.takuhiro/projects/ar-nerf/"&gt;AR NeRF&lt;/a&gt; &lt;/p&gt;
 &lt;p&gt;&lt;a href="https://limacv.github.io/deblurnerf/"&gt;Deblur NeRF&lt;/a&gt; models a camera with non instantaneous shutter speed to reconstruct radiance fields from motion blurred images more accurately.  &lt;/p&gt;
-&lt;p&gt;&lt;a href="https://jonbarron.info/mipnerf/"&gt;MIP NeRF&lt;/a&gt; integrates the radiance field over cones instead of rays (it uses multiple samples per pixel) to more accurately capture the underlying field radiance.  &lt;/p&gt;
+&lt;p&gt;&lt;a href="https://jonbarron.info/mipnerf/"&gt;MIP NeRF&lt;/a&gt; integrates the radiance field over cones instead of rays (equivlant but faster to using multiple samples per pixel) to more accurately capture the underlying field radiance.  &lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Limits of the radiance field&lt;/strong&gt;&lt;br&gt;
 Unlike some differential rendering methods NeRF only predicts depth and color at first bounce in a scene. This means it does not learn deeper structures such as the position of light sources in the scene or unlit object textures. Many followup methods including &lt;em&gt;NeRF in the Wild&lt;/em&gt; make strides to learn more of the underlying scene structure.  &lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;My Own Journey Implementing NeRF&lt;/strong&gt;&lt;br&gt;
@@ -196,6 +196,8 @@ I had a great time learning about and implementing the original NeRF paper and w
 &lt;p&gt;&lt;em&gt;Thanks to &lt;a href="https://www.afox.land"&gt;Alex Fox&lt;/a&gt;, Laura Lindzey as well as several others for amazing feedback&lt;/em&gt;  &lt;/p&gt;
 &lt;p&gt;Have questions / comments / corrections?&lt;br&gt;
 Get in touch: &lt;a href="mailto:pstefek.dev@gmail.com"&gt;pstefek.dev@gmail.com&lt;/a&gt;  &lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Corrections&lt;/em&gt;&lt;br&gt;
+&lt;em&gt;1/18/2022: Fixed the description of Mip-NeRF to say that it does not use multiple samples per pixel&lt;/em&gt;&lt;/p&gt;
 &lt;hr&gt;
 &lt;script type="text/javascript"&gt;if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
     var align = "center",
