@@ -220,7 +220,7 @@ One big assumption is to totally disregard depth of field. It's very possible th
 
 [Deblur NeRF](https://limacv.github.io/deblurnerf/) models a camera with non instantaneous shutter speed to reconstruct radiance fields from motion blurred images more accurately.  
 
-[MIP NeRF](https://jonbarron.info/mipnerf/) integrates the radiance field over cones instead of rays (it uses multiple samples per pixel) to more accurately capture the underlying field radiance.  
+[MIP NeRF](https://jonbarron.info/mipnerf/) integrates the radiance field over cones instead of rays (equivlant but faster to using multiple samples per pixel) to more accurately capture the underlying field radiance.  
 
 **Limits of the radiance field**  
 Unlike some differential rendering methods NeRF only predicts depth and color at first bounce in a scene. This means it does not learn deeper structures such as the position of light sources in the scene or unlit object textures. Many followup methods including *NeRF in the Wild* make strides to learn more of the underlying scene structure.  
@@ -259,6 +259,10 @@ I had a great time learning about and implementing the original NeRF paper and w
 
 Have questions / comments / corrections?  
 Get in touch: <a href="mailto:pstefek.dev@gmail.com">pstefek.dev@gmail.com</a>  
+
+*Corrections*  
+*1/18/2022: Fixed the description of Mip-NeRF to say that it does not use multiple samples per pixel*
+
 ----------------
 
 
