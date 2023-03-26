@@ -5,4 +5,5 @@ Publish to gh-pages branch:
 `pelican content -s publishconf.py -t theme/`  
 `ghp-import output -b gh-pages`   
 `git push origin gh-pages`  
+Move CNAME from main to gh-pages as it will have been deleted. (TODO have this happen automatically)
 Alternatively just use the commands in `task.py`
