@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Dynamically Deducing Data Dependencies</title>
+    <link rel="stylesheet" type="text/css" href="/theme/css/main.css" />
+</head>
+
+<body>
+    <div class="container">
+<header>
+    <a href="/">home</a>
+    <meta charset="UTF-8">
+</header>
+<div class="row">
+ <div class="col-md-8">
+  <h1>Dynamically Deducing Data Dependencies</h1>
+  <label>Posted on <strong>14 December 2020</strong></label>
+  <p><strong>Background</strong><br>
+A few weeks ago, I was talking to <a href="https://jemma.dev/">Jemma Issroff</a>, a fellow <a href="https://www.recurse.com/">Recurser</a>, about a toy programming language she was building. We ended up thinking about automatically memoizing pure functions based on their parameters. As we thought about this problem more and more, we decided it would be interesting to be able to tell which parameters of function were actually required to compute its result at runtime. The idea at the time was that we could cache just based on those parameters. It turned out that just figuring out how to compute those dependencies was an interesting question in itself.</p>
+<p><strong>Problem Statement</strong><br>
+Let's say we have a function <span class="math">\(f\)</span> that takes arguments <span class="math">\(x_1,...,x_n\)</span> and outputs some result <span class="math">\(res\)</span>. We want to check at runtime which of those arguments are really necessary to compute <span class="math">\(res\)</span>. Let's take a very simple example:  </p>
+<pre>
+let f = fn(x, y, z) {
+  return y
+}
+</pre>
+<p>Now if we call 
+<a href="https://mr4k.github.io/konsole/?program=let%20f%20%3D%20fn(x%2C%20y%2C%20z)%20%7B%0A%20%20return%20y%0A%7D%0A%2F%2F%20this%20is%20a%20special%20builtin%20which%20renders%20the%20dependency%20of%20it%27s%20arguments%20as%20a%20graph%0Adep_diagraph(f(1%2C%202%2C%203))%0A"><span class="math">\(f(1,2,3)\)</span></a>
+, it's pretty clear that the result <span class="math">\(2\)</span> only depends on <span class="math">\(2\)</span>, the value of the second argument. Of course we could have figured that out at compile time (and in fact most compilers will yell at you to tell you <span class="math">\(x\)</span> and <span class="math">\(z\)</span> are unused).
+But now let's take a slightly more interesting case:  </p>
+<div class="highlight"><pre><span></span><code><span class="nv">let</span><span class="w"> </span><span class="nv">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">fn</span><span class="ss">(</span><span class="nv">x</span>,<span class="w"> </span><span class="nv">y</span>,<span class="w"> </span><span class="nv">z</span><span class="ss">)</span><span class="w"> </span>{<span class="w"></span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="ss">(</span><span class="nv">x</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="ss">)</span><span class="w"> </span>{<span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nv">y</span><span class="w"></span>
+<span class="w">  </span>}<span class="w"> </span><span class="k">else</span><span class="w"> </span>{<span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nv">z</span><span class="w"></span>
+<span class="w">  </span>}<span class="w"></span>
+}<span class="w"></span>
+</code></pre></div>
+
+<p>Unlike the first example, clearly all the variables are used here. However, if we evaluate
+ <a href="https://mr4k.github.io/konsole/?program=let%20f%20%3D%20fn(x%2C%20y%2C%20z)%20%7B%0A%20%20if%20(x%20%3E%200)%20%7B%0A%20%20%20%20return%20y%0A%20%20%7D%20else%20%7B%0A%20%20%20%20return%20z%0A%20%20%7D%0A%7D%0A%2F%2F%20this%20is%20a%20special%20builtin%20which%20renders%20the%20dependencies%20of%20its%20argument%20as%20a%20graph%0A%2F%2F%20to%20just%20get%20the%20normal%20output%20of%20f%20use%20the%20following%20instead%0A%2F%2F%20f(1%2C2%2C3)%0Adep_diagraph(f(1%2C%202%2C%203))%0A"><span class="math">\(f(1,2,3)\)</span></a>
+  the output <span class="math">\(2\)</span> only depends on the values of <span class="math">\(x\)</span> and <span class="math">\(y\)</span>.   </p>
+<p>Let's stop here for a second and unpack that statement a little. Why am I saying the return value of <span class="math">\(f(1,2,3)\)</span> depends on both <span class="math">\(x\)</span> and <span class="math">\(y\)</span> even though the return value is exactly equal to the just value of <span class="math">\(y\)</span>?  </p>
+<p>The answer is because if the value of x were to change in a certain way (for example from <span class="math">\(1\)</span> to <span class="math">\(-1\)</span>), our return value would change.   </p>
+<p>On the other hand, the return value of 
+<a href="https://mr4k.github.io/konsole/?program=let%20f%20%3D%20fn(x%2C%20y%2C%20z)%20%7B%0A%20%20if%20(x%20%3E%200)%20%7B%0A%20%20%20%20return%20y%0A%20%20%7D%20else%20%7B%0A%20%20%20%20return%20z%0A%20%20%7D%0A%7D%0A%2F%2F%20this%20is%20a%20special%20builtin%20which%20renders%20the%20dependencies%20of%20its%20argument%20as%20a%20graph%0A%2F%2F%20to%20just%20get%20the%20normal%20output%20of%20f%20use%20the%20following%20instead%0A%2F%2F%20f(1%2C2%2C3)%0Adep_diagraph(f(-1%2C%202%2C%203))%0A"><span class="math">\(f(-1,2,3)\)</span></a>
+ depends on <span class="math">\(x\)</span> and <span class="math">\(z\)</span>.   </p>
+<p><strong>Definition of Dependency</strong><br>
+So far, we've been talking about what dependence means informally. For all the <a href="https://www.google.com/search?q=mathematicians">sticklers out there</a>, I'm going to give a more concrete definition. We can say that expression <span class="math">\(a\)</span> depends on expression <span class="math">\(b\)</span> iff in order to compute the value of <span class="math">\(a\)</span> the value of <span class="math">\(b\)</span> must first be computed.  </p>
+<p><strong>Rules of Dependency Propagation</strong><br>
+Now that we have an intuitive understanding of how to determine which dependencies a function needs, let's try to make this intuition into a concrete algorithm.  </p>
+<p>First we're going to quickly introduce one more operator <span class="math">\(+\)</span>.   </p>
+<div class="highlight"><pre><span></span><code><span class="nv">let</span><span class="w"> </span><span class="nv">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">fn</span><span class="ss">(</span><span class="nv">x</span>,<span class="nv">y</span><span class="ss">)</span><span class="w"> </span>{<span class="w"></span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nv">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nv">y</span><span class="w"></span>
+}<span class="w"></span>
+</code></pre></div>
+
+<p>The dependencies of any call to this function, for example <a href="https://mr4k.github.io/konsole/?program=let%20f%20%3D%20fn(x%2C%20y)%20%7B%0A%20%20return%20x%20%2B%20y%0A%7D%0A%2F%2F%20this%20is%20a%20special%20builtin%20which%20renders%20the%20dependencies%20of%20its%20argument%20as%20a%20graph%0A%2F%2F%20to%20just%20get%20the%20normal%20output%20of%20f%20use%20the%20following%20instead%0A%2F%2F%20f(1%2C2%2C3)%0Adep_diagraph(f(1%2C%202))%0A"><span class="math">\(f(1,2)\)</span></a>, are simply x and y.
+But now let's look at a more complicated example:  </p>
+<div class="highlight"><pre><span></span><code><span class="nv">Let</span><span class="w"> </span><span class="nv">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">fn</span><span class="ss">(</span><span class="nv">x</span>,<span class="w"> </span><span class="nv">y</span>,<span class="w"> </span><span class="nv">z</span><span class="ss">)</span><span class="w"> </span>{<span class="w"></span>
+<span class="w">  </span><span class="nv">let</span><span class="w"> </span><span class="nv">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">z</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nv">y</span><span class="w"></span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="ss">(</span><span class="nv">s</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="ss">)</span><span class="w"> </span>{<span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nv">x</span><span class="w"></span>
+<span class="w">  </span>}<span class="w"> </span><span class="k">else</span><span class="w"> </span>{<span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nv">s</span><span class="w"></span>
+<span class="w">  </span>}<span class="w"></span>
+}<span class="w"></span>
+</code></pre></div>
+
+<p>This example isn't too much more complicated than any of the previous ones. A quick look will tell us 
+<a href="https://mr4k.github.io/konsole/?program=let%20f%20%3D%20fn(x%2C%20y%2C%20z)%20%7B%0A%20%20let%20s%20%3D%20z%20%2B%20y%0A%20%20if%20(s%20%3C%200)%20%7B%0A%20%20%20%20return%20x%0A%20%20%7D%20else%20%7B%0A%20%20%20%20return%20s%0A%20%20%7D%0A%7D%0A%2F%2F%20this%20is%20a%20special%20builtin%20which%20renders%20the%20dependencies%20of%20its%20argument%20as%20a%20graph%0A%2F%2F%20to%20just%20get%20the%20normal%20output%20of%20f%20use%20the%20following%20instead%0A%2F%2F%20f(1%2C2%2C3)%0Adep_diagraph(f(1%2C%202%2C%203))%0A"><span class="math">\(f(1,2,3)\)</span></a>
+ will give a result of <span class="math">\(5\)</span> and will depend on <span class="math">\(y\)</span> and <span class="math">\(z\)</span>. It will also allow us to determine, 
+ <a href="https://mr4k.github.io/konsole/?program=let%20f%20%3D%20fn(x%2C%20y%2C%20z)%20%7B%0A%20%20let%20s%20%3D%20z%20%2B%20y%0A%20%20if%20(s%20%3C%200)%20%7B%0A%20%20%20%20return%20x%0A%20%20%7D%20else%20%7B%0A%20%20%20%20return%20s%0A%20%20%7D%0A%7D%0A%2F%2F%20this%20is%20a%20special%20builtin%20which%20renders%20the%20dependencies%20of%20its%20argument%20as%20a%20graph%0A%2F%2F%20to%20just%20get%20the%20normal%20output%20of%20f%20use%20the%20following%20instead%0A%2F%2F%20f(1%2C2%2C3)%0Adep_diagraph(f(1%2C%202%2C%20-3))%0A"><span class="math">\(f(1, 2, -3)\)</span></a>
+  will give a result of <span class="math">\(1\)</span> and depend on <span class="math">\(x\)</span>, <span class="math">\(y\)</span> and <span class="math">\(z\)</span>. However, there is a more systematic way we can evaluate the dependencies (you're probably even using it in your head).   </p>
+<p>Let's create two rules, one for "+" and one for "if". Let's pretend x, y, z are generic expressions and deps(e) of an expression <span class="math">\(e\)</span> gives the set of all of its dependencies.<br>
+Here are our two rules:  </p>
+<ul>
+<li><span class="math">\(let\,res = x + y;\)</span> <span class="math">\(deps(res) = deps(x) \cup deps(y)\)</span> (where <span class="math">\(\cup\)</span> is the union of two sets)  </li>
+<li><span class="math">\(let\,res = if\,(x)\,\{ y \}\,else\,\{ z \};\)</span> if x is true then <span class="math">\(deps(res) = deps(x) \cup deps(y)\)</span> else <span class="math">\(deps(res) = deps(x) \cup deps(z)\)</span>  </li>
+</ul>
+<p>Combining these two rules we can trace the dependencies of any function made up of only additions and if statements! While that's not really mind blowing, I found it kind of interesting.  </p>
+<p>Now if you are a battle hardened senior software engineer, you probably know that some of the most advanced programs powering cutting edge tech companies like Google and Facebook will occasionally use more operators than just "+" and "if".  </p>
+<p>So how do we handle other operations? Simple! Create more rules!    </p>
+<p><strong>Arithmetic</strong><br>
+Unlike in grade school, here arithmetic is simple. Almost all arithmetic operators follow the exact same rules as "+" (except multiplication).  </p>
+<p><strong>Short Circuit Operators</strong><br>
+Okay now let's do multiplication. Imagine you have the following statement:  </p>
+<div class="highlight"><pre><span></span><code><span class="nv">let</span><span class="w"> </span><span class="nv">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">fn</span><span class="ss">(</span><span class="nv">m</span>,<span class="w"> </span><span class="nv">a</span>,<span class="w"> </span><span class="nv">n</span>,<span class="w"> </span><span class="nv">y</span>,<span class="w"> </span><span class="nv">a</span>,<span class="w"> </span><span class="nv">r</span>,<span class="w"> </span><span class="nv">g</span>,<span class="w"> </span><span class="nv">s</span><span class="ss">)</span><span class="w"> </span>{<span class="w"></span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nv">m</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nv">n</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nv">y</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nv">r</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nv">g</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nv">s</span><span class="w"></span>
+}<span class="w"></span>
+</code></pre></div>
+
+<p>A call like <a href="https://mr4k.github.io/konsole/?program=let%20f%20%3D%20fn(m%2C%20a%2C%20n%2C%20y%2C%20a%2C%20r%2C%20g%2C%20s)%20%7B%0A%20%20return%20m%20*%20a%20*%20n%20*%20y%20*%20a%20*%20r%20*%20g%20*%20s%0A%7D%0A%2F%2F%20this%20is%20a%20special%20builtin%20which%20renders%20the%20dependencies%20of%20its%20argument%20as%20a%20graph%0A%2F%2F%20to%20just%20get%20the%20normal%20output%20of%20f%20use%20the%20following%20instead%0A%2F%2F%20f(1%2C2%2C3%2C4%2C5%2C6%2C7%2C8)%0Adep_diagraph(f(1%2C%202%2C%203%2C%204%2C%205%2C%206%2C%207%2C%208))%0A"><span class="math">\(f(1, 2, 3, 4, 5, 6, 7, 8)\)</span></a> depends on every argument passed to f. However, what about this call <a href="https://mr4k.github.io/konsole/?program=let%20f%20%3D%20fn(m%2C%20a%2C%20n%2C%20y%2C%20a%2C%20r%2C%20g%2C%20s)%20%7B%0A%20%20return%20m%20*%20a%20*%20n%20*%20y%20*%20a%20*%20r%20*%20g%20*%20s%0A%7D%0A%2F%2F%20this%20is%20a%20special%20builtin%20which%20renders%20the%20dependencies%20of%20its%20argument%20as%20a%20graph%0A%2F%2F%20to%20just%20get%20the%20normal%20output%20of%20f%20use%20the%20following%20instead%0A%2F%2F%20f(0%2C2%2C3%2C4%2C5%2C6%2C7%2C8)%0Adep_diagraph(f(0%2C%202%2C%203%2C%204%2C%205%2C%206%2C%207%2C%208))%0A"><span class="math">\(f(0, 2, 3, 4, 5, 6, 7, 8)\)</span></a>? Notice that the only variable which really affects the output of the product is <span class="math">\(m\)</span> with value 0. As long as the value of <span class="math">\(m\)</span> remains 0, the value of the result will be 0 no matter what value any other variable takes. This idea is conceptually similar to <a href="https://en.wikipedia.org/wiki/Short-circuit_evaluation">short circuit evaluation for boolean values</a>.   </p>
+<p>Now you might ask what if there are multiple values that are all zero <span class="math">\(f(0, 2, 3, 0, 5, 6, 7, 0)\)</span>? Which one should we choose to depend on? <br>
+There are a couple options here:  </p>
+<ul>
+<li>Choose the first available zero. This matches up with classic short circuit evaluation.</li>
+<li>Choose the zero with the fewest dependencies. Choosing this option is less efficient but will ensure that our deps function returns the smallest set of dependencies possible.  </li>
+</ul>
+<p>This optimization can also be applied to boolean functions such as &amp;&amp; and ||.   </p>
+<p>Short Circuit Rules (for the Classic Short Circuit Strategy):  </p>
+<ul>
+<li>
+<p><span class="math">\(let\,res = x_0\,*... *\,x_n;\)</span> If no expression <span class="math">\(x_i\)</span> is zero, <span class="math">\(deps(res) = \bigcup_{i=0} deps(x_i)\)</span>.        Otherwise <span class="math">\(let\,i =argmin_{i}\{x_i == 0\},\)</span> <span class="math">\(deps(res) = deps(x_i)\)</span>.</p>
+</li>
+<li>
+<p><span class="math">\(let\,res = x_0\,\&amp;\&amp;\,...\,\&amp;\&amp;\,x_n;\)</span> If no expression <span class="math">\(x_i\)</span> is false, <span class="math">\(deps(res) = \bigcup_{i=0}\,deps(x_i)\)</span>. <br>
+Otherwise <span class="math">\(let\,i = argmin_{i}\{x_i == false\},\)</span> <span class="math">\(deps(res) = deps(x_i)\)</span> </p>
+</li>
+<li>
+<p><span class="math">\(let\,res = x_0\,||... ||\,x_n;\)</span> If no expression <span class="math">\(x_i\)</span> is true, <span class="math">\(deps(res) = \bigcup_{i=0} deps(x_i)\)</span>. Otherwise <span class="math">\(let\,i = argmin_{i}\{x_i == true\},\)</span> <span class="math">\(deps(res) = deps(x_i)\)</span></p>
+</li>
+</ul>
+<p><strong>Functions Calls</strong><br>
+Here's a slightly trickier case:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">let</span><span class="w"> </span><span class="nv">g</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">fn</span><span class="ss">(</span><span class="nv">x</span>,<span class="w"> </span><span class="nv">y</span>,<span class="w"> </span><span class="nv">z</span><span class="ss">)</span><span class="w"> </span>{<span class="w"></span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="ss">(</span><span class="nv">x</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="ss">)</span><span class="w"> </span>{<span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nv">y</span><span class="w"></span>
+<span class="w">  </span>}<span class="w"> </span><span class="k">else</span><span class="w"> </span>{<span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nv">z</span><span class="w"></span>
+<span class="w">  </span>}<span class="w"></span>
+}<span class="w"></span>
+<span class="nv">let</span><span class="w"> </span><span class="nv">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">fn</span><span class="ss">(</span><span class="nv">x</span>,<span class="w"> </span><span class="nv">y</span>,<span class="w"> </span><span class="nv">z</span><span class="ss">)</span><span class="w"> </span>{<span class="w"></span>
+<span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="nv">g</span><span class="ss">(</span><span class="nv">z</span>,<span class="nv">x</span>,<span class="nv">y</span><span class="ss">)</span><span class="w"></span>
+}<span class="w"></span>
+</code></pre></div>
+
+<p>The above example represents a function call within a function call. In order to define this rule we need a few quick definitions:</p>
+<p>Let's define a function called <span class="math">\(argdeps(f, a_0, a_1,...,a_n)\)</span>. <span class="math">\(argdeps\)</span> takes a function <span class="math">\(f\)</span> and its arguments <span class="math">\(a_0,...,a_n\)</span> and returns indices of the arguments which are needed to compute the corresponding value of <span class="math">\(f\)</span>. Under the hood, this function is computed in the exact same way that we have been computing deps.</p>
+<p>Let's define f to be a function with n arguments, and x_0,...,x_n to be n expressions. Now we can make our rule:<br>
+<span class="math">\(let\,res = f(x_0,...,x_n);\)</span>  <span class="math">\(deps(f) = U_{i = argdeps(f,\,x_0,...,\,x_n)} deps(x_i)\)</span></p>
+<p><strong>Lists</strong><br>
+Now that we're feeling warmed up we can tackle one of the more complex rules sets.  </p>
+<p>Let's take a quick look at a function involving lists.  </p>
+<div class="highlight"><pre><span></span><code><span class="nv">let</span><span class="w"> </span><span class="nv">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">fn</span><span class="ss">(</span><span class="nv">a</span><span class="ss">)</span><span class="w"> </span>{<span class="w"></span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nv">a</span>[<span class="mi">0</span>]<span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nv">a</span>[<span class="mi">2</span>]<span class="w"></span>
+}<span class="w"></span>
+</code></pre></div>
+
+<p>Now fellow travellers, we have come to a fork in the road. To one side, lies the simple path on which we treat the entire list <span class="math">\(a\)</span> as a single unit. We would then say that the output of <span class="math">\(f\)</span> merely depends on a. To the other side lies the difficult path, to treat each element of <span class="math">\(a\)</span> as its own unit. </p>
+<p>Many would say, we can choose the best route to take based on tradeoffs and product requirements. Normally, I would agree that taking the simple path is a totally reasonable option. However on this particular journey, I believe we don't really have a choice, we have a responsibility.</p>
+<p>Let's look back at our example from above:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">let</span><span class="w"> </span><span class="nv">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">fn</span><span class="ss">(</span><span class="nv">a</span><span class="ss">)</span><span class="w"> </span>{<span class="w"></span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nv">a</span>[<span class="mi">0</span>]<span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nv">a</span>[<span class="mi">2</span>]<span class="w"></span>
+}<span class="w"></span>
+</code></pre></div>
+
+<p>The dependencies of this function are <span class="math">\(a[0]\)</span> and <span class="math">\(a[2]\)</span>. This new notation is very simple but important, especially when talking about multi dimensional arrays. One subtle note is that this notation allows us to specify different levels of granularity. <span class="math">\(a[0]\)</span> for example, could be a single element or an entire array. I have also not actually defined what the set <span class="math">\(deps(a[0])\)</span> is yet. Before we actually get there, it will be useful to look at a few more examples.</p>
+<div class="highlight"><pre><span></span><code><span class="nv">let</span><span class="w"> </span><span class="nv">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">fn</span><span class="ss">(</span><span class="nv">a</span><span class="ss">)</span><span class="w"> </span>{<span class="w"></span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nv">a</span><span class="w"></span>
+}<span class="w"></span>
+</code></pre></div>
+
+<p>This example is incredibly simple but important to look at. Let's look at <a href="https://mr4k.github.io/konsole/?program=let%20f%20%3D%20fn(a)%20%7B%0A%20%20return%20a%0A%7D%0A%2F%2F%20this%20is%20a%20special%20builtin%20which%20renders%20the%20dependencies%20of%20its%20argument%20as%20a%20graph%0A%2F%2F%20to%20just%20get%20the%20normal%20output%20of%20f%20use%20the%20following%20instead%0A%2F%2F%20f(%5B1%2C2%2C3%5D)%0Adep_diagraph(f(%5B1%2C2%2C3%5D))%0A"><span class="math">\(f([1,2,3])\)</span></a>. So it might seem like <span class="math">\(f([1,2,3])\)</span> just depends on the expressions at <span class="math">\(a[0], a[1], a[2]\)</span>, but is that really correct?</p>
+<p><strong>The Recomputablity Test</strong><br>
+Here's a way to test our intuition:</p>
+<p>Say we call a function <span class="math">\(f\)</span> once with args <span class="math">\(x_0,...,x_n\)</span> giving us the resulting value <span class="math">\(r_0\)</span> and the resulting set of dependencies <span class="math">\(D_0\)</span>. Then we call it again with arguments <span class="math">\(y_0,...y_n\)</span> and get the result <span class="math">\(r_1\)</span>. If all of the values of the dependencies given by <span class="math">\(D_0\)</span> are the same between the two calls, the results <span class="math">\(r_0\)</span> and <span class="math">\(r_1\)</span> should be the same. (Note this test only tells us if a set of dependencies is not valid, not that it's valid)</p>
+<p>Let's try using this test. <span class="math">\(f([1,2,3])\)</span> gives is the resulting array <span class="math">\([1,2,3]\)</span> and prospective dependency set <span class="math">\(D_0\)</span> = <span class="math">\(a[0], a[1], a[2]\)</span> with corresponding values <span class="math">\(1,2,3\)</span>.</p>
+<p>Now what if we call <span class="math">\(f([1,2,3,4])\)</span>? All of the values corresponding to <span class="math">\(D_0\)</span> remain unchanged so the value of <a href="https://mr4k.github.io/konsole/?program=let%20f%20%3D%20fn(a)%20%7B%0A%20%20return%20a%0A%7D%0A%2F%2F%20this%20is%20a%20special%20builtin%20which%20renders%20the%20dependencies%20of%20its%20argument%20as%20a%20graph%0A%2F%2F%20to%20just%20get%20the%20normal%20output%20of%20f%20use%20the%20following%20instead%0A%2F%2F%20f(%5B1%2C2%2C3%2C4%5D)%0Adep_diagraph(f(%5B1%2C2%2C3%2C4%5D))%0A"><span class="math">\(f([1,2,3,4])\)</span></a> must be <span class="math">\([1,2,3]\)</span> right? It's easy to see that this is wrong, so <span class="math">\(a[0], a[1], a[2]\)</span> cannot be our only dependencies.</p>
+<p><strong>Length Dependencies</strong><br>
+One way to fix our problem is to take an additional dependency on the length of a. We will use <span class="math">\(lendeps(a)\)</span> to denote the set of the expressions which the length of a depends on.</p>
+<p>So one rule which sums up what we've been saying is:<br>
+<span class="math">\(let\,res = a;\)</span> (where a is a list) <span class="math">\(deps(res) = \big(\bigcup_{i=0} deps(x_i)\big) \cup {lendeps(a)}\)</span> </p>
+<p>Since res is also an array we must also define its length dependencies with a second rule.</p>
+<p><span class="math">\(lendeps(res) = lendeps(a)\)</span></p>
+<p><strong>List Concatenation</strong> <br>
+Now let's talk about concatenation:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">let</span><span class="w"> </span><span class="nv">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">fn</span><span class="ss">(</span><span class="nv">a</span>,<span class="w"> </span><span class="nv">b</span><span class="ss">)</span><span class="w"> </span>{<span class="w"></span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nv">b</span><span class="w"></span>
+}<span class="w"></span>
+</code></pre></div>
+
+<p>If a and b are two lists, the resulting third list depends on both a, b, and their lengths. Let's define <span class="math">\(res = a + b\)</span>. The rules for computing deps(res) and lendeps(res) are as follows:</p>
+<ul>
+<li><span class="math">\(deps(a+b) =\)</span> <span class="math">\(deps(a) \cup deps(b) \cup lendeps(a) \cup lendeps(b)\)</span>  </li>
+<li><span class="math">\(lendeps(res) = lendeps(a) \cup lendeps(b)\)</span></li>
+</ul>
+<p>But we are not actually quite done yet. Check out the function below:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">let</span><span class="w"> </span><span class="nv">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">fn</span><span class="ss">(</span><span class="nv">a</span>,<span class="w"> </span><span class="nv">b</span><span class="ss">)</span><span class="w"> </span>{<span class="w"></span>
+<span class="w">  </span><span class="nv">let</span><span class="w"> </span><span class="nv">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">b</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nv">a</span><span class="w"></span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nv">c</span>[<span class="mi">3</span>]<span class="w"></span>
+}<span class="w"></span>
+</code></pre></div>
+
+<p>This function returns the 4th element of the concatenated list <span class="math">\(a + b\)</span>. So
+ <a href="https://mr4k.github.io/konsole/?program=let%20f%20%3D%20fn(a%2C%20b)%20%7B%0A%20%20let%20c%20%3D%20b%20%2B%20a%0A%20%20return%20c%5B3%5D%0A%7D%0A%2F%2F%20this%20is%20a%20special%20builtin%20which%20renders%20the%20dependencies%20of%20its%20argument%20as%20a%20graph%0A%2F%2F%20to%20just%20get%20the%20normal%20output%20of%20f%20use%20the%20following%20instead%0A%2F%2F%20f(%5B1%2C2%5D%2C%20%5B3%2C4%2C5%5D)%0Adep_diagraph(f(%5B1%2C2%5D%2C%5B3%2C4%2C5%5D))%0A"><span class="math">\(f([1,2], [3,4,5])\)</span></a>
+would return 1 and 
+<a href="https://mr4k.github.io/konsole/?program=let%20f%20%3D%20fn(a%2C%20b)%20%7B%0A%20%20let%20c%20%3D%20b%20%2B%20a%0A%20%20return%20c%5B3%5D%0A%7D%0A%2F%2F%20this%20is%20a%20special%20builtin%20which%20renders%20the%20dependencies%20of%20its%20argument%20as%20a%20graph%0A%2F%2F%20to%20just%20get%20the%20normal%20output%20of%20f%20use%20the%20following%20instead%0A%2F%2F%20f(%5B1%2C2%5D%2C%20%5B3%2C4%2C5%2C6%5D)%0Adep_diagraph(f(%5B1%2C2%5D%2C%5B3%2C4%2C5%2C6%5D))%0A"><span class="math">\(f([1,2],[3,4,5,6])\)</span></a>
+ would return <span class="math">\(6\)</span>.</p>
+<p>Right now let's focus on the case of <span class="math">\(f([1,2],[3,4,5,6])\)</span>. The result depends on the 4th element of <span class="math">\(c\)</span> which is the 4th element of <span class="math">\(a\)</span>. Luckily the dependency set is simple here. It's just the 4th element of a. </p>
+<p>However if we look at the next case <span class="math">\(f([1,2], [3,4,5])\)</span>, the dependencies are a little more complicated. The result of this function does not just depend on a[0]. Can you see why? </p>
+<p align="center">
+    <img src="/images/dependency-tracking/array-concat.png" width="65%" > 
+</p>
+
+<p>What happens if we increase the size of b, for example by calling <span class="math">\(f([1,2], [3,4,5,6])\)</span>? The answer is definitely no longer 1 so using the Recomputablity Test from before we can tell that the dependencies of <span class="math">\(f([1,2], [3,4,5])\)</span> cannot just be <span class="math">\(a[0]\)</span>. You may already see where this is going, <span class="math">\(f([1,2], [3,4,5])\)</span> must depend on both <span class="math">\(a[0]\)</span> and <span class="math">\(len(b)\)</span>. </p>
+<p>Here we are again faced with a choice. We can either say that all elements in a list depend on their value and the length of the list or we can break it down more granularly. Granularity costs time and memory so it's a legitimate tradeoff. I choose to go down the more granular road (in the interest of keeping the dependency set smaller) but I will write out the rules for both versions:  </p>
+<p>Recall above we defined <span class="math">\(res = a + b\)</span> with two lists <span class="math">\(a\)</span> and <span class="math">\(b\)</span>, then made a rule to define deps(res) and lendeps(res). So here's a third rule which is recursively applied to all elements e of <span class="math">\(res\)</span>.</p>
+<ul>
+<li>(non granular version, larger dependency set) let <span class="math">\(x\)</span> be the child of <span class="math">\(a\)</span> or <span class="math">\(b\)</span> which corresponds to <span class="math">\(e\)</span>, <span class="math">\(deps(e) = deps(x) \cup lendeps(a)\)</span></li>
+<li>(granular version) 
+let <span class="math">\(x\)</span> be a child of <span class="math">\(a\)</span> which corresponds to <span class="math">\(e\)</span>, <span class="math">\(deps(e) = deps(x)\)</span>.<br>
+On the other hand, let <span class="math">\(x\)</span> be a child of <span class="math">\(b\)</span> which corresponds to <span class="math">\(e\)</span>, <span class="math">\(deps(e) = deps(x) \cup lendeps(a)\)</span></li>
+</ul>
+<p>A quick note about the computation feasibility of this rule. This rule as is applied recursively to every element in a and b so it is very computational intensive when you have large multidimensional arrays. I'd recommend using some kind of lazy evaluation for this rule in practice to avoid having to compute it for every element when unnecessary. </p>
+<p><strong>Can I try this out?</strong><br>
+You may have noticed that all the code in this article looked a little strange. That's because it is all written the <a href="https://github.com/jemmaissroff/koko">custom programming language</a> Jemma has been building. The language supports all of the dependency tracking operations I talked about above and you can <a href="https://mr4k.github.io/konsole/">play around with it yourself</a>! If you need inspiration, every linked function in this blog post is a working example.</p>
+<p><strong>Where would stuff like this every come up?</strong>
+So I guess it's kind of cool that we can granularly track data dependencies, but more importantly why would we every want to? The answer is I'm not totally sure! But here are some quick ideas:</p>
+<ul>
+<li>Priviledged Access to Data and Derived Computations. Give every piece of data a security level. In order to access the output of a computation involving the data your security clearance must be greater than or equal to the maximum security clearance of all the dependencies.</li>
+<li>JITs which compile at only statements which are used.</li>
+<li>Constructing minimal auto differentiation graphs.</li>
+<li>Determining trace purity at runtime.</li>
+</ul>
+<p>Thanks to Jemma Issroff and Robert Lord for providing feedback on this post.</p>
+<p>Have questions / comments / corrections?<br>
+Get in touch: <a href="mailto:pstefek.dev@gmail.com">pstefek.dev@gmail.com</a>   </p>
+<script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width < 768) ? "left" : align;
+        indent = (screen.width < 768) ? "0em" : indent;
+        linebreak = (screen.width < 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/latest.js?config=TeX-AMS-MML_HTMLorMML';
+
+    var configscript = document.createElement('script');
+    configscript.type = 'text/x-mathjax-config';
+    configscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'none' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        availableFonts: ['STIX', 'TeX']," +
+        "        preferredFont: 'STIX'," +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+</script>
+ </div>
+</div>
+<footer>
+    <a href="/">home</a>
+    <br><br>
+    <script async defer src="https://www.recurse-scout.com/loader.js?t=1edc1771a358f1a5944eeaa441cadbdb"></script>
+    <div class="rc-scout"></div>
+</footer>
+    </div>
+
+    <!-- Google Analytics -->
+    <script>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+        
+        ga('create', 'UA-157308007-1', 'auto');
+        ga('set', 'anonymizeIp', true);
+        ga('send', 'pageview');
+    </script>
+    <!-- End Google Analytics -->
+</body>
+
+</html>

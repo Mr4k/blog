@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Differentiable Dithering</title>
+    <link rel="stylesheet" type="text/css" href="/theme/css/main.css" />
+</head>
+
+<body>
+    <div class="container">
+<header>
+    <a href="/">home</a>
+    <meta charset="UTF-8">
+</header>
+<div class="row">
+ <div class="col-md-8">
+  <h1>Differentiable Dithering</h1>
+  <label>Posted on <strong>09 September 2020</strong></label>
+  <p>Colab source code can be found <a href="https://gist.github.com/Mr4k/1f1b7ecaf30de073a50cbedd0da4dc82">here</a>.</p>
+<p><strong>Problem</strong><br>
+Let's say we want to reduce the number of colors in an image. For example consider the picture of fruit below:</p>
+<p align="center">
+    <img src="/images/differentiable-dithering/fruit.jpg" width="50%" > 
+</p>
+<p>If we run a count of how many colors are in the above image we get a whopping 157376 (for a 900 x 450 pixel image). Are all those colors really necessary?</p>
+<p align="center">
+    <img src="/images/differentiable-dithering/fruit-16-final.png" width="50%" > 
+</p>
+<p>The image above has 16 colors and the one below only has 8.</p>
+<p align="center">
+    <img src="/images/differentiable-dithering/fruit-8-final.png" width="50%" > 
+</p>
+<p>The problem of color palette reduction has been studied extensively and the typical approach works roughly as follows:  </p>
+<ol>
+<li>
+<p>Build a reduced color palette of size N by dividing the color space up into N distinct regions where each region is represented by one color. This is usually accomplished by one of several <a href="https://en.wikipedia.org/wiki/Color_quantization">popular approaches</a>.  </p>
+</li>
+<li>
+<p><a href="https://en.wikipedia.org/wiki/Dither">Dither</a> the image. The process of dithering eliminates color banding and creates the illusion of more colors through a stippling like effect. If you are not familar with dithering we will explore it in more detail later. Given a fixed color palette there are specialized algorithms for dithering such as <a href="https://research.cs.wisc.edu/graphics/Courses/559-s2004/docs/floyd-steinberg.pdf">Floyd Stienberg</a>.  </p>
+</li>
+</ol>
+<p>Instead of the usual approach, we are going to solve both of these problems at the same time using gradient descent.  </p>
+<p>First of all let's define a palette of N colors. For this article the colors will be 3 component vectors in rgb space. A quick warning to graphics nerds, for portability and simplicity we do not take <a href="http://xahlee.info/img/what_is_gamma_correction.html">gamma correction</a> into account. Our palette can be thought of as a Nx3 matrix where the rows represent colors in the palette and the columns represent the r,g,b weights of each of those colors. This entries of this matrix are variables in our optimization problem.</p>
+<p>Now how do we assign our palette colors to pixels in a differentiable way? I decided to do this using probability distributions. Each pixel is represented by a vector containing the probabilities of each palette color being chosen for that pixel. When actually generating an image we just sample each pixel's color from it's distribution.  </p>
+<p>The above formulation is pretty general. Importantly both the colors in the palette and the mapping of image pixels to palette colors are variables which we can optimize over simultaneously. Now all we need to do is attach any one of a number of loss functions.   </p>
+<p>The loss function I chose to use at first was just the squared difference between the original image and the expected value of the output image:  </p>
+<p><span class="math">\(loss(output, target)=\sum_{i\in pixels}(target_i\)</span> <span class="math">\(-\)</span> <span class="math">\(E[output_i])^2\)</span> (equation 1)  </p>
+<p>So what's the idea here? Basically the expected output allows our image to pretend it has more colors than it really does.   </p>
+<p align="center">
+    <img src="/images/differentiable-dithering/dither-grey.png" width="50%" > 
+</p>
+
+<p>For example let's pretend our palette has only two colors, black and white. Also suppose our target image is a 50% gray square. Consider the following three possible representations of the image. One is an all black image, one is all white and the third has 50% black and 50% white pixels randomly distributed across the image. If we look from far away the third image will look better. This is because the black and white pixels will blur together and appear gray. This effect is called dithering.   </p>
+<p>By the above reasoning we want to make sure that the dithered pixel assignment (each pixel has a 50% chance of being black or white) should appear more desirable than the other two candidates to our loss function. Taking the squared error between the target image and the expected color of each pixel does exactly this.   </p>
+<p>You might be asking, why not take the expected value of the whole squared error? This would look like:</p>
+<p><span class="math">\(loss(output, target) = E[\sum_{i\in pixels}(target_i\)</span> <span class="math">\(-\)</span> <span class="math">\(output_i)^2]\)</span> (equation 2)   </p>
+<p>This actually does not work. To see why, let's look at the same setup as above and consider the expectation of an individual pixel (for math sticklers we can do this because expectation is linear). The loss function for a pixel denoted by the random variable <span class="math">\(X\)</span> that always chooses black is: </p>
+<p><span class="math">\(E[(0.5 - X)^2] = (0.5 - 0)^2 = 0.25\)</span>   </p>
+<p>And the loss function for a pixel denoted by the random <span class="math">\(X\)</span> which is 50% black and 50% white is:</p>
+<p><span class="math">\(E[(0.5-X)^2] = (0.5-0)^2 * 0.5\)</span> <span class="math">\(+\)</span> <span class="math">\((0.5-1)^2 * 0.5 = 0.25\)</span>  </p>
+<p>Unfortunately the values here are the same in both cases which rules out this loss function.  </p>
+<p>Let's try using the loss from equation 1 with a palette of two colors:</p>
+<p align="center">
+    <img src="/images/differentiable-dithering/fruit-2-final.png" width="50%" > 
+</p>
+
+<p>Hey! Not too bad! As we can see, different shades are captured by different densities of darker pixels. For a starker example let's try this image of a vertical black and white gradient:</p>
+<p align="center">
+    <div align="center">
+        <img class='artpic' src="/images/differentiable-dithering/bw-grad.png" width="25%" > 
+        <img class='artpic' src="/images/differentiable-dithering/bw-grad-2.png" width="25%" >
+    </div> 
+</p>
+
+<p>Now let's try 16 colors:</p>
+<p align="center">
+    <img src="/images/differentiable-dithering/fruit-16-noisy.png" width="50%" > 
+</p>
+<p>The above image highlights one weakness of our current loss function. It's very noisy, even when it doesn't have to be.   </p>
+<p>To give an extreme example, consider an image with three colors red, blue and purple (a mix of 50% red and 50% blue). Let's say we have room for 3 colors in our palette. In the eyes of equation 1 both of the following solutions would have the same loss:  </p>
+<ol>
+<li>
+<p>The red pixels are red, the blue pixels are blue and the purple pixels are purple. We are using all three colors in our palette to the best of our ability and the image is reproduced perfectly.  </p>
+</li>
+<li>
+<p>Each red pixel is red, each blue pixel is blue, each purple pixel has a <span class="math">\(\frac{1}{2}\)</span> chance of being red and a <span class="math">\(\frac{1}{2}\)</span> chance of being blue. Notice here we only use two out of three possible colors and the final image is clearly lower quality.   </p>
+</li>
+</ol>
+<p>To control for this weakness, I added an additional term to the loss function which penalizes the sum of the pixel variances with a coeffcient given below by <span class="math">\(c\)</span>. The new loss function looks like this:  </p>
+<p><span class="math">\(loss(output, target)=\sum_{i\in pixels}(target_i\)</span> <span class="math">\(-\)</span> <span class="math">\(E[output_i])^2 + cVar(output_i)\)</span> (equation 3) </p>
+<p>Right now I just hand tune the coefficient of the variance penalty. A good rule of thumb seems to be larger palettes should weigh variance more heavily. Applying this penalty (variance coefficient = 0.25) gives us the 16 color image from the top of this post:</p>
+<p align="center">
+    <img src="/images/differentiable-dithering/fruit-16-final.png" width="50%" > 
+</p>
+
+<p>The tradeoff is that too little variance removes too much noise which, due to the absence of dithering, makes the final image appear to contain fewer colors and also creates <a href="https://en.wikipedia.org/wiki/Colour_banding">banding effects</a>. The image below has 16 colors and variance coefficient = 1.0. It demonstrates both of these problems:  </p>
+<p align="center">
+    <img src="/images/differentiable-dithering/fruit-16-saturated.png" width="50%" > 
+</p>
+<p>In fact when the variance coefficent = 1.0, a little algebra shows equation 3 is equal to our rejected equation 2.</p>
+<p>Note there are many valid choices of loss function here and I'm not claiming mine is perfect at all. For example <a href="https://blog.demofox.org/2017/12/23/c-differentiable-programming-searching-for-an-optimal-dither-pattern/">this article</a> on creating optimal dither patterns blurs both images and takes the difference between those. We could try to use this idea or search for something else to replace our simple squared error. It would also be interesting to try to use a real image quality metric like <a href="https://www.cns.nyu.edu/~lcv/ssim/">SSIM</a> to measure image quality instead of using variance as a proxy.   </p>
+<p>Another place for improvement is that our approach is sloooow (up to several minutes). It also does not scale well memory wise to large palettes (when I try using more than 200 colors for the 900x450 pixel fruit image my colab notebook runs out of ram). This is because in that case there are more than 200x950x450 variables to optimize over. We could potentially tackle these problems in two ways. To address speed we could try to break the image up into mini batches. To address memory usage we could try to use a neural network to output probabilities at each pixel location instead of storing them all explicitly.   </p>
+<p><strong>Why do I think this approach is interesting?</strong><br>
+Although this approach is not state of the art by any means in either speed or quality I think it's interesting that we can optimize both the palette selection and dithering at the same time.  </p>
+<p>As far as I know dithering and palette selection aren't really part of state of the art lossy compression today. However it would be neat if these same concepts could be applied to something like the color space transform, discrete cosine transform and weight quantization steps of <a href="http://pi.math.cornell.edu/~web6140/TopTenAlgorithms/JPEG.html">jpeg compression</a>.  </p>
+<p>A pipedream would be an entirely differentiable image compression pipeline where all the steps can be fine tuned together to optimize a particular image with respect to any differentiable loss function.</p>
+<p>Have questions / comments / corrections?<br>
+Get in touch: <a href="mailto:pstefek.dev@gmail.com">pstefek.dev@gmail.com</a>   </p>
+<p>Discussion on <a href="https://news.ycombinator.com/item?id=24477913">Hacker News</a>.</p>
+<script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width < 768) ? "left" : align;
+        indent = (screen.width < 768) ? "0em" : indent;
+        linebreak = (screen.width < 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/latest.js?config=TeX-AMS-MML_HTMLorMML';
+
+    var configscript = document.createElement('script');
+    configscript.type = 'text/x-mathjax-config';
+    configscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'none' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        availableFonts: ['STIX', 'TeX']," +
+        "        preferredFont: 'STIX'," +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+</script>
+ </div>
+</div>
+<footer>
+    <a href="/">home</a>
+    <br><br>
+    <script async defer src="https://www.recurse-scout.com/loader.js?t=1edc1771a358f1a5944eeaa441cadbdb"></script>
+    <div class="rc-scout"></div>
+</footer>
+    </div>
+
+    <!-- Google Analytics -->
+    <script>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+        
+        ga('create', 'UA-157308007-1', 'auto');
+        ga('set', 'anonymizeIp', true);
+        ga('send', 'pageview');
+    </script>
+    <!-- End Google Analytics -->
+</body>
+
+</html>
