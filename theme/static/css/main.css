@@ -122,6 +122,10 @@ table, th, td {
     img{
         width: 100%;
 	}
+	
+	video{
+        width: 100%;
+	}
 	.artpic{
 		width:60%;
 		max-height: 100%;
