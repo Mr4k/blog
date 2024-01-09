@@ -1,4 +1,4 @@
-Title: A Technical Survery of 3D Graphics in Playdate Games
+Title: A Technical Survey of 3D Graphics in Playdate Games
 Date: 2024-01-09
 Modified: 2024-01-09
 Category: graphics, playdate, video games
