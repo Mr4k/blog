@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>A Technical Survery of 3D Graphics in Playdate Games</title>
+    <link rel="stylesheet" type="text/css" href="/theme/css/main.css" />
+</head>
+
+<body>
+    <div class="container">
+<header>
+    <a href="/">home</a>
+    <meta charset="UTF-8">
+</header>
+<div class="row">
+ <div class="col-md-8">
+  <h1>A Technical Survery of 3D Graphics in Playdate Games</h1>
+  <label>Posted on <strong>09 January 2024</strong></label>
+  <p align="center">
+    <img src="/images/playdate3d/playdate3d-header.png" width="300px"> 
+</p>
+
+<p>This year one of my friends gave me a <a href="https://play.date/">Playdate</a> for Christmas and I have been fascinated with it for the last couple weeks. As a hobbyist game developer, I wanted to make a game for it. I had a bunch of 3D game ideas but realized that the hardware on the playdate is quite limited compared to my m1 mac. Instead of deterring me, the constraints drew me in and I’ve spent the last couple of weeks exploring the potential for 3D graphics on the playdate.  </p>
+<p>To prepare for making a 3D engine I wanted to get a sense of what was already out there. This post will be a review of prior art. I've dug through and categorized all the 3d games/demos/engines for the playdate that I could find.  </p>
+<p>Before we dive in, I want to talk about how I categorized these games. It’s difficult to find a hard boundary that defines if a game is 3D or not. As such, the process of deciding if a game is 3D is somewhat a matter of personal opinion. </p>
+<p>A game is 3D to me if it makes me personally feel like I’m looking through a window into some kind of world containing 3 spatial dimensions. For example, some cases I don’t consider 3D are <a href="https://tvtropes.org/pmwiki/pmwiki.php/Main/ThreeQuartersView">3/4s view RPGs</a> (such as <a href="https://play.date/games/casual-birder/">Casual Birder</a>) and 2d sidescrollers with <a href="https://en.wikipedia.org/wiki/Parallax_scrolling">parallax</a> (such as <a href="https://lumicreative.itch.io/midnight-raider">Midnight Raider</a>).</p>
+<p>People who have played a lot of video games also know that there are different kinds of 3D games with different capabilities. Think <a href="https://www.youtube.com/watch?v=561sPCk6ByE">Wolfenstien 3D</a> vs <a href="https://youtu.be/_is7aycnw6k?t=645">Horizon Forbidden West</a>. Sometimes the words 2.5D or pseudo 3D are used around for games that feel less “3D” than the state of the art. Most games on the playdate fall into this “pseudo” 3D category so these terms are too broad to be useful here. Instead I’m going to categorize games/demos/engines based on how many mechanical degrees of freedom the player has, camera position (first person, third person dynamic, third person static) and projection type (<a href="https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/building-basic-perspective-projection-matrix.html">perspective or orthographic</a>).  </p>
+<p>I’m choosing to focus on these three categories because they all represent tradeoffs between flexibility and performance. </p>
+<p>In general the fewer degrees of freedom there are, the more room there is to “fake” things.  </p>
+<p>Other factors play a large role in performance too such as camera type (a static third person camera can be a lot easier to render than a dynamic first person camera), projection type (orthographic projection can be faster than perspective projection) and of course level of graphical fidelity/realism. As we’ll see, different 3D games on the playdate make many different tradeoffs between performance, flexibility and fidelity. </p>
+<p>A last quick note about performance on the playdate, I will give frames per second numbers when available. However it’s important to note that the max fps on the playdate while refreshing the entire screen is 52 fps. I say “refreshing the entire screen” because the playdate sdk also lets you only update part of the screen. In that case you can actually render faster than 52 fps but most 3d games have to redraw the entire screen with every update.  </p>
+<p><strong>Grand Tour Legends</strong><br>
+Type: Game<br>
+Status: Released<br>
+Link: <a href="https://play.date/games/grand-tour-legends/">https://play.date/games/grand-tour-legends/</a> <br>
+Degrees of Freedom: 1 (1 combined spatial / rotational degree of freedom)<br>
+Performance On Device: Smooth (no fps counter available)<br>
+Technique: Full Motion Video+<br>
+Camera Position: Third Person Dynamic (Over the Shoulder)<br>
+Camera Projection: Perspective  </p>
+<p align="center">
+    <img src="/images/playdate3d/grand-tour-legends.gif" width="400px"> 
+</p>
+
+<p>Grand Tour Legends is the first playdate game I played. It’s also the most beautiful 3D I’ve seen on the playdate, but all that shine does not come for free. The game only has one true degree of freedom. You can move forward or roll backwards and that’s it.</p>
+<p>Notes<br>
+While the game’s source code is not available there is a little info <a href="https://devforum.play.date/t/grand-tour-legends/2306">here</a>. We know the environment is a pre-rendered video that speeds up based on how fast you are moving (or in some cases goes backwards when you roll downhill). The player is a sprite and the other racers are apparently “fully 3D” (whether this means meshes or <a href="https://docs.unrealengine.com/4.26/en-US/RenderingAndGraphics/RenderToTextureTools/3/">imposters</a> is not clear to me).  </p>
+<p>One thing the above thread doesn’t tell me is how the other racers are occluded by the environment. I suspect when rendering them, each of their pixels is compared against a depth buffer channel of the pre-rendered video to make sure not to draw them in front of the terrain if they are actually behind it.  </p>
+<p>I’m also not sure whether the dithering is pre-rendered or not. Either way it looks gorgeous.  </p>
+<p>I’m calling this technique full motion video+ because it is substantially more complex than just drawing a video.   </p>
+<p>The advantages of pre-rendering a video for the environment are that you can apply all sorts of extra beautification steps (antialiasing, shadows, complex lighting, etc) without any overhead in game. On pc GPU rasterizers are fast enough to make nearly photorealistic images in real time so the benefits or pre-rendering are minimal, but on playdate you can create unmatched beauty.  </p>
+<p>My props to <a href="https://www.iorama.studio/">IORAMA</a> for coming up with a very creative rendering technique.  </p>
+<p><strong>Unnamed Train Game</strong><br>
+Type: Demo<br>
+Status: Unreleased<br>
+Link: <a href="https://nitter.net/HunterBridges/status/1566650619254882304">https://nitter.net/HunterBridges</a> <br>
+Degrees of Freedom: 1 (1 spatial degree of freedom, 0 rotation degrees of freedom)<br>
+Performance On Device: Unknown<br>
+Technique: Unknown (not enough info to guess well)<br>
+Camera Position: First Person<br>
+Camera Projection: Perspective </p>
+<p align="center"> 
+<video width="400px" controls>
+  <source src="/images/playdate3d/TrainGame.mov" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+</p>
+
+<p><strong>Tau</strong><br>
+Type: Game<br>
+Status: Released<br>
+Link: <a href="https://play.date/games/tau/">https://play.date/games/tau/</a> <br>
+Degrees of Freedom: 1 (1 combined spatial + rotational degree of freedom)<br>
+Performance On Device: Smooth<br>
+Technique: Unknown<br>
+Camera Position: Third Person Dynamic (Over the shoulder)<br>
+Camera Projection: Perspective  </p>
+<p align="center">
+    <img loading="lazy" src="/images/playdate3d/tau.gif" width="400px"> 
+</p>
+<p>Notes (conjecture)<br>
+While I’m not sure exactly how they are drawing the cylinder it does look like the game makes heavy use of pre-rendered sprites.</p>
+<p>On the playdate, image files are typically tiny because they are often 1 bit per pixel. Because images are cheap, many people choose to pre-render objects from lots of different angles and then display the image that is closest to the true angle between the camera and the pre-rendered sprite during the game. This technique is called <a href="https://docs.unrealengine.com/4.26/en-US/RenderingAndGraphics/RenderToTextureTools/3/">imposters</a>.  </p>
+<p><strong>Skew</strong><br>
+Type: Game<br>
+Status: Released<br>
+Link: <a href="https://play.date/games/skew/">https://play.date/games/skew/</a><br>
+Degrees of Freedom: 2 (2 spatial degrees of freedom, 0 rotation degrees of freedom)<br>
+Performance On Device: Smooth (exact fps not available)<br>
+Technique: Unknown<br>
+Camera Position: Third Person Dynamic<br>
+Camera Projection: Perspective  </p>
+<p align="center">
+    <img loading="lazy" src="/images/playdate3d/skew.gif" width="400px"> 
+</p>
+<p>Notes<br>
+There are a few technical details in this <a href="https://news.play.date/news/skew/">blog post on Panic’s website</a>. I can’t get too much from it though besides the fact that the player is definitely a sprite.  </p>
+<p><strong>Unknown Hat Man Demo</strong><br>
+Type: Demo<br>
+Status: Unreleased<br>
+Link: <a href="https://nitter.net/timheigames/status/1556762636083150852">https://nitter.net/timheigames/</a><br>
+Degrees of Freedom: 2 (2 spatial degrees of freedom, 0 rotation degrees of freedom)<br>
+Performance On Device: 50+ fps<br>
+Technique: Triangle Rasterization<br>
+Camera Position: Third Person Dynamic<br>
+Camera Projection: Perspective  </p>
+<p align="center"> 
+<video width="400px" controls>
+  <source src="/images/playdate3d/hatman.mov" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+</p>
+<p>Notes<br>
+We know from the tweet thread linked above that this demo works by rendering triangles. It appears every object in the demo is a true 3D model. As we will talk about later, full 6DOF 3D rasterizers do exist on the playdate, so the author’s claims seem legitimate to me. The author also says performance slows down around 800 triangles. I don’t personally think that is a good metric for measuring draw speed on the playdate but that’s another post. I also suspect this demo uses a full 6DOF capable renderer, but it’s in the 2DOF category for now because I haven’t seen any other degrees of freedom demonstrated.</p>
+<p><strong>The Big Pond</strong><br>
+Type: Demo<br>
+Status: Released<br>
+Link:<a href="https://okacat.itch.io/the-big-pond">https://okacat.itch.io/the-big-pond</a><br>
+Degrees of Freedom: 2 (2 spatial degrees of freedom, 0 rotation degrees of freedom)<br>
+Performance On Device: Inconsistent<br>
+Technique: Triangle Rasterization<br>
+Camera Position: Third Person Dynamic<br>
+Camera Projection: Perspective  </p>
+<p align="center">
+    <img loading="lazy" src="/images/playdate3d/bigpond.gif" width="400px"> 
+</p>
+<p>Notes:<br>
+This game logs to the console that is loading obj files so I’m pretty sure it is using a triangle rasterizer to render real 3d meshes. Despite not having much on the screen performance is quite inconsistent. I’m not sure why this is. </p>
+<p><strong>Daily Driver</strong> <br>
+Type: Game<br>
+Status: Demo Released<br>
+Link: <a href="https://gingerbeardman.itch.io/daily-driver">https://gingerbeardman.itch.io/daily-driver</a>  <br>
+Degrees of Freedom: 3 (3 spatial degrees of freedom, 0 rotation degrees of freedom)<br>
+Performance On Device: 52+ fps<br>
+Technique: Isometric Rendering<br>
+Camera Position: Third Person Static<br>
+Camera Projection: Orthographic  </p>
+<p align="center">
+    <img loading="lazy" src="/images/playdate3d/dailydriver.gif" width="400px"> 
+</p>
+<p>Notes<br>
+Daily driver combines sprites that have been pre-rendered from multiple angles (<a href="https://docs.unrealengine.com/4.26/en-US/RenderingAndGraphics/RenderToTextureTools/3/">imposters</a>) with an isometric view to create a 3D driving experience. Having an orthographic static camera makes 3D rendering a lot easier. It also runs faster than the playdate’s full screen refresh rate of 52 fps because it doesn’t redraw unnecessary raster lines! There are a ton of juicy technical details in the <a href="https://devforum.play.date/t/matts-prototypes/826/93?page=5">playdate forum thread</a>.  </p>
+<p><strong>Mode7Driver</strong><br>
+Type: Demo<br>
+Status: Released<br>
+Link: https://play.date/dev/ (Once you download the SDK it’s under PlaydateSDK/Examples/Mode7Driver)<br>
+Degrees of Freedom: 3 (2 spatial degrees of freedom, 1 rotation degrees of freedom)<br>
+Performance On Device: 52 fps<br>
+Technique: Mode7 Subset<br>
+Camera Position: Third Person Over the Shoulder<br>
+Camera Projection: Perspective  </p>
+<p align="center"> 
+<video width="400px" controls>
+  <source src="/images/playdate3d/mode7driver.mov" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+</p>
+<p>Notes  <br>
+The original <a href="https://sneslab.net/wiki/Mode_7">Mode7</a> was a graphics mode on the SNES that allowed developers to draw backgrounds scan line by scan line using special hardware. The pixels of these scan lines were mapped from screen space to texture space by a per scan line affine transformation. This was quite flexible and enabled many different effects, such as the tracks in racing games like <a href="https://www.youtube.com/watch?v=OF1SpvKRMD0">F-Zero</a> and the <a href="https://youtu.be/pafOj9IrtuY?t=78">tube from Castlevania IV</a>.   </p>
+<p>The playdate lua sdk contains a function called <a href="https://sdk.play.date/2.1.1/Inside%20Playdate.html#m-graphics.image.drawSampled">drawSampled</a> which emulates a subset of Mode7’s functionality to make the player appear to be on textured a 3d plane. </p>
+<p>Unfortunately the drawSampled source code is not available so we cannot know exactly how their technique works.</p>
+<p><strong>Red Terror</strong><br>
+Type: Game<br>
+Status: Released<br>
+Link: <a href="https://therussianbeargame.itch.io/red-terror">https://therussianbeargame.itch.io/red-terror</a><br>
+Degrees of Freedom: 2 (2 spatial degrees of freedom, 1 rotation degrees of freedom)<br>
+Performance On Device: 20-30 fps<br>
+Technique: Raycasting<br>
+Camera Position: First Person<br>
+Camera Projection: Perspective  </p>
+<p align="center">
+    <img loading="lazy" src="/images/playdate3d/redterror.gif" width="400px"> 
+</p>
+<p>Notes<br>
+Sweet, sweet <a href="https://lodev.org/cgtutor/raycasting.html">raycasting</a> like Wolfenstein running on the playdate. Looks smooth. More technical details on this <a href="https://devforum.play.date/t/help-error-search-crash-in-my-raycasting-3d-game/11555/31">playdate forum post</a>. One nugget of info is it uses <a href="https://developer.valvesoftware.com/wiki/Mipmapping">mip-mapping</a> on the walls to make them less noisy when they are far away. Neat! Big props to the dev, this looks pretty smooth.</p>
+<p><strong>Wi-Fi Dungeon: Organism Online</strong><br>
+Type: Game<br>
+Status: Unreleased<br>
+Link: <a href="https://www.youtube.com/watch?v=ywhRQ4-nlEg">Wi-Fi Dungeon: Organism Online (Announce Trailer)</a><br>
+Degrees of Freedom: 2 (2 spatial degrees of freedom, 1 rotation degrees of freedom)<br>
+Performance On Device: Unknown<br>
+Technique: Raycasting (suspected but not confirmed)<br>
+Camera Position: First Person<br>
+Camera Projection: Perspective  </p>
+<p align="center">
+<iframe width="560" height="315" src="https://www.youtube.com/embed/ywhRQ4-nlEg?si=124o_rtw-4k-emw8" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+</p>
+
+<p><strong>Unknown Ray Casting Engine #1</strong><br>
+Type: Demo<br>
+Status: Unreleased<br>
+Link: <a href="https://www.youtube.com/watch?v=ablhAP85NNw">https://www.youtube.com/watch?v=ablhAP85NNw</a><br>
+Degrees of Freedom: 2 (2 spatial degrees of freedom, 1 rotational degrees of freedom)<br>
+Performance On Device: ~33 fps based on the video<br>
+Technique: Raycasting<br>
+Camera Position: First Person<br>
+Camera Projection: Perspective  </p>
+<p align="center">
+<iframe width="560" height="315" src="https://www.youtube.com/embed/ablhAP85NNw?si=JAMQCVo2D_QxlclP" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+</p>
+<p>Notes:<br>
+This raycaster has crisp textures and graphics look very clean compared to other raycasters on the playdate. I can’t tell if this is just the artwork though.</p>
+<p><strong>Unknown Ray Casting Engine #2</strong><br>
+Type: Demo<br>
+Status: Unreleased<br>
+Link: <a href="https://www.youtube.com/watch?v=rGlUOxdprQM">https://www.youtube.com/watch?v=rGlUOxdprQM</a><br>
+Degrees of Freedom: 2 (2 spatial degrees of freedom, 1 rotation degrees of freedom)<br>
+Performance On Device: 29 - 45 fps based on the video<br>
+Technique: Raycasting<br>
+Camera Position: First Person<br>
+Camera Projection: Perspective  </p>
+<p align="center">
+<iframe width="560" height="315" src="https://www.youtube.com/embed/rGlUOxdprQM?si=nu13ohbRHeRwgw-f" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+</p>
+<p>Notes:<br>
+Fastest raycasting engine I’ve seen so far for playdate. Wonder what makes all these engines different? Textures also look good but can’t tell if this is due to the engine or just the artwork. Would love more details.  </p>
+<p><strong>Wild Dungeons</strong><br>
+Type: Demo<br>
+Status: Released<br>
+Link: <a href="https://crankworkgames.itch.io/wild-dungeons">https://crankworkgames.itch.io/wild-dungeons</a><br>
+Degrees of Freedom: 2 (2 spatial degrees of freedom, 1 rotation degrees of freedom)<br>
+Performance On Device: 5-15 fps<br>
+Technique: Raycasting<br>
+Camera Position: First Person<br>
+Camera Projection: Perspective  </p>
+<p align="center">
+    <img loading="lazy" src="/images/playdate3d/wilddungeons.gif" width="400px"> 
+</p>
+<p>Notes<br>
+The developer of this game does not have a playdate to test on yet and it seems like the on device fps is suffering a little as a result. At the time of writing they are still pushing improvements out and getting a decent amount of user feedback so it seems like things could improve dramatically.</p>
+<p><strong>Legend of Etad</strong><br>
+Type: Game<br>
+Status: Released<br>
+Link: <a href="https://play.date/games/legend-of-etad/">https://play.date/games/legend-of-etad/</a>  <br>
+Degrees of Freedom: 2 (2 spatial degrees of freedom, 1 rotation degrees of freedom)<br>
+Performance On Device: Smooth<br>
+Technique: Pre-rendered composition<br>
+Camera Position: First Person<br>
+Camera Projection: Perspective  </p>
+<p align="center">
+    <img loading="lazy" src="/images/playdate3d/etad.gif" width="400px"> 
+</p>
+<p>Notes<br>
+Another creative, completely out of left field idea, this game pre-renders discrete parts of the world and then overlays the pre-rendered pieces together to achieve a full scene. I’m gonna call this pre-rendered composition. I’m not gonna lie, I don't totally understand it. Many more details in this <a href="https://nitter.net/GarethIW/status/1515778382486724617">gold mine of a twitter thread</a>. All of this comes at a cost of course. The game jumps between positions instead of continuously walking from one place to another.  </p>
+<p><strong>Dioragame</strong><br>
+Type: Game<br>
+Status: Unreleased<br>
+Link: <a href="https://dioragame.com/devlog/">https://dioragame.com/devlog/</a><br>
+Degrees of Freedom: 4 (3 spatial degrees of freedom, 1 rotation degrees of freedom)<br>
+Performance On Device: <a href="https://nitter.net/the3dprintist/status/1561780780275081216?t=2JRksrsKkPYyL4kccMPL8w">30 fps</a>  <br>
+Technique: Isometric Rendering<br>
+Camera Position: Third Person Dynamic<br>
+Camera Projection: Orthographic  </p>
+<p align="center">
+    <img loading="lazy" src="/images/playdate3d/diora.gif" width="400px"> 
+</p>
+<p>Like Daily Driver but with a rotatable camera. Everything in the scene is an imposters. There’s a pretty detailed engine post if you go to <a href="https://dioragame.com/devlog/">https://dioragame.com/devlog/</a> and choose the entry “The Diorama Engine”. Like Daily Driver this game gets a large performance boost by having a far away third person orthographic projection.</p>
+<p><strong>P-Racing</strong><br>
+Type: Game / Engine<br>
+Status: Game Release, Engine Open Sourced<br>
+Game Link: <a href="https://play.date/games/p-racing/">https://play.date/games/p-racing/</a>   <br>
+Engine Link: <a href="https://github.com/risolvipro/playdate-mode7">https://github.com/risolvipro/playdate-mode7</a>  <br>
+Degrees of Freedom: 4 (2 spatial degrees of freedom, 2 rotation degrees of freedom) <br>
+Performance On Device: Smooth<br>
+Technique: Mode7+<br>
+Camera Position: Third Person Dynamic (Over the Shoulder),<br>
+Camera Projection: Perspective  </p>
+<p align="center">
+    <img loading="lazy" src="/images/playdate3d/pracing.gif" width="400px"> 
+</p>
+<p>Notes:<br>
+P-Racing is appears to use a combination of Mode7 style rendering (see <a href="https://github.com/risolvipro/playdate-mode7/blob/b853a8064d0494c74fc31823ea076c8486ecf5d2/src/pd_mode7.c#L675">here</a>) to draw the road similar to Mode7Driver and <a href="https://docs.unrealengine.com/4.26/en-US/RenderingAndGraphics/RenderToTextureTools/3/">imposters</a> for the cars (see <a href="https://github.com/risolvipro/playdate-mode7/blob/b853a8064d0494c74fc31823ea076c8486ecf5d2/src/pd_mode7.c#L428">here</a>). I also suspect it’s using non camera facing textured quads for the street lights, and untextured triangle meshes for the buildings (neither appear to be in the open sourced engine sadly). It’s really cool seeing a game use a combination of so many techniques. I’m calling this Mode7+ since it appears more capable than what can be built using the Playdate’s <a href="https://sdk.play.date/2.1.1/Inside%20Playdate.html#m-graphics.image.drawSampled">built-in Mode7 drawing function</a>.</p>
+<p><strong>Super Agent</strong><br>
+Type: Game<br>
+Status: Unreleased<br>
+Link: <a href="https://nitter.net/RisolviPro/status/1710043502413852815">https://nitter.net/RisolviPro</a><br>
+Degrees of Freedom: 3 (3 spatial degrees of freedom, 1 rotation degrees of freedom)<br>
+Performance On Device: Unknown<br>
+Technique: Unknown<br>
+Camera Position: Third Person Dynamic<br>
+Camera Projection: Perspective  </p>
+<p align="center"> 
+<video width="400px" controls>
+  <source src="/images/playdate3d/super-agent.mov" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+</p>
+<p>Notes<br>
+Just like in the train game, we see that the tree billboards are pre-rendered at different scales to make them look better far away. This is a form of <a href="https://developer.valvesoftware.com/wiki/Mipmapping">mip-mapping</a>.</p>
+<p><strong>Super Agent Mountain Scene</strong><br>
+Type: Demo<br>
+Status: Unreleased<br>
+Link: <a href="https://nitter.net/RisolviPro/status/1717659562738655470">https://nitter.net/RisolviPro</a><br>
+Degrees of Freedom: 2 (2 spatial degrees of freedom, 2 rotation degrees of freedom)<br>
+Performance On Device: Unknown<br>
+Technique: Unknown<br>
+Camera Position: ???<br>
+Camera Projection: Perspective  </p>
+<p align="center"> 
+<video width="400px" controls>
+  <source src="/images/playdate3d/super-agent-mountain.mov" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+</p>
+
+<p><strong>PlayDOOM</strong><br>
+Type: Demo<br>
+Status: Released<br>
+Link: <a href="https://playdate-wiki.com/wiki/PlayDOOM">https://playdate-wiki.com/wiki/PlayDOOM</a> (Sadly it appears at the time of writing there is not fast build Playdate OS 2.11+)  <br>
+Degrees of Freedom: 4 (3 spatial degrees of freedom, 1 rotation degrees of freedom)<br>
+Performance On Device: ~15 fps<br>
+Technique: DOOM (Ray Casting+)<br>
+Camera Position: First Person<br>
+Camera Projection: Perspective  </p>
+<p align="center">
+    <img loading="lazy" src="/images/playdate3d/pdoom.gif" width="400px"> 
+</p>
+
+<p>Notes<br>
+Some neat porting notes are available on the <a href="https://devforum.play.date/t/doom-on-playdate/852">playdate forums</a>. Also it’s DOOM!  </p>
+<p><strong>Mini3D</strong><br>
+Type: Engine<br>
+Status: Released<br>
+Link: <a href="https://play.date/dev/">https://play.date/dev/</a> (Once you download the SDK it’s under PlaydateSDK/C_API/Examples)<br>
+Degrees of Freedom: 6 (3 spatial degrees of freedom, 3 rotational degrees of freedom)<br>
+Performance On Device: Highly scene dependent can be 52, can be 1 if you push it too hard<br>
+Technique: Triangle Rasterizer<br>
+Camera Position: Flexible  <br>
+Camera Projection: Supports Perspective and Isometric  </p>
+<p align="center"> 
+<video width="400px" controls>
+  <source src="/images/playdate3d/mini3d.mov" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+</p>
+<p>Notes<br>
+A solid rasterized 3D engine with a full scene hierarchy and Lua bindings that comes hidden in the playdate sdk. It has multiple different settings where you can trade performance for quality especially around depth conflicts (<a href="https://en.wikipedia.org/wiki/Z-buffering">zbuffer</a>/<a href="https://psx.arthus.net/sdk/Psy-Q/DOCS/TECHNOTE/ordtbl.pdf">ordertable</a>/per object depth). Honestly, this thing is pretty cool, and its code has taught me a lot about how the playdate works. I’m not sure why this is not used to make 3D games. Maybe people don’t know about it? Maybe it doesn’t scale well to huge worlds? Do playdate games even have huge worlds?</p>
+<p><strong>Mini3D+</strong><br>
+Type: Engine<br>
+Status: Released<br>
+Link: <a href="https://github.com/nstbayless/mini3D-plus">https://github.com/nstbayless/mini3D-plus</a><br>
+Degrees of Freedom: 6 (3 spatial degrees of freedom, 3 rotational degrees of freedom)<br>
+Performance On Device: The kart demo that comes with it runs at 30-40 fps on my device regardless of what the readme says (it claims 20 fps, I have filed an issue on the repo)<br>
+Technique: Triangle Rasterizer<br>
+Camera Position: Flexible<br>
+Camera Projection: Supports Perspective and Isometric  </p>
+<p align="center">
+    <img loading="lazy" src="/images/playdate3d/mini3d.gif" width="400px"> 
+</p>
+<p>Notes<br>
+This library is an open source extension of mini 3D with several large improvements:  </p>
+<ul>
+<li>Mesh clipping at camera (allows rendering faces which are partly behind the camera)</li>
+<li>Textures</li>
+<li>Imposters</li>
+<li>Collision detection
+Seems like mostly sphere triangle but the cart demo plays nicely</li>
+</ul>
+<p>Downsides  </p>
+<ul>
+<li>Texture projection is approximate to save on speed but only noticeable when triangles are very close to the camera</li>
+<li>Seems abandoned but it also a good starting place / resource for building an even more ambitious engine</li>
+</ul>
+<p><strong>Common themes</strong><br>
+The biggest thing that stuck out to me when I looked at all these games/demos was how pre-rendering techniques (imposters, mip-mapping, even full motion video) seem to be hugely popular on the playdate. Given its hardware limitation, it does seem like even in triangle-rasterized 3D games, if the scene is large, devs will likely have to use imposters to mimic tiny, even more detailed meshes. I’m personally also curious to see how far you can go with imposter only graphics. Can you make a 6DOF 3d first person shooter using only imposters? I think you might be able to if given the right level design constraints.  </p>
+<p>Another thing that struck me was that very few playdate 3d games use triangle rasterization, even though there is a built in engine for it. There are certainly hardware constraints which make triangle rasterization less appealing than on a platform with a gpu, but I suspect this is also due to Playdate developers choosing to make their own 3d engines which emulate retro techniques for the fun of it (and that’s awesome). I am definitely curious about how far triangle rasterization can be pushed on the playdate.  </p>
+<p><strong>What is the future of 3D on the playdate?</strong><br>
+While all of the games/demos above are wildly impressive, I don’t think people are done pushing the limits of the hardware. I’m excited for what is to come!</p>
+ </div>
+</div>
+<footer>
+    <a href="/">home</a>
+    <br><br>
+    <script async defer src="https://www.recurse-scout.com/loader.js?t=1edc1771a358f1a5944eeaa441cadbdb"></script>
+    <div class="rc-scout"></div>
+</footer>
+    </div>
+
+    <!-- Google Analytics -->
+    <script>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+        
+        ga('create', 'UA-157308007-1', 'auto');
+        ga('set', 'anonymizeIp', true);
+        ga('send', 'pageview');
+    </script>
+    <!-- End Google Analytics -->
+</body>
+
+</html>
