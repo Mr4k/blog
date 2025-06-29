@@ -24,11 +24,13 @@
 	font-style: normal;
 	font-weight: 400;
 }
+
 @font-face {
 	font-family: "Neutral Regular 2";
 	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001251-35d9c274f6e1e4b02a13a899dab6df7f.eot");
 	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001251-35d9c274f6e1e4b02a13a899dab6df7f.eot?#iefix") format("embedded-opentype"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001251-35d9c274f6e1e4b02a13a899dab6df7f.woff2") format("woff2"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001251-35d9c274f6e1e4b02a13a899dab6df7f.woff") format("woff"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001251-35d9c274f6e1e4b02a13a899dab6df7f.svg#typotheque_webfonts_service") format("svg");
 }
+
 @font-face {
 	font-family: "Neutral 2";
 	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001252-c69c1edf5a5f9b3ddc6494869d377455.eot");
@@ -36,11 +38,13 @@
 	font-style: italic;
 	font-weight: 400;
 }
+
 @font-face {
 	font-family: "Neutral Regular Italic 2";
 	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001252-c69c1edf5a5f9b3ddc6494869d377455.eot");
 	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001252-c69c1edf5a5f9b3ddc6494869d377455.eot?#iefix") format("embedded-opentype"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001252-c69c1edf5a5f9b3ddc6494869d377455.woff2") format("woff2"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001252-c69c1edf5a5f9b3ddc6494869d377455.woff") format("woff"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001252-c69c1edf5a5f9b3ddc6494869d377455.svg#typotheque_webfonts_service") format("svg");
 }
+
 @font-face {
 	font-family: "Neutral 2";
 	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001253-bcea74faba2fa3c3cdeb277afbbfb844.eot");
@@ -48,11 +52,13 @@
 	font-style: normal;
 	font-weight: 700;
 }
+
 @font-face {
 	font-family: "Neutral Medium 2";
 	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001253-bcea74faba2fa3c3cdeb277afbbfb844.eot");
 	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001253-bcea74faba2fa3c3cdeb277afbbfb844.eot?#iefix") format("embedded-opentype"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001253-bcea74faba2fa3c3cdeb277afbbfb844.woff2") format("woff2"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001253-bcea74faba2fa3c3cdeb277afbbfb844.woff") format("woff"), url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001253-bcea74faba2fa3c3cdeb277afbbfb844.svg#typotheque_webfonts_service") format("svg");
 }
+
 @font-face {
 	font-family: "Neutral 2";
 	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001254-0fda9ee2882f56a104d7cf32d3f6061c.eot");
@@ -60,6 +66,7 @@
 	font-style: italic;
 	font-weight: 700;
 }
+
 @font-face {
 	font-family: "Neutral Medium Italic 2";
 	src: url("https://s3-us-west-1.amazonaws.com/fonts-california.typotheque.com/WF-028965-009912-001254-0fda9ee2882f56a104d7cf32d3f6061c.eot");
@@ -67,37 +74,40 @@
 }
 
 body {
-    font-family: "Neutral 2";
-    background-color: #FEFEFE;
-    line-height: 160%;
-    color: #111;
-    width: 50%;
-    min-width: 400px;
-    min-height: 200px;
-    padding: 1em;
-    margin: 5% auto;
-    border: thin solid gray;
-    border-radius: 5px;
-    display: block;
-    align-self: center;
+	font-family: "Neutral 2";
+	background-color: #FEFEFE;
+	line-height: 160%;
+	color: #111;
+	width: 50%;
+	min-width: 400px;
+	min-height: 200px;
+	padding: 1em;
+	margin: 5% auto;
+	border: thin solid gray;
+	border-radius: 5px;
+	display: block;
+	align-self: center;
 }
 
-img{
-    max-width:100%;
-    max-height: 100%;
+img {
+	max-width: 100%;
+	max-height: 100%;
 }
 
 /* Special Constructs for the post Art Class With Leibniz */
-.artpic{
-	max-width:100%;
-    max-height: 100%;
+.artpic {
+	max-width: 100%;
+	max-height: 100%;
 }
 
 table {
 	border-collapse: collapse;
 	font-size: 75%;
 }
-table, th, td {
+
+table,
+th,
+td {
 	border: 1px solid black;
 	text-align: center;
 }
@@ -107,29 +117,35 @@ table, th, td {
 		font-size: 250%;
 		line-height: 175%;
 		width: 100%;
-    	border: none;
+		border: none;
 	}
+
 	table {
 		border-collapse: collapse;
 		width: 95%;
 		font-size: 75%;
 	}
-	table, th, td {
+
+	table,
+	th,
+	td {
 		border: 1px solid black;
 		text-align: center;
 	}
-	
-    img{
-        width: 100%;
+
+	img {
+		width: 100%;
 	}
-	
-	video{
-        width: 100%;
+
+	video {
+		width: 100%;
 	}
-	.artpic{
-		width:60%;
+
+	.artpic {
+		width: 60%;
 		max-height: 100%;
 	}
+
 	code {
 		font-family: 'Source Code Pro', monospace;
 		font-size: 0.5em;
@@ -137,3 +153,402 @@ table, th, td {
 		letter-spacing: 0.015em;
 	}
 }
+
+pre {
+	line-height: 125%;
+}
+
+td.linenos .normal {
+	color: inherit;
+	background-color: transparent;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
+span.linenos {
+	color: inherit;
+	background-color: transparent;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
+td.linenos .special {
+	color: #000000;
+	background-color: #ffffc0;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
+span.linenos.special {
+	color: #000000;
+	background-color: #ffffc0;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
+.highlight .hll {
+	background-color: #ffffcc
+}
+
+.highlight {
+	background: #f8f8f8;
+}
+
+.highlight .c {
+	color: #3D7B7B;
+	font-style: italic
+}
+
+/* Comment */
+.highlight .err {
+	border: 1px solid #FF0000
+}
+
+/* Error */
+.highlight .k {
+	color: #008000;
+	font-weight: bold
+}
+
+/* Keyword */
+.highlight .o {
+	color: #666666
+}
+
+/* Operator */
+.highlight .ch {
+	color: #3D7B7B;
+	font-style: italic
+}
+
+/* Comment.Hashbang */
+.highlight .cm {
+	color: #3D7B7B;
+	font-style: italic
+}
+
+/* Comment.Multiline */
+.highlight .cp {
+	color: #9C6500
+}
+
+/* Comment.Preproc */
+.highlight .cpf {
+	color: #3D7B7B;
+	font-style: italic
+}
+
+/* Comment.PreprocFile */
+.highlight .c1 {
+	color: #3D7B7B;
+	font-style: italic
+}
+
+/* Comment.Single */
+.highlight .cs {
+	color: #3D7B7B;
+	font-style: italic
+}
+
+/* Comment.Special */
+.highlight .gd {
+	color: #A00000
+}
+
+/* Generic.Deleted */
+.highlight .ge {
+	font-style: italic
+}
+
+/* Generic.Emph */
+.highlight .gr {
+	color: #E40000
+}
+
+/* Generic.Error */
+.highlight .gh {
+	color: #000080;
+	font-weight: bold
+}
+
+/* Generic.Heading */
+.highlight .gi {
+	color: #008400
+}
+
+/* Generic.Inserted */
+.highlight .go {
+	color: #717171
+}
+
+/* Generic.Output */
+.highlight .gp {
+	color: #000080;
+	font-weight: bold
+}
+
+/* Generic.Prompt */
+.highlight .gs {
+	font-weight: bold
+}
+
+/* Generic.Strong */
+.highlight .gu {
+	color: #800080;
+	font-weight: bold
+}
+
+/* Generic.Subheading */
+.highlight .gt {
+	color: #0044DD
+}
+
+/* Generic.Traceback */
+.highlight .kc {
+	color: #008000;
+	font-weight: bold
+}
+
+/* Keyword.Constant */
+.highlight .kd {
+	color: #008000;
+	font-weight: bold
+}
+
+/* Keyword.Declaration */
+.highlight .kn {
+	color: #008000;
+	font-weight: bold
+}
+
+/* Keyword.Namespace */
+.highlight .kp {
+	color: #008000
+}
+
+/* Keyword.Pseudo */
+.highlight .kr {
+	color: #008000;
+	font-weight: bold
+}
+
+/* Keyword.Reserved */
+.highlight .kt {
+	color: #B00040
+}
+
+/* Keyword.Type */
+.highlight .m {
+	color: #666666
+}
+
+/* Literal.Number */
+.highlight .s {
+	color: #BA2121
+}
+
+/* Literal.String */
+.highlight .na {
+	color: #687822
+}
+
+/* Name.Attribute */
+.highlight .nb {
+	color: #008000
+}
+
+/* Name.Builtin */
+.highlight .nc {
+	color: #0000FF;
+	font-weight: bold
+}
+
+/* Name.Class */
+.highlight .no {
+	color: #880000
+}
+
+/* Name.Constant */
+.highlight .nd {
+	color: #AA22FF
+}
+
+/* Name.Decorator */
+.highlight .ni {
+	color: #717171;
+	font-weight: bold
+}
+
+/* Name.Entity */
+.highlight .ne {
+	color: #CB3F38;
+	font-weight: bold
+}
+
+/* Name.Exception */
+.highlight .nf {
+	color: #0000FF
+}
+
+/* Name.Function */
+.highlight .nl {
+	color: #767600
+}
+
+/* Name.Label */
+.highlight .nn {
+	color: #0000FF;
+	font-weight: bold
+}
+
+/* Name.Namespace */
+.highlight .nt {
+	color: #008000;
+	font-weight: bold
+}
+
+/* Name.Tag */
+.highlight .nv {
+	color: #19177C
+}
+
+/* Name.Variable */
+.highlight .ow {
+	color: #AA22FF;
+	font-weight: bold
+}
+
+/* Operator.Word */
+.highlight .w {
+	color: #bbbbbb
+}
+
+/* Text.Whitespace */
+.highlight .mb {
+	color: #666666
+}
+
+/* Literal.Number.Bin */
+.highlight .mf {
+	color: #666666
+}
+
+/* Literal.Number.Float */
+.highlight .mh {
+	color: #666666
+}
+
+/* Literal.Number.Hex */
+.highlight .mi {
+	color: #666666
+}
+
+/* Literal.Number.Integer */
+.highlight .mo {
+	color: #666666
+}
+
+/* Literal.Number.Oct */
+.highlight .sa {
+	color: #BA2121
+}
+
+/* Literal.String.Affix */
+.highlight .sb {
+	color: #BA2121
+}
+
+/* Literal.String.Backtick */
+.highlight .sc {
+	color: #BA2121
+}
+
+/* Literal.String.Char */
+.highlight .dl {
+	color: #BA2121
+}
+
+/* Literal.String.Delimiter */
+.highlight .sd {
+	color: #BA2121;
+	font-style: italic
+}
+
+/* Literal.String.Doc */
+.highlight .s2 {
+	color: #BA2121
+}
+
+/* Literal.String.Double */
+.highlight .se {
+	color: #AA5D1F;
+	font-weight: bold
+}
+
+/* Literal.String.Escape */
+.highlight .sh {
+	color: #BA2121
+}
+
+/* Literal.String.Heredoc */
+.highlight .si {
+	color: #A45A77;
+	font-weight: bold
+}
+
+/* Literal.String.Interpol */
+.highlight .sx {
+	color: #008000
+}
+
+/* Literal.String.Other */
+.highlight .sr {
+	color: #A45A77
+}
+
+/* Literal.String.Regex */
+.highlight .s1 {
+	color: #BA2121
+}
+
+/* Literal.String.Single */
+.highlight .ss {
+	color: #19177C
+}
+
+/* Literal.String.Symbol */
+.highlight .bp {
+	color: #008000
+}
+
+/* Name.Builtin.Pseudo */
+.highlight .fm {
+	color: #0000FF
+}
+
+/* Name.Function.Magic */
+.highlight .vc {
+	color: #19177C
+}
+
+/* Name.Variable.Class */
+.highlight .vg {
+	color: #19177C
+}
+
+/* Name.Variable.Global */
+.highlight .vi {
+	color: #19177C
+}
+
+/* Name.Variable.Instance */
+.highlight .vm {
+	color: #19177C
+}
+
+/* Name.Variable.Magic */
+.highlight .il {
+	color: #666666
+}
+
+/* Literal.Number.Integer.Long */
