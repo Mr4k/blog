@@ -395,3 +395,7 @@ Another thing that struck me was that very few playdate 3d games use triangle ra
 
 **What is the future of 3D on the playdate?**  
 While all of the games/demos above are wildly impressive, I don’t think people are done pushing the limits of the hardware. I’m excited for what is to come!
+
+--------
+Have questions / comments / corrections?  
+Get in touch: <a href="mailto:pstefek.dev@gmail.com">pstefek.dev@gmail.com</a>
