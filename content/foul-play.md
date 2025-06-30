@@ -33,8 +33,10 @@ Here is a hello world example in c on the Playdate demonstrating this structure:
 
 	#include "pd_api.h"
 
-	int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t _arg)
-	{
+	int eventHandler(
+		PlaydateAPI* pd,
+		PDSystemEvent event,
+		uint32_t _arg) {
 		if ( event == kEventInit )
 		{
 			pd->console->log("hello world");
@@ -150,22 +152,30 @@ After doing some more research and experimentation I was able to piece together 
 
 	:::
 	// 1. Pushes the current link register to the stack.
-	// The link register typically contains return address for a function call
+	// The link register typically contains return
+	// address for a function call
 	push {lr}  
-	// 2. Clears the link register and the associate program status
-	// register. I'm not totally sure is this is needed
+	// 2. Clears the link register and the
+	// associated program status register.
+	// I'm not totally sure is this is needed
 	movs.w lr,#0x0 
-	// 3. Moves the top 16 bits of an address known to be in the Playdate Sdk MPU region
-	// into the link register. The link register should now read 0x80500000
-	// The choice of 0x80500000 is arbitrary you can use any value
-	// within the Playdate Sdk address space
+	// 3. Moves the top 16 bits of an address
+	// known to be in the Playdate Sdk MPU region
+	// into the link register. The link 
+	// register should now read 0x80500000
+	// The choice of 0x80500000 is arbitrary 
+	// you can use any value within
+	// the Playdate Sdk address space
 	movt lr,#0x805 
-	// 4. Calls the svc interrupt handler. This checks the link register
-	// which now contains a fake value that makes it look like the interrupt
-	// comes from within the Playdate Sdk section of the code
+	// 4. Calls the svc interrupt handler. 
+	// This checks the link register
+	// which now contains a fake value that
+	// makes it look like the interrupt comes
+	// from within the Playdate Sdk section of the code
 	svc 0x2 
-	// 5. Pops the old real link register value off the stack.
-	// Onto the program counter so the function exits correctly
+	// 5. Pops the old real link register
+	// value off the stack onto the program counter so
+	// the function exits correctly
 	pop {pc} 
 
 *Note while I'm confident about points 3 and 4 which are the crux of the exploit I'm not 100% sure
