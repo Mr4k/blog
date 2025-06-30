@@ -35,8 +35,10 @@
 
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">"pd_api.h"</span><span class="cp"></span>
 
-<span class="kt">int</span><span class="w"> </span><span class="nf">eventHandler</span><span class="p">(</span><span class="n">PlaydateAPI</span><span class="o">*</span><span class="w"> </span><span class="n">pd</span><span class="p">,</span><span class="w"> </span><span class="n">PDSystemEvent</span><span class="w"> </span><span class="n">event</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">_arg</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">eventHandler</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">PlaydateAPI</span><span class="o">*</span><span class="w"> </span><span class="n">pd</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">PDSystemEvent</span><span class="w"> </span><span class="n">event</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">_arg</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="n">event</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">kEventInit</span><span class="w"> </span><span class="p">)</span><span class="w"></span>
 <span class="w">    </span><span class="p">{</span><span class="w"></span>
 <span class="w">        </span><span class="n">pd</span><span class="o">-&gt;</span><span class="n">console</span><span class="o">-&gt;</span><span class="n">log</span><span class="p">(</span><span class="s">"hello world"</span><span class="p">);</span><span class="w"></span>
@@ -109,22 +111,30 @@ pop {pc}
 <p>I already knew instruction 4 was the SuperVisor Call where the application asked for privileged permissions. Nick and I had already tried calling this method earlier in our investigation to no avail. But when I isolated the 5 assembly instructions into my own test setup I confirmed they did in fact escalate privileges independent of the rest of the code. At this point, I knew the shape of what must be happening. Somehow these lines tricked the privilege check into thinking the SVC exception was originating from an approved MPU segment. </p>
 <p>After doing some more research and experimentation I was able to piece together the following explanation of the exploit:</p>
 <div class="highlight"><pre><span></span><code><span class="c1">// 1. Pushes the current link register to the stack.</span>
-<span class="c1">// The link register typically contains return address for a function call</span>
+<span class="c1">// The link register typically contains return</span>
+<span class="c1">// address for a function call</span>
 <span class="n">push</span><span class="w"> </span><span class="p">{</span><span class="n">lr</span><span class="p">}</span><span class="w">  </span>
-<span class="c1">// 2. Clears the link register and the associate program status</span>
-<span class="c1">// register. I'm not totally sure is this is needed</span>
+<span class="c1">// 2. Clears the link register and the</span>
+<span class="c1">// associated program status register.</span>
+<span class="c1">// I'm not totally sure is this is needed</span>
 <span class="n">movs</span><span class="p">.</span><span class="n">w</span><span class="w"> </span><span class="n">lr</span><span class="p">,#</span><span class="mh">0</span><span class="n">x0</span><span class="w"> </span>
-<span class="c1">// 3. Moves the top 16 bits of an address known to be in the Playdate Sdk MPU region</span>
-<span class="c1">// into the link register. The link register should now read 0x80500000</span>
-<span class="c1">// The choice of 0x80500000 is arbitrary you can use any value</span>
-<span class="c1">// within the Playdate Sdk address space</span>
+<span class="c1">// 3. Moves the top 16 bits of an address</span>
+<span class="c1">// known to be in the Playdate Sdk MPU region</span>
+<span class="c1">// into the link register. The link </span>
+<span class="c1">// register should now read 0x80500000</span>
+<span class="c1">// The choice of 0x80500000 is arbitrary </span>
+<span class="c1">// you can use any value within</span>
+<span class="c1">// the Playdate Sdk address space</span>
 <span class="n">movt</span><span class="w"> </span><span class="n">lr</span><span class="p">,#</span><span class="mh">0</span><span class="n">x805</span><span class="w"> </span>
-<span class="c1">// 4. Calls the svc interrupt handler. This checks the link register</span>
-<span class="c1">// which now contains a fake value that makes it look like the interrupt</span>
-<span class="c1">// comes from within the Playdate Sdk section of the code</span>
+<span class="c1">// 4. Calls the svc interrupt handler. </span>
+<span class="c1">// This checks the link register</span>
+<span class="c1">// which now contains a fake value that</span>
+<span class="c1">// makes it look like the interrupt comes</span>
+<span class="c1">// from within the Playdate Sdk section of the code</span>
 <span class="n">svc</span><span class="w"> </span><span class="mh">0</span><span class="n">x2</span><span class="w"> </span>
-<span class="c1">// 5. Pops the old real link register value off the stack.</span>
-<span class="c1">// Onto the program counter so the function exits correctly</span>
+<span class="c1">// 5. Pops the old real link register</span>
+<span class="c1">// value off the stack onto the program counter so</span>
+<span class="c1">// the function exits correctly</span>
 <span class="n">pop</span><span class="w"> </span><span class="p">{</span><span class="n">pc</span><span class="p">}</span><span class="w"></span>
 </code></pre></div>
 

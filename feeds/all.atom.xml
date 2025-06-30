@@ -18,8 +18,10 @@
 
 &lt;span class="cp"&gt;#include&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="cpf"&gt;"pd_api.h"&lt;/span&gt;&lt;span class="cp"&gt;&lt;/span&gt;
 
-&lt;span class="kt"&gt;int&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nf"&gt;eventHandler&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;PlaydateAPI&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;pd&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;PDSystemEvent&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;event&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="kt"&gt;uint32_t&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;_arg&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
-&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="kt"&gt;int&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nf"&gt;eventHandler&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="n"&gt;PlaydateAPI&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;pd&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="n"&gt;PDSystemEvent&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;event&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="kt"&gt;uint32_t&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;_arg&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
 &lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;event&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;kEventInit&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
 &lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
 &lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="n"&gt;pd&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="n"&gt;console&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="n"&gt;log&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"hello world"&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
@@ -92,22 +94,30 @@ pop {pc}
 &lt;p&gt;I already knew instruction 4 was the SuperVisor Call where the application asked for privileged permissions. Nick and I had already tried calling this method earlier in our investigation to no avail. But when I isolated the 5 assembly instructions into my own test setup I confirmed they did in fact escalate privileges independent of the rest of the code. At this point, I knew the shape of what must be happening. Somehow these lines tricked the privilege check into thinking the SVC exception was originating from an approved MPU segment. &lt;/p&gt;
 &lt;p&gt;After doing some more research and experimentation I was able to piece together the following explanation of the exploit:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="c1"&gt;// 1. Pushes the current link register to the stack.&lt;/span&gt;
-&lt;span class="c1"&gt;// The link register typically contains return address for a function call&lt;/span&gt;
+&lt;span class="c1"&gt;// The link register typically contains return&lt;/span&gt;
+&lt;span class="c1"&gt;// address for a function call&lt;/span&gt;
 &lt;span class="n"&gt;push&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="n"&gt;lr&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;  &lt;/span&gt;
-&lt;span class="c1"&gt;// 2. Clears the link register and the associate program status&lt;/span&gt;
-&lt;span class="c1"&gt;// register. I'm not totally sure is this is needed&lt;/span&gt;
+&lt;span class="c1"&gt;// 2. Clears the link register and the&lt;/span&gt;
+&lt;span class="c1"&gt;// associated program status register.&lt;/span&gt;
+&lt;span class="c1"&gt;// I'm not totally sure is this is needed&lt;/span&gt;
 &lt;span class="n"&gt;movs&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;lr&lt;/span&gt;&lt;span class="p"&gt;,#&lt;/span&gt;&lt;span class="mh"&gt;0&lt;/span&gt;&lt;span class="n"&gt;x0&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;
-&lt;span class="c1"&gt;// 3. Moves the top 16 bits of an address known to be in the Playdate Sdk MPU region&lt;/span&gt;
-&lt;span class="c1"&gt;// into the link register. The link register should now read 0x80500000&lt;/span&gt;
-&lt;span class="c1"&gt;// The choice of 0x80500000 is arbitrary you can use any value&lt;/span&gt;
-&lt;span class="c1"&gt;// within the Playdate Sdk address space&lt;/span&gt;
+&lt;span class="c1"&gt;// 3. Moves the top 16 bits of an address&lt;/span&gt;
+&lt;span class="c1"&gt;// known to be in the Playdate Sdk MPU region&lt;/span&gt;
+&lt;span class="c1"&gt;// into the link register. The link &lt;/span&gt;
+&lt;span class="c1"&gt;// register should now read 0x80500000&lt;/span&gt;
+&lt;span class="c1"&gt;// The choice of 0x80500000 is arbitrary &lt;/span&gt;
+&lt;span class="c1"&gt;// you can use any value within&lt;/span&gt;
+&lt;span class="c1"&gt;// the Playdate Sdk address space&lt;/span&gt;
 &lt;span class="n"&gt;movt&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;lr&lt;/span&gt;&lt;span class="p"&gt;,#&lt;/span&gt;&lt;span class="mh"&gt;0&lt;/span&gt;&lt;span class="n"&gt;x805&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;
-&lt;span class="c1"&gt;// 4. Calls the svc interrupt handler. This checks the link register&lt;/span&gt;
-&lt;span class="c1"&gt;// which now contains a fake value that makes it look like the interrupt&lt;/span&gt;
-&lt;span class="c1"&gt;// comes from within the Playdate Sdk section of the code&lt;/span&gt;
+&lt;span class="c1"&gt;// 4. Calls the svc interrupt handler. &lt;/span&gt;
+&lt;span class="c1"&gt;// This checks the link register&lt;/span&gt;
+&lt;span class="c1"&gt;// which now contains a fake value that&lt;/span&gt;
+&lt;span class="c1"&gt;// makes it look like the interrupt comes&lt;/span&gt;
+&lt;span class="c1"&gt;// from within the Playdate Sdk section of the code&lt;/span&gt;
 &lt;span class="n"&gt;svc&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mh"&gt;0&lt;/span&gt;&lt;span class="n"&gt;x2&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;
-&lt;span class="c1"&gt;// 5. Pops the old real link register value off the stack.&lt;/span&gt;
-&lt;span class="c1"&gt;// Onto the program counter so the function exits correctly&lt;/span&gt;
+&lt;span class="c1"&gt;// 5. Pops the old real link register&lt;/span&gt;
+&lt;span class="c1"&gt;// value off the stack onto the program counter so&lt;/span&gt;
+&lt;span class="c1"&gt;// the function exits correctly&lt;/span&gt;
 &lt;span class="n"&gt;pop&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="n"&gt;pc&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
