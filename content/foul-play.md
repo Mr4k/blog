@@ -95,7 +95,7 @@ The Playdate Sdk used this temporary privilege escalation ability to interact wi
 	<img src="/images/foul-play/get_scores_hypo.svg" width="80%"> 
 </p>  
 
-*Note this image is a hypothetical diagram of one way the get_scores function could work. I’m not 100% sure exactly how this function is implemented in the Playdate Sdk. The entire architecture even might be completely different.*
+*Note this image is a high simplified hypothetical diagram. It's not meant to represent the underlying system in detail.*
 
 After Nick figured out the privilege system, we tried the simplest thing possible. We called the EnsurePrivileges method ourselves. I had written some code to check the privilege bit on the control register which would let us know if we had succeeded. Unsurprisingly this simple attack did not work. It was like trying to kick down a locked door. We also tried to call the SVC instruction ourselves but were again met with a denial. We speculated that the privilege check had some way to tell which section of code raised the interrupt and deny sections that held user code. Unfortunately since we could not access the os code we could not look at how that privilege check worked. We decided this was a dead end and somewhat dejectedly went to bed.  
 
@@ -105,12 +105,11 @@ After Nick figured out the privilege system, we tried the simplest thing possibl
 The next morning I woke up early with one last idea. The Playdate high score api functions have to be asynchronous because they cannot stall the games while they are running. Due to their asynchronous nature, they do not return the high score values they fetch directly. Instead they all take a callback which is called after the network results are fetched. If the callback was mistakenly called while the processor’s thread mode access level was still privileged, any code in that callback would run with full privileged access. It was a bit of a long shot but it’s also the kind of mistake I could see myself making.
 
 
-Hypothetical Get Highscores Thread
 <p align="center">
 	<img src="/images/foul-play/get_scores_hypo_cb.svg" width="80%"> 
 </p>  
 
-*Note this image is a hypothetical diagram. I'm not 100% confident and could be way off base here.*
+*Note this image is a high simplified diagram. It hides a lot of detail I'm not too clear on including the underlying multi task system involved in the asynchronous request fetching.*
 
 
 The test for this idea was extremely simple to write and after a few deep breaths I ran the code. The privilege bit check in the callback function confirmed my hunch. I had gained privileged access to the system. 
@@ -216,6 +215,10 @@ Thanks to Nick Spinale for teaching me everything I know about the Cortex M7 and
 Thanks to Scratchminer from the Playdate Discord for telling me about [CVE-2021-43997](https://nvd.nist.gov/vuln/detail/CVE-2021-43997)
 
 And finally thanks to Panic for making a great console and being so responsive
+
+Corrections:
+
+- 7/1/25: Update the diagrams to reflect my uncertainity more accurately
 
 Have questions / comments / corrections?  
 Get in touch: <a href="mailto:pstefek.dev@gmail.com">pstefek.dev@gmail.com</a>
