@@ -78,16 +78,15 @@
     <img src="/images/foul-play/get_scores_hypo.svg" width="80%"> 
 </p>
 
-<p><em>Note this image is a hypothetical diagram of one way the get_scores function could work. I’m not 100% sure exactly how this function is implemented in the Playdate Sdk. The entire architecture even might be completely different.</em></p>
+<p><em>Note this image is a high simplified hypothetical diagram. It's not meant to represent the underlying system in detail.</em></p>
 <p>After Nick figured out the privilege system, we tried the simplest thing possible. We called the EnsurePrivileges method ourselves. I had written some code to check the privilege bit on the control register which would let us know if we had succeeded. Unsurprisingly this simple attack did not work. It was like trying to kick down a locked door. We also tried to call the SVC instruction ourselves but were again met with a denial. We speculated that the privilege check had some way to tell which section of code raised the interrupt and deny sections that held user code. Unfortunately since we could not access the os code we could not look at how that privilege check worked. We decided this was a dead end and somewhat dejectedly went to bed.  </p>
 <p><strong>Privilege Escalation</strong></p>
 <p>The next morning I woke up early with one last idea. The Playdate high score api functions have to be asynchronous because they cannot stall the games while they are running. Due to their asynchronous nature, they do not return the high score values they fetch directly. Instead they all take a callback which is called after the network results are fetched. If the callback was mistakenly called while the processor’s thread mode access level was still privileged, any code in that callback would run with full privileged access. It was a bit of a long shot but it’s also the kind of mistake I could see myself making.</p>
-<p>Hypothetical Get Highscores Thread</p>
 <p align="center">
     <img src="/images/foul-play/get_scores_hypo_cb.svg" width="80%"> 
 </p>
 
-<p><em>Note this image is a hypothetical diagram. I'm not 100% confident and could be way off base here.</em></p>
+<p><em>Note this image is a high simplified diagram. It hides a lot of detail I'm not too clear on including the underlying multi task system involved in the asynchronous request fetching.</em></p>
 <p>The test for this idea was extremely simple to write and after a few deep breaths I ran the code. The privilege bit check in the callback function confirmed my hunch. I had gained privileged access to the system. </p>
 <p>The next step was to actually make a custom wifi call. I tried a dns lookup for <a href="http://google.com">google.com</a> and it was successful. I felt pretty good. While this seems like it would be a trivial issue for a security engineer to find, I had never tried any kind of “hacking” before so it was really cool seeing something I contributed to work.</p>
 <p>I showed Nick and then we both turned off our computers and went outside for the rest of the day.</p>
@@ -163,6 +162,10 @@ there aren't some extra subtleties hiding in steps 1, 2 and 5.</em></p>
 <p>Thanks to Nick Spinale for teaching me everything I know about the Cortex M7 and doing at least 90% of the work</p>
 <p>Thanks to Scratchminer from the Playdate Discord for telling me about <a href="https://nvd.nist.gov/vuln/detail/CVE-2021-43997">CVE-2021-43997</a></p>
 <p>And finally thanks to Panic for making a great console and being so responsive</p>
+<p>Corrections:</p>
+<ul>
+<li>7/1/25: Update the diagrams to reflect my uncertainity more accurately</li>
+</ul>
 <p>Have questions / comments / corrections?<br>
 Get in touch: <a href="mailto:pstefek.dev@gmail.com">pstefek.dev@gmail.com</a></p>
 <hr><ol class="simple-footnotes"><li id="sf-foul-play-1">Tricking Panic might not have worked anyway because the Playdate os firmware is encrypted and we’d have to find a way to pull the decryption key off the devic to decompile it <a href="#sf-foul-play-1-back" class="simple-footnote-back">↩</a></li><li id="sf-foul-play-2">After Panic fixed this exploit the author posted the redacted instructions to the repo showing they used the same exploit <a href="#sf-foul-play-2-back" class="simple-footnote-back">↩</a></li></ol>
