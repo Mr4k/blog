@@ -69,9 +69,9 @@ The permissions issues seemed like a brick wall. At this point Nick and I realiz
 3. Continue to poke around and hope we found something
 
 
-Option (1) seemed difficult at the time. We did not know how to access the on device OS code to reverse engineer it. And we could not find a leak of the code on Google. The only other way to get the code was through a human being. We knew Panic did send firmware to people who claimed to have Playdate issues but that seemed too underhanded and even then it would take too long given our limited time frame. [ref]Tricking Panic might not have worked anyway because the Playdate os firmware is encrypted and we’d have to find a way to pull the decryption key off the devic to decompile it[/ref]
+Option (1) seemed difficult at the time. We did not know how to access the on device OS code to reverse engineer it. And we could not find a leak of the code on Google. The only other way to get the code was through a human being. We knew Panic did send firmware to people who claimed to have Playdate issues but that seemed too underhanded and even then it would take too long given our limited time frame. [ref]Tricking Panic might not have worked anyway because the Playdate os firmware is encrypted and we’d have to find a way to pull the decryption key off the device to decompile it[/ref]
 
-We did try a little bit of option (2). I poked around the Google and the Playdate Squad discord to see if anyone else had written about accessing the wifi. We also looked quickly at a project called [IndexOS](https://scratchminer.github.io/Index-OS-Website/index) which is an alternative game launcher for the Playdate. It seemed like IndexOS’s installer was able to get around some system permissions to swap out it's game launcher with the default one. But after half an hour we couldn’t see any obvious exploits in its code (we’ll revisit IndexOS later). Due to time constraints we decided to cut our losses here and move on.
+We did try a little bit of option (2). I poked around the Google and the Playdate Squad discord to see if anyone else had written about accessing the wifi. We also looked quickly at a project called [IndexOS](https://scratchminer.github.io/Index-OS-Website/index) which is an alternative game launcher for the Playdate. It seemed like IndexOS’s installer was able to get around some system permissions to swap out its game launcher with the default one. But after half an hour we couldn’t see any obvious exploits in its code (we’ll revisit IndexOS later). Due to time constraints we decided to cut our losses here and move on.
 
 Having tried options (1) and (2) Nick and I decided to fall back on option (3), deepen our understanding of the system and hope we got lucky.
 
@@ -118,7 +118,7 @@ The next step was to actually make a custom wifi call. I tried a dns lookup for 
 
 I showed Nick and then we both turned off our computers and went outside for the rest of the day.
 
-What we had found was a way for any application (or game) on the Playdate to gain full control of the device. That meant in theory Playdate games could now use networking. Unfortunately that also meant games could ruin your device, buy things for you and steal your wifi password. So I tried to do the mature thing and reported it to Panic.
+What we had found was a way for any application (or game) on the Playdate to gain full control of the device. That meant in theory Playdate games could now use networking. Unfortunately that also meant games could ruin your device, buy things for you and steal your wifi password[ref]Of course some of these are simpler to pull of than others in practice.[/ref]. So I tried to do the mature thing and reported it to Panic.
 
 They responded very quickly and said they were already aware of the issue and were going to fix it as soon as they could.
 
