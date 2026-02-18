@@ -128,7 +128,7 @@ A week later I was back home. But even far away from Portland I was still haunte
 
 Roaming around the city I felt like a noir detective who has been told he solved the case, but just can’t shake the feeling that there is something more going on. So I went back to my computer, determined to find some answers.
 
-The first question was pretty simple. Now that I understood a little more about the internals of the Playdate, some strategic googling revealed the Playdate OS was based on Amazon’s FreeRTOS Kernel. Reading the docs a bit I noticed that the type of exploit Nick and I found is explictly called out in their [threat model section](https://www.freertos.org/Security/02-Kernel-threat-model#:~:text=Exploiting%20system%20calls%20which%20take%20a%20function%20pointer%20as%20a%20parameter%20to%20achieve%20arbitrary%20code%20execution).
+The first question was pretty simple. Now that I understood a little more about the internals of the Playdate, some strategic googling revealed the Playdate OS was based on Amazon’s FreeRTOS Kernel. Reading the docs a bit I noticed that the type of exploit Nick and I found is explicitly called out in their [threat model section](https://www.freertos.org/Security/02-Kernel-threat-model#:~:text=Exploiting%20system%20calls%20which%20take%20a%20function%20pointer%20as%20a%20parameter%20to%20achieve%20arbitrary%20code%20execution).
 
 Next I decided to revisit IndexOS. After running a few tests I confirmed IndexOS’s installer was definitely escalating its privileges to move files where it wasn’t supposed to. But how was the installer doing it and what had we missed before?
 
