@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>peterstefek.me - algorithms</title><link href="/" rel="alternate"></link><link href="/feeds/algorithms.atom.xml" rel="self"></link><id>/</id><updated>2021-01-05T00:00:00-08:00</updated><entry><title>A Linear Time Solution To Advent of Code Day 8</title><link href="/advent.html" rel="alternate"></link><published>2021-01-05T00:00:00-08:00</published><updated>2021-01-05T00:00:00-08:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2021-01-05:/advent.html</id><summary type="html">&lt;p&gt;Cutting loopy loops&lt;/p&gt;</summary><content type="html">&lt;p&gt;A few weeks ago I tried to go through Advent of Code 2020 (spoiler I didn't finish). Advent of Code is a set of 25 coding challenges each with two parts. The challenges are unveiled one at a time from the beginning of December until Christmas day.   &lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>peterstefek.me - algorithms</title><link href="/" rel="alternate"/><link href="/feeds/algorithms.atom.xml" rel="self"/><id>/</id><updated>2021-01-05T00:00:00-08:00</updated><entry><title>A Linear Time Solution To Advent of Code Day 8</title><link href="/advent.html" rel="alternate"/><published>2021-01-05T00:00:00-08:00</published><updated>2021-01-05T00:00:00-08:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2021-01-05:/advent.html</id><summary type="html">&lt;p&gt;Cutting loopy loops&lt;/p&gt;</summary><content type="html">&lt;p&gt;A few weeks ago I tried to go through Advent of Code 2020 (spoiler I didn't finish). Advent of Code is a set of 25 coding challenges each with two parts. The challenges are unveiled one at a time from the beginning of December until Christmas day.   &lt;/p&gt;
 &lt;p&gt;One fun thing about Advent of Code is that everyone does it differently. People write solutions in every language out there (and some new ones they've invented) using many different techniques (I'm sure there's someone who tries to do the whole thing in regex).  &lt;/p&gt;
 &lt;p&gt;I found part 2 of &lt;a href="https://adventofcode.com/2020/day/8"&gt;problem 8&lt;/a&gt; to be very interesting and wanted to write up my solution.  &lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;A Quick Summary of the Problem&lt;/strong&gt;&lt;br&gt;
@@ -62,7 +62,7 @@ Another way to think of these programs is as directed graphs. Each node represen
 &lt;/ul&gt;
 &lt;/li&gt;
 &lt;/ol&gt;
-&lt;p&gt;What is the runtime of this algorithm? Well we only go over each potential switch once. However unlike the simple algorithm, we also know during the check for cycle step each node is only added to the cyclic_nodes set once. Therefore the runtime is linear with respect to the number of instructions.&lt;/p&gt;</content><category term="algorithms"></category><category term="algorithms"></category></entry><entry><title>Optimizing an Open Source Texture Synthesis Library</title><link href="/texture-optimization.html" rel="alternate"></link><published>2020-07-26T00:00:00-07:00</published><updated>2020-07-26T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-07-26:/texture-optimization.html</id><summary type="html">&lt;p&gt;Adventures in learning to profile.&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;strong&gt;Background&lt;/strong&gt;&lt;br&gt;
+&lt;p&gt;What is the runtime of this algorithm? Well we only go over each potential switch once. However unlike the simple algorithm, we also know during the check for cycle step each node is only added to the cyclic_nodes set once. Therefore the runtime is linear with respect to the number of instructions.&lt;/p&gt;</content><category term="algorithms"/><category term="algorithms"/></entry><entry><title>Optimizing an Open Source Texture Synthesis Library</title><link href="/texture-optimization.html" rel="alternate"/><published>2020-07-26T00:00:00-07:00</published><updated>2020-07-26T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-07-26:/texture-optimization.html</id><summary type="html">&lt;p&gt;Adventures in learning to profile.&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;strong&gt;Background&lt;/strong&gt;&lt;br&gt;
 Near the end of 2019 I stumbled across this &lt;a href="https://www.youtube.com/watch?v=fMbK7PYQux4&amp;amp;t=6m57s"&gt;talk&lt;/a&gt; by procedural generation researcher &lt;a href="https://www.anastasiaopara.com/"&gt;Anastasia Opara&lt;/a&gt;. In the talk she presents a novel algorithm for example based texture synthesis. The goal of example based texture synthesis is to take one or more example textures and synthesize a new visually similar output texture.    &lt;/p&gt;
 &lt;p&gt;Here's an example from the project README:
 &lt;br&gt;
@@ -127,7 +127,7 @@ Overall I was pretty excited by how this project turned out. However I think it'
 While I said many things above about optimization and profiling I am no expert and always looking to learn more so if you think something is incorrect or have any suggestions feel free to get in touch!&lt;br&gt;
 Also a big thanks to the people at &lt;a href="https://www.embark-studios.com/"&gt;Embark Studios&lt;/a&gt; who were nice enough to take the time to review my code / ideas!    &lt;/p&gt;
 &lt;p&gt;Have questions / comments / corrections?&lt;br&gt;
-Get in touch: &lt;a href="mailto:pstefek.dev@gmail.com"&gt;pstefek.dev@gmail.com&lt;/a&gt;   &lt;/p&gt;</content><category term="algorithms"></category><category term="probability"></category><category term="algorithms"></category><category term="image processing"></category><category term="optimization"></category></entry><entry><title>The PCP Theorem and the Hardness of Approximation</title><link href="/pcp-theorem.html" rel="alternate"></link><published>2018-04-29T02:50:00-07:00</published><updated>2019-08-14T09:30:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2018-04-29:/pcp-theorem.html</id><summary type="html">&lt;p&gt;An introduction to the applications of the PCP theorem&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;strong&gt;Preamble&lt;/strong&gt;&lt;br&gt;
+Get in touch: &lt;a href="mailto:pstefek.dev@gmail.com"&gt;pstefek.dev@gmail.com&lt;/a&gt;   &lt;/p&gt;</content><category term="algorithms"/><category term="probability"/><category term="algorithms"/><category term="image processing"/><category term="optimization"/></entry><entry><title>The PCP Theorem and the Hardness of Approximation</title><link href="/pcp-theorem.html" rel="alternate"/><published>2018-04-29T02:50:00-07:00</published><updated>2019-08-14T09:30:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2018-04-29:/pcp-theorem.html</id><summary type="html">&lt;p&gt;An introduction to the applications of the PCP theorem&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;strong&gt;Preamble&lt;/strong&gt;&lt;br&gt;
 This post uses a lot of computational complexity terms and is fairly dense. I've included some defintions of frequently used terminology below. &lt;br&gt;&lt;br&gt;&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
@@ -436,7 +436,7 @@ http://theory.cs.princeton.edu/complexity/ab_hastadchap.pdf
     (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
     (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
 }
-&lt;/script&gt;</content><category term="algorithms"></category><category term="algorithms"></category><category term="theory"></category></entry><entry><title>The Alias Method for Fast Weighted Random</title><link href="/alias-method.html" rel="alternate"></link><published>2017-06-25T00:00:00-07:00</published><updated>2019-10-15T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2017-06-25:/alias-method.html</id><summary type="html">&lt;p&gt;Constant time draws from a discrete distribution.&lt;/p&gt;</summary><content type="html">&lt;style&gt;
+&lt;/script&gt;</content><category term="algorithms"/><category term="algorithms"/><category term="theory"/></entry><entry><title>The Alias Method for Fast Weighted Random</title><link href="/alias-method.html" rel="alternate"/><published>2017-06-25T00:00:00-07:00</published><updated>2019-10-15T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2017-06-25:/alias-method.html</id><summary type="html">&lt;p&gt;Constant time draws from a discrete distribution.&lt;/p&gt;</summary><content type="html">&lt;style&gt;
 thick.thicker {
     font-weight: 900;
 }
@@ -452,7 +452,7 @@ thick.thicker {
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;random&lt;/span&gt;
 
 &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;weightedRandom&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;weights&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
-    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
 &lt;span class="sd"&gt;    Draw from a general discrete distribution.&lt;/span&gt;
 &lt;span class="sd"&gt;    :param weights: A dictionary of weights which sum to one.&lt;/span&gt;
 &lt;span class="sd"&gt;    :return: A random sample from it the distribution defined by the weights.&lt;/span&gt;
@@ -520,7 +520,7 @@ Here's a visualization of the algorithm:&lt;/p&gt;
 &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;random&lt;/span&gt;
 
 &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;partitionWeights&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;weights&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
-    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
 &lt;span class="sd"&gt;    The preprocessing step.&lt;/span&gt;
 &lt;span class="sd"&gt;    :param weights: A dictionary of weights which sum to one.&lt;/span&gt;
 &lt;span class="sd"&gt;    :return: A partition used to draw quickly from the distribution&lt;/span&gt;
@@ -544,7 +544,7 @@ Here's a visualization of the algorithm:&lt;/p&gt;
     &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;boxes&lt;/span&gt;
 
 &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;drawFromPartition&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;partition&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
-    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
 &lt;span class="sd"&gt;    The draw step.&lt;/span&gt;
 &lt;span class="sd"&gt;    :param partition: partition A partition of a distribution into boxes.&lt;/span&gt;
 &lt;span class="sd"&gt;    :return: A sample from the distribution represented by the partition.&lt;/span&gt;
@@ -568,4 +568,4 @@ Here's a visualization of the algorithm:&lt;/p&gt;
 &lt;span class="nb"&gt;print&lt;/span&gt; &lt;span class="n"&gt;counts&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
-&lt;p&gt;&lt;strong&gt;One final note on runtime.&lt;/strong&gt; If you run our example code you'll notice the "slow" function is almost twice as fast as the "fast" one. Have I been lying this whole time? No. This is because in our example we used a small number of weights. In a &lt;a href="https://gist.github.com/Mr4k/eabaca318499bd54e5e18431efbc6622"&gt;separate speed test&lt;/a&gt; I use 1000 weights and draw from the distributions 100000 times each. In this case the fast algorithm runs in 0.35 seconds on my computer while the slow algorithm takes about 15 seconds.&lt;/p&gt;</content><category term="algorithms"></category><category term="probability"></category><category term="algorithms"></category></entry></feed>
+&lt;p&gt;&lt;strong&gt;One final note on runtime.&lt;/strong&gt; If you run our example code you'll notice the "slow" function is almost twice as fast as the "fast" one. Have I been lying this whole time? No. This is because in our example we used a small number of weights. In a &lt;a href="https://gist.github.com/Mr4k/eabaca318499bd54e5e18431efbc6622"&gt;separate speed test&lt;/a&gt; I use 1000 weights and draw from the distributions 100000 times each. In this case the fast algorithm runs in 0.35 seconds on my computer while the slow algorithm takes about 15 seconds.&lt;/p&gt;</content><category term="algorithms"/><category term="probability"/><category term="algorithms"/></entry></feed>

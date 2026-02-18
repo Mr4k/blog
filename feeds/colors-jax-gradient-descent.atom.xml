@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>peterstefek.me - colors, jax, gradient descent</title><link href="/" rel="alternate"></link><link href="/feeds/colors-jax-gradient-descent.atom.xml" rel="self"></link><id>/</id><updated>2020-09-09T00:00:00-07:00</updated><entry><title>Differentiable Dithering</title><link href="/differentiable-dithering.html" rel="alternate"></link><published>2020-09-09T00:00:00-07:00</published><updated>2020-09-09T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-09-09:/differentiable-dithering.html</id><summary type="html">&lt;p&gt;Coloring with calculus&lt;/p&gt;</summary><content type="html">&lt;p&gt;Colab source code can be found &lt;a href="https://gist.github.com/Mr4k/1f1b7ecaf30de073a50cbedd0da4dc82"&gt;here&lt;/a&gt;.&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>peterstefek.me - colors, jax, gradient descent</title><link href="/" rel="alternate"/><link href="/feeds/colors-jax-gradient-descent.atom.xml" rel="self"/><id>/</id><updated>2020-09-09T00:00:00-07:00</updated><entry><title>Differentiable Dithering</title><link href="/differentiable-dithering.html" rel="alternate"/><published>2020-09-09T00:00:00-07:00</published><updated>2020-09-09T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-09-09:/differentiable-dithering.html</id><summary type="html">&lt;p&gt;Coloring with calculus&lt;/p&gt;</summary><content type="html">&lt;p&gt;Colab source code can be found &lt;a href="https://gist.github.com/Mr4k/1f1b7ecaf30de073a50cbedd0da4dc82"&gt;here&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Problem&lt;/strong&gt;&lt;br&gt;
 Let's say we want to reduce the number of colors in an image. For example consider the picture of fruit below:&lt;/p&gt;
 &lt;p align="center"&gt;
@@ -151,4 +151,4 @@ Get in touch: &lt;a href="mailto:pstefek.dev@gmail.com"&gt;pstefek.dev@gmail.com
     (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
     (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
 }
-&lt;/script&gt;</content><category term="colors, jax, gradient descent"></category><category term="colors"></category><category term="jax"></category><category term="gradient descent"></category></entry></feed>
+&lt;/script&gt;</content><category term="colors, jax, gradient descent"/><category term="colors"/><category term="jax"/><category term="gradient descent"/></entry></feed>

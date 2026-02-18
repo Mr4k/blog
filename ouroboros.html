@@ -19,11 +19,11 @@
   <p><meta charset="utf-8"/></p>
 <p>The code associated with this article can be found <a href="https://github.com/Mr4k/ouroboros">here</a>.</p>
 <p>Consider the following function in Python which sums up the first n numbers:</p>
-<div class="highlight"><pre><span></span><code><span class="nv">def</span><span class="w"> </span><span class="nv">sum</span><span class="ss">(</span><span class="nv">n</span>,<span class="w"> </span><span class="nv">acc</span><span class="o">=</span><span class="mi">0</span><span class="ss">)</span>:<span class="w"></span>
-<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="nv">n</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span>:<span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nv">acc</span><span class="w"></span>
-<span class="w">  </span><span class="k">else</span>:<span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nv">sum</span><span class="ss">(</span><span class="nv">n</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span>,<span class="w"> </span><span class="nv">acc</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nv">n</span><span class="ss">)</span><span class="w"></span>
+<div class="highlight"><pre><span></span><code><span class="nv">def</span><span class="w"> </span><span class="nv">sum</span><span class="ss">(</span><span class="nv">n</span>,<span class="w"> </span><span class="nv">acc</span><span class="o">=</span><span class="mi">0</span><span class="ss">)</span>:
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="nv">n</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span>:
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nv">acc</span>
+<span class="w">  </span><span class="k">else</span>:
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nv">sum</span><span class="ss">(</span><span class="nv">n</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span>,<span class="w"> </span><span class="nv">acc</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nv">n</span><span class="ss">)</span>
 </code></pre></div>
 
 <p>So sum(1) returns 1, sum(2) returns 3 and sum(3) returns 6. What about sum(10000000)?<br>
@@ -37,13 +37,13 @@ Most likely you will see a different error which looks like this:  </p>
 <p>Since I was looking for small projects to do during my first week at the <a href="https://www.recurse.com/">Recurse Center</a>, I decided to try to implement a basic version of tail call optimization in Python. Note this is not an original idea and I had already seen some clever hacks which used exceptions to break out of sub calls. I decided to try something different, although after presenting my implementation to the greater RC community I learned that another Recurser had given a <a href="https://www.youtube.com/watch?v=Qk1I6ZxcceU&amp;feature=share">fantastic talk</a> which used the same idea back in 2015 (small world!)  </p>
 <p>Before I dive into the details let's look at the prototype in action:<br>
 sum.py is a file which contains the same sum calculation from the beginning of this post:  </p>
-<div class="highlight"><pre><span></span><code><span class="nv">def</span><span class="w"> </span><span class="nv">sum</span><span class="ss">(</span><span class="nv">n</span>,<span class="w"> </span><span class="nv">acc</span><span class="o">=</span><span class="mi">0</span><span class="ss">)</span>:<span class="w"></span>
-<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="nv">n</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span>:<span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nv">acc</span><span class="w"></span>
-<span class="w">  </span><span class="k">else</span>:<span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nv">sum</span><span class="ss">(</span><span class="nv">n</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span>,<span class="w"> </span><span class="nv">acc</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nv">n</span><span class="ss">)</span><span class="w"></span>
+<div class="highlight"><pre><span></span><code><span class="nv">def</span><span class="w"> </span><span class="nv">sum</span><span class="ss">(</span><span class="nv">n</span>,<span class="w"> </span><span class="nv">acc</span><span class="o">=</span><span class="mi">0</span><span class="ss">)</span>:
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="nv">n</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span>:
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nv">acc</span>
+<span class="w">  </span><span class="k">else</span>:
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nv">sum</span><span class="ss">(</span><span class="nv">n</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span>,<span class="w"> </span><span class="nv">acc</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nv">n</span><span class="ss">)</span>
 
-<span class="nv">print</span><span class="ss">(</span><span class="nv">sum</span><span class="ss">(</span><span class="mi">1000000</span><span class="ss">))</span><span class="w"></span>
+<span class="nv">print</span><span class="ss">(</span><span class="nv">sum</span><span class="ss">(</span><span class="mi">1000000</span><span class="ss">))</span>
 </code></pre></div>
 
 <p>If type <code>python sum.py</code> we will get an error.<br>
@@ -87,8 +87,8 @@ Unfortunately, there's one more major problem with our clean bytecode definition
     <img src="/images/ouroboros/ouroboros.jpg" width="40%" > 
 </p>
 <p>The Ouroboros is a snake which is eating its own tail. It symbolizes eternal cyclic renewal. In Python I consider this function to represent an Ouroboros,  </p>
-<div class="highlight"><pre><span></span><code><span class="nv">def</span><span class="w"> </span><span class="nv">ouroboros</span><span class="ss">()</span>:<span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nv">ouroboros</span><span class="ss">()</span><span class="w"></span>
+<div class="highlight"><pre><span></span><code><span class="nv">def</span><span class="w"> </span><span class="nv">ouroboros</span><span class="ss">()</span>:
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nv">ouroboros</span><span class="ss">()</span>
 </code></pre></div>
 
 <p>Now that we can optimize tail recursive function calls, this function will run forever (read as until we send SIGINT), eating it's own stack in an endless cycle.  </p>

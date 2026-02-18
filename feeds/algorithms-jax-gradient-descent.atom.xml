@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>peterstefek.me - algorithms, jax, gradient descent</title><link href="/" rel="alternate"></link><link href="/feeds/algorithms-jax-gradient-descent.atom.xml" rel="self"></link><id>/</id><updated>2020-09-01T00:00:00-07:00</updated><entry><title>Art Class With Leibniz</title><link href="/art-class-with-leibniz.html" rel="alternate"></link><published>2020-09-01T00:00:00-07:00</published><updated>2020-09-01T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-09-01:/art-class-with-leibniz.html</id><summary type="html">&lt;p&gt;Doodling with derivatives&lt;/p&gt;</summary><content type="html">&lt;p align="center"&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>peterstefek.me - algorithms, jax, gradient descent</title><link href="/" rel="alternate"/><link href="/feeds/algorithms-jax-gradient-descent.atom.xml" rel="self"/><id>/</id><updated>2020-09-01T00:00:00-07:00</updated><entry><title>Art Class With Leibniz</title><link href="/art-class-with-leibniz.html" rel="alternate"/><published>2020-09-01T00:00:00-07:00</published><updated>2020-09-01T00:00:00-07:00</updated><author><name>Peter Stefek</name></author><id>tag:None,2020-09-01:/art-class-with-leibniz.html</id><summary type="html">&lt;p&gt;Doodling with derivatives&lt;/p&gt;</summary><content type="html">&lt;p align="center"&gt;
     &lt;img class='artpic' src="/images/art-class/mona-progress.gif" width="20%" &gt; 
 &lt;/p&gt;
 
@@ -202,4 +202,4 @@ How do the hyperparameters affect image quality?  &lt;/p&gt;
 &lt;p&gt;What if we used different shapes? What if we let the algorithm choose the shape?&lt;/p&gt;
 &lt;p&gt;What if we did it in 3d?  &lt;/p&gt;
 &lt;p&gt;Have questions / comments / corrections?&lt;br&gt;
-Get in touch: &lt;a href="mailto:pstefek.dev@gmail.com"&gt;pstefek.dev@gmail.com&lt;/a&gt;&lt;/p&gt;</content><category term="algorithms, jax, gradient descent"></category><category term="algorithms"></category><category term="jax"></category><category term="gradient descent"></category></entry></feed>
+Get in touch: &lt;a href="mailto:pstefek.dev@gmail.com"&gt;pstefek.dev@gmail.com&lt;/a&gt;&lt;/p&gt;</content><category term="algorithms, jax, gradient descent"/><category term="algorithms"/><category term="jax"/><category term="gradient descent"/></entry></feed>

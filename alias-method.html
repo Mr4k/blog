@@ -32,7 +32,7 @@ thick.thicker {
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">random</span>
 
 <span class="k">def</span> <span class="nf">weightedRandom</span><span class="p">(</span><span class="n">weights</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Draw from a general discrete distribution.</span>
 <span class="sd">    :param weights: A dictionary of weights which sum to one.</span>
 <span class="sd">    :return: A random sample from it the distribution defined by the weights.</span>
@@ -100,7 +100,7 @@ Here's a visualization of the algorithm:</p>
 <span class="kn">import</span> <span class="nn">random</span>
 
 <span class="k">def</span> <span class="nf">partitionWeights</span><span class="p">(</span><span class="n">weights</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The preprocessing step.</span>
 <span class="sd">    :param weights: A dictionary of weights which sum to one.</span>
 <span class="sd">    :return: A partition used to draw quickly from the distribution</span>
@@ -124,7 +124,7 @@ Here's a visualization of the algorithm:</p>
     <span class="k">return</span> <span class="n">boxes</span>
 
 <span class="k">def</span> <span class="nf">drawFromPartition</span><span class="p">(</span><span class="n">partition</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The draw step.</span>
 <span class="sd">    :param partition: partition A partition of a distribution into boxes.</span>
 <span class="sd">    :return: A sample from the distribution represented by the partition.</span>

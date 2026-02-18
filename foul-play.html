@@ -30,21 +30,21 @@
 </p>
 
 <p>Here is a hello world example in c on the Playdate demonstrating this structure:</p>
-<div class="highlight"><pre><span></span><code><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdio.h&gt;</span><span class="cp"></span>
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdlib.h&gt;</span><span class="cp"></span>
+<div class="highlight"><pre><span></span><code><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdio.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdlib.h&gt;</span>
 
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">"pd_api.h"</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">"pd_api.h"</span>
 
-<span class="kt">int</span><span class="w"> </span><span class="nf">eventHandler</span><span class="p">(</span><span class="w"></span>
-<span class="w">    </span><span class="n">PlaydateAPI</span><span class="o">*</span><span class="w"> </span><span class="n">pd</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="n">PDSystemEvent</span><span class="w"> </span><span class="n">event</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">_arg</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="n">event</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">kEventInit</span><span class="w"> </span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">pd</span><span class="o">-&gt;</span><span class="n">console</span><span class="o">-&gt;</span><span class="n">log</span><span class="p">(</span><span class="s">"hello world"</span><span class="p">);</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">eventHandler</span><span class="p">(</span>
+<span class="w">    </span><span class="n">PlaydateAPI</span><span class="o">*</span><span class="w"> </span><span class="n">pd</span><span class="p">,</span>
+<span class="w">    </span><span class="n">PDSystemEvent</span><span class="w"> </span><span class="n">event</span><span class="p">,</span>
+<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">_arg</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="n">event</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">kEventInit</span><span class="w"> </span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">pd</span><span class="o">-&gt;</span><span class="n">console</span><span class="o">-&gt;</span><span class="n">log</span><span class="p">(</span><span class="s">"hello world"</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
 </code></pre></div>
 
 <p>Nick’s first observation was that the Playdate Sdk is not a library which is statically linked into the game binary at compile time like I previously assumed. Instead the PlaydateAPI pointer points to a special region of device memory which contains the sdk. The process is an ad-hoc version of dynamic linking which allows Panic to upgrade the sdk when they release new Playdate OS versions.</p>
@@ -95,7 +95,7 @@
 <p><strong>The End?</strong></p>
 <p>A week later I was back home. But even far away from Portland I was still haunted by some of the loose ends hanging off our investigation. I still didn't understand much about the Playdate's operating system and I couldn't help feeling there something we missed about custom launchers like IndexOS.</p>
 <p>Roaming around the city I felt like a noir detective who has been told he solved the case, but just can’t shake the feeling that there is something more going on. So I went back to my computer, determined to find some answers.</p>
-<p>The first question was pretty simple. Now that I understood a little more about the internals of the Playdate, some strategic googling revealed the Playdate OS was based on Amazon’s FreeRTOS Kernel. Reading the docs a bit I noticed that the type of exploit Nick and I found is explictly called out in their <a href="https://www.freertos.org/Security/02-Kernel-threat-model#:~:text=Exploiting%20system%20calls%20which%20take%20a%20function%20pointer%20as%20a%20parameter%20to%20achieve%20arbitrary%20code%20execution">threat model section</a>.</p>
+<p>The first question was pretty simple. Now that I understood a little more about the internals of the Playdate, some strategic googling revealed the Playdate OS was based on Amazon’s FreeRTOS Kernel. Reading the docs a bit I noticed that the type of exploit Nick and I found is explicitly called out in their <a href="https://www.freertos.org/Security/02-Kernel-threat-model#:~:text=Exploiting%20system%20calls%20which%20take%20a%20function%20pointer%20as%20a%20parameter%20to%20achieve%20arbitrary%20code%20execution">threat model section</a>.</p>
 <p>Next I decided to revisit IndexOS. After running a few tests I confirmed IndexOS’s installer was definitely escalating its privileges to move files where it wasn’t supposed to. But how was the installer doing it and what had we missed before?</p>
 <p>Playdate projects are traditionally built in c, lua or rarely a combination of both. When Nick and I glanced at IndexOS we had assumed it was a project entirely built in Lua. Almost all the code was in lua files and the tiny binary that came with it appeared to be just the stock lua entry point when we first looked at it. </p>
 <p><strong>A Second Privilege Escalation</strong></p>
@@ -112,11 +112,11 @@ pop {pc}
 <div class="highlight"><pre><span></span><code><span class="c1">// 1. Pushes the current link register to the stack.</span>
 <span class="c1">// The link register typically contains return</span>
 <span class="c1">// address for a function call</span>
-<span class="n">push</span><span class="w"> </span><span class="p">{</span><span class="n">lr</span><span class="p">}</span><span class="w">  </span>
+<span class="nx">push</span><span class="w"> </span><span class="p">{</span><span class="nx">lr</span><span class="p">}</span><span class="w">  </span>
 <span class="c1">// 2. Clears the link register and the</span>
 <span class="c1">// associated program status register.</span>
 <span class="c1">// I'm not totally sure is this is needed</span>
-<span class="n">movs</span><span class="p">.</span><span class="n">w</span><span class="w"> </span><span class="n">lr</span><span class="p">,#</span><span class="mh">0</span><span class="n">x0</span><span class="w"> </span>
+<span class="nx">movs</span><span class="p">.</span><span class="nx">w</span><span class="w"> </span><span class="nx">lr</span><span class="p">,</span><span class="err">#</span><span class="mh">0x0</span><span class="w"> </span>
 <span class="c1">// 3. Moves the top 16 bits of an address</span>
 <span class="c1">// known to be in the Playdate Sdk MPU region</span>
 <span class="c1">// into the link register. The link </span>
@@ -124,31 +124,31 @@ pop {pc}
 <span class="c1">// The choice of 0x80500000 is arbitrary </span>
 <span class="c1">// you can use any value within</span>
 <span class="c1">// the Playdate Sdk address space</span>
-<span class="n">movt</span><span class="w"> </span><span class="n">lr</span><span class="p">,#</span><span class="mh">0</span><span class="n">x805</span><span class="w"> </span>
+<span class="nx">movt</span><span class="w"> </span><span class="nx">lr</span><span class="p">,</span><span class="err">#</span><span class="mh">0x805</span><span class="w"> </span>
 <span class="c1">// 4. Calls the svc interrupt handler. </span>
 <span class="c1">// This checks the link register</span>
 <span class="c1">// which now contains a fake value that</span>
 <span class="c1">// makes it look like the interrupt comes</span>
 <span class="c1">// from within the Playdate Sdk section of the code</span>
-<span class="n">svc</span><span class="w"> </span><span class="mh">0</span><span class="n">x2</span><span class="w"> </span>
+<span class="nx">svc</span><span class="w"> </span><span class="mh">0x2</span><span class="w"> </span>
 <span class="c1">// 5. Pops the old real link register</span>
 <span class="c1">// value off the stack onto the program counter so</span>
 <span class="c1">// the function exits correctly</span>
-<span class="n">pop</span><span class="w"> </span><span class="p">{</span><span class="n">pc</span><span class="p">}</span><span class="w"></span>
+<span class="nx">pop</span><span class="w"> </span><span class="p">{</span><span class="nx">pc</span><span class="p">}</span>
 </code></pre></div>
 
 <p><em>Note while I'm confident about points 3 and 4 which are the crux of the exploit I'm not 100% sure
 there aren't some extra subtleties hiding in steps 1, 2 and 5.</em></p>
 <p>After I knew this much I asked the developer of IndexOS to confirm my suspicions. They did and told me this issue was related to <a href="https://nvd.nist.gov/vuln/detail/CVE-2021-43997">CVE-2021-43997</a>, a known FreeRTOS exploit.</p>
 <p>How did this get introduced to the Playdate community? Some more strategic googling revealed the following repo from 2022 containing a redacted Playdate privilege escalation function:</p>
-<div class="highlight"><pre><span></span><code><span class="kt">void</span><span class="w"> </span><span class="nf">privEsc</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="kr">__asm</span><span class="w"> </span><span class="k">volatile</span><span class="p">(</span><span class="w"></span>
-<span class="w">        </span><span class="s">"nop</span><span class="se">\n</span><span class="s">"</span><span class="w"></span>
-<span class="w">        </span><span class="s">"nop</span><span class="se">\n</span><span class="s">"</span><span class="w"></span>
-<span class="w">        </span><span class="s">"nop</span><span class="se">\n</span><span class="s">"</span><span class="w"></span>
-<span class="w">        </span><span class="s">"nop</span><span class="se">\n</span><span class="s">"</span><span class="w"></span>
+<div class="highlight"><pre><span></span><code><span class="kt">void</span><span class="w"> </span><span class="nf">privEsc</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kr">__asm</span><span class="w"> </span><span class="k">volatile</span><span class="p">(</span>
+<span class="w">        </span><span class="s">"nop</span><span class="se">\n</span><span class="s">"</span>
+<span class="w">        </span><span class="s">"nop</span><span class="se">\n</span><span class="s">"</span>
+<span class="w">        </span><span class="s">"nop</span><span class="se">\n</span><span class="s">"</span>
+<span class="w">        </span><span class="s">"nop</span><span class="se">\n</span><span class="s">"</span>
 <span class="w">        </span><span class="s">"nop</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span><span class="w"> </span><span class="c1">//redacted</span>
-<span class="p">}</span><span class="w"></span>
+<span class="p">}</span>
 </code></pre></div>
 
 <p>While I wasn’t sure that at the time, those 5 redacted instructions in the repo sure seemed like they could be <a href="https://nvd.nist.gov/vuln/detail/CVE-2021-43997">CVE-2021-43997</a> as well<sup id="sf-foul-play-3-back"><a href="#sf-foul-play-3" class="simple-footnote" title="After Panic fixed this exploit the author posted the redacted instructions to the repo showing they used the same exploit">3</a></sup>. Neither the IndexOS author or the github repo author claimed to be the person who first did the exploit so I imagine some third person discovered this issue on the Playdate before September 2022 by trying recent FreeRTOS CVEs to see what would happen.</p>
@@ -168,7 +168,7 @@ there aren't some extra subtleties hiding in steps 1, 2 and 5.</em></p>
 </ul>
 <p>Have questions / comments / corrections?<br>
 Get in touch: <a href="mailto:pstefek.dev@gmail.com">pstefek.dev@gmail.com</a></p>
-<hr><ol class="simple-footnotes"><li id="sf-foul-play-1">Tricking Panic might not have worked anyway because the Playdate os firmware is encrypted and we’d have to find a way to pull the decryption key off the device to decompile it <a href="#sf-foul-play-1-back" class="simple-footnote-back">↩</a></li><li id="sf-foul-play-2">Of course some of these are simpler to pull of than others in practice. <a href="#sf-foul-play-2-back" class="simple-footnote-back">↩</a></li><li id="sf-foul-play-3">After Panic fixed this exploit the author posted the redacted instructions to the repo showing they used the same exploit <a href="#sf-foul-play-3-back" class="simple-footnote-back">↩</a></li></ol>
+<hr><ol class="simple-footnotes"><li id="sf-foul-play-1">Tricking Panic might not have worked anyway because the Playdate os firmware is encrypted and we’d have to find a way to pull the decryption key off the device to decompile it <a href="#sf-foul-play-1-back" class="simple-footnote-back">↩︎</a></li><li id="sf-foul-play-2">Of course some of these are simpler to pull of than others in practice. <a href="#sf-foul-play-2-back" class="simple-footnote-back">↩︎</a></li><li id="sf-foul-play-3">After Panic fixed this exploit the author posted the redacted instructions to the repo showing they used the same exploit <a href="#sf-foul-play-3-back" class="simple-footnote-back">↩︎</a></li></ol>
  </div>
 </div>
 <footer>
