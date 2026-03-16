@@ -11,6 +11,22 @@ Summary: Can the gameboy for hipsters do 3d?
 	<img src="/images/playdate3d/playdate3d-header.png" width="300px"> 
 </p>   
 
+### <mark>\[Update 3/16/2026\] Note this content is out of date there has been a lot of work on Playdate 3D projects since this has been written </mark>
+Here are some links to cool resources:
+
+- The [3d channel](https://discord.com/channels/675983554655551509/1249789474771177635) on the Playdate Discord.
+- The [3d section](https://play.date/games/3d/) of the Playdate Catalog
+- [Power Off](https://freds72.itch.io/power-off) Freds72's Quake Engine, an insane accomplishment
+- [Jump Truck](https://play.date/games/jump-truck/) A shameless plug for my own Playdate 3d game
+- [Trackminia](https://play.date/games/trackminia/) A very slick drifting racer
+
+Additionally two of the games discussed in this post have since come out:
+
+- [Super Agent](https://play.date/games/super-agent/) 
+- [Diora](https://play.date/games/diora/) 
+
+### <mark> Below is the original post </mark>
+
 This year one of my friends gave me a [Playdate](https://play.date/) for Christmas and I have been fascinated with it for the last couple weeks. As a hobbyist game developer, I wanted to make a game for it. I had a bunch of 3D game ideas but realized that the hardware on the playdate is quite limited compared to my m1 mac. Instead of deterring me, the constraints drew me in and I’ve spent the last couple of weeks exploring the potential for 3D graphics on the playdate.  
 
 To prepare for making a 3D engine I wanted to get a sense of what was already out there. This post will be a review of prior art. I've dug through and categorized all the 3d games/demos/engines for the playdate that I could find.  
