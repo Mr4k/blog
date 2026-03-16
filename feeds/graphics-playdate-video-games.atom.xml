@@ -3,6 +3,21 @@
     &lt;img src="/images/playdate3d/playdate3d-header.png" width="300px"&gt; 
 &lt;/p&gt;
 
+&lt;h3&gt;&lt;mark&gt;[Update 3/16/2026] Note this content is out of date there has been a lot of work on Playdate 3D projects since this has been written &lt;/mark&gt;&lt;/h3&gt;
+&lt;p&gt;Here are some links to cool resources:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;The &lt;a href="https://discord.com/channels/675983554655551509/1249789474771177635"&gt;3d channel&lt;/a&gt; on the Playdate Discord.&lt;/li&gt;
+&lt;li&gt;The &lt;a href="https://play.date/games/3d/"&gt;3d section&lt;/a&gt; of the Playdate Catalog&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://freds72.itch.io/power-off"&gt;Power Off&lt;/a&gt; Freds72's Quake Engine, an insane accomplishment&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://play.date/games/jump-truck/"&gt;Jump Truck&lt;/a&gt; A shameless plug for my own Playdate 3d game&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://play.date/games/trackminia/"&gt;Trackminia&lt;/a&gt; A very slick drifting racer&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Additionally two of the games discussed in this post have since come out:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://play.date/games/super-agent/"&gt;Super Agent&lt;/a&gt; &lt;/li&gt;
+&lt;li&gt;&lt;a href="https://play.date/games/diora/"&gt;Diora&lt;/a&gt; &lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;&lt;mark&gt; Below is the original post &lt;/mark&gt;&lt;/h3&gt;
 &lt;p&gt;This year one of my friends gave me a &lt;a href="https://play.date/"&gt;Playdate&lt;/a&gt; for Christmas and I have been fascinated with it for the last couple weeks. As a hobbyist game developer, I wanted to make a game for it. I had a bunch of 3D game ideas but realized that the hardware on the playdate is quite limited compared to my m1 mac. Instead of deterring me, the constraints drew me in and I’ve spent the last couple of weeks exploring the potential for 3D graphics on the playdate.  &lt;/p&gt;
 &lt;p&gt;To prepare for making a 3D engine I wanted to get a sense of what was already out there. This post will be a review of prior art. I've dug through and categorized all the 3d games/demos/engines for the playdate that I could find.  &lt;/p&gt;
 &lt;p&gt;Before we dive in, I want to talk about how I categorized these games. It’s difficult to find a hard boundary that defines if a game is 3D or not. As such, the process of deciding if a game is 3D is somewhat a matter of personal opinion. &lt;/p&gt;
